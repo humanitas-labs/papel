@@ -1,0 +1,87 @@
+name: Serein
+
+options:
+  bundleIdPrefix: org.humanitas
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    CURRENT_PROJECT_VERSION: 1
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: true
+    MARKETING_VERSION: 0.1.0
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_VERSION: 6.0
+
+targets:
+  Serein:
+    type: application
+    platform: macOS
+    sources:
+      - path: Serein
+    info:
+      path: Serein/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Serein
+        CFBundleName: Serein
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Markdown document
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - net.daringfireball.markdown
+              - public.plain-text
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: net.daringfireball.markdown
+            UTTypeDescription: Markdown document
+            UTTypeConformsTo:
+              - public.plain-text
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - md
+                - markdown
+              public.mime-type:
+                - text/markdown
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHighResolutionCapable: true
+        NSSupportsAutomaticTermination: true
+        NSSupportsSuddenTermination: true
+    settings:
+      base:
+        CODE_SIGN_STYLE: Automatic
+        COMBINE_HIDPI_IMAGES: true
+        GENERATE_INFOPLIST_FILE: false
+        INFOPLIST_FILE: Serein/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.serein
+        PRODUCT_NAME: Serein
+
+  SereinTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: SereinTests
+    dependencies:
+      - target: Serein
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.serein.tests
+
+schemes:
+  Serein:
+    build:
+      targets:
+        Serein: all
+        SereinTests:
+          - test
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - SereinTests
+

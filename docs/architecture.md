@@ -1,0 +1,81 @@
+# Serein Architecture
+
+Last updated: `2026.08.30`
+
+## 1. Objective
+
+Serein is a native macOS document editor. Ordinary Markdown text is the only
+persistent state. The application owns presentation and editing behavior, not a
+document library or storage system.
+
+## 2. Runtime
+
+```text
+Markdown file
+    ↕ native document lifecycle
+MarkdownDocument
+    ↕ SwiftUI binding
+MarkdownEditor
+    ↕ NSViewRepresentable
+SereinTextView / SereinLayoutManager / TextKit
+    → temporary source styling, contextual concealment, margin decorations
+```
+
+`MarkdownDocument` reads and writes UTF-8 without transforming the source; its
+codec is exposed as `init(data:)` and `data` so the byte-exact invariant is
+tested directly. Markdown is imported as `net.daringfireball.markdown` because
+the SDK ships no `UTType.markdown`. `MarkdownEditor` synchronizes the document
+binding with AppKit and skips restyling while an input method holds marked
+text. `WindowConfigurator` applies window behavior whenever its host view
+attaches to a window. Styling changes attributes in the in-memory text storage
+but never changes the persisted string. `Appearance` is the single source of
+visual tokens; the user-tunable ones read the live `Configuration`.
+
+Concealment is layered on styling without touching storage. The styler
+annotates heading markers with a `.concealable` attribute; `SereinLayoutManager`
+is its own `NSLayoutManagerDelegate` and, while generating glyphs, gives every
+concealable character outside its `activeRange` a `.null` glyph property
+(zero advance, nothing drawn). `SereinTextView` overrides the
+`setSelectedRanges` primitive, which every selection path funnels through,
+and sets the active range to the union of the paragraphs the selection
+touches; only ranges that carry markers are invalidated, so moving through
+plain paragraphs costs nothing. The revealed range is frozen while an input
+method holds marked text. Invariant: concealment never edits the text, so
+saving, undo, find, copy, and select-all operate on the unchanged source.
+
+`ConfigurationStore` owns that configuration. It reads `key = value` lines
+from `~/.config/serein/config` (honouring `$XDG_CONFIG_HOME`), writes the
+commented template when the file is missing, and watches both the file and its
+directory with `DispatchSource` so in-place and atomic saves alike reload it.
+Parsing never fails: unknown keys are ignored and invalid or out-of-range
+values fall back to their defaults. A changed configuration posts
+`Configuration.didChangeNotification`; every text view refonts, re-insets, and
+restyles.
+The Settings scene (`⌘,`) edits the same keys with controls and writes
+through `ConfigurationStore.write`, which merges values into the existing
+file text so comments, order, and unknown keys survive; the file and the
+window can never disagree. Presets are whole-configuration files in
+`presets/` beside the config, in the same format; applying one writes its
+values through the same path, so a preset is a snapshot, never a live link.
+
+## 3. Application boundaries
+
+- SwiftUI owns scenes, commands, document composition, and the settings panel.
+- The configuration file owns every user-tunable value.
+- AppKit owns the writing surface and Mac text behavior.
+- The document model owns exact Markdown source serialization.
+- Styling may annotate source but may not silently rewrite it.
+
+## 4. Visual system
+
+The full window is the canvas. A transparent titlebar retains standard Mac
+traffic lights while removing app-owned chrome. The editor maintains a maximum
+measure with responsive margins and uses the system serif design so typography
+tracks platform rendering and accessibility behavior.
+
+## 5. Decisions
+
+| ID | Decision | Status |
+|---|---|---|
+| [ADR-001](decisions/001-native-editor.md) | Native document lifecycle and AppKit editing surface | Accepted |
+
