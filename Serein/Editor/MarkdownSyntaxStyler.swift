@@ -168,6 +168,8 @@ final class MarkdownSyntaxStyler {
         }
     }
 
+    /// Delimiters are dimmed and, off the active paragraph, concealed; the
+    /// styled content between them stays.
     private func dimDelimiters(
         around contentRange: NSRange,
         in matchRange: NSRange,
@@ -177,16 +179,13 @@ final class MarkdownSyntaxStyler {
         let suffixLocation = NSMaxRange(contentRange)
         let suffixLength = NSMaxRange(matchRange) - suffixLocation
 
-        storage.addAttribute(
-            .foregroundColor,
-            value: Appearance.mutedInk,
-            range: NSRange(location: matchRange.location, length: prefixLength)
-        )
-        storage.addAttribute(
-            .foregroundColor,
-            value: Appearance.mutedInk,
-            range: NSRange(location: suffixLocation, length: suffixLength)
-        )
+        for range in [
+            NSRange(location: matchRange.location, length: prefixLength),
+            NSRange(location: suffixLocation, length: suffixLength),
+        ] {
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: range)
+            storage.addAttribute(.concealable, value: true, range: range)
+        }
     }
 }
 

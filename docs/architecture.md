@@ -32,7 +32,7 @@ but never changes the persisted string. `Appearance` is the single source of
 visual tokens; the user-tunable ones read the live `Configuration`.
 
 Concealment is layered on styling without touching storage. The styler
-annotates heading markers with a `.concealable` attribute; `SereinLayoutManager`
+annotates heading markers and inline delimiters with a `.concealable` attribute; `SereinLayoutManager`
 is its own `NSLayoutManagerDelegate` and, while generating glyphs, gives every
 concealable character outside its `activeRange` a `.null` glyph property
 (zero advance, nothing drawn). `SereinTextView` overrides the

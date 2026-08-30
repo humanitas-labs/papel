@@ -48,14 +48,40 @@ struct ConcealmentTests {
     }
 
     @Test
-    func nonHeadingsCarryNoMark() throws {
+    func listMarkersQuotesAndPlainHashesCarryNoMark() throws {
         let textView = SereinTextView()
-        textView.string = "#hashtag\n> quote\n- item **bold**\n"
+        textView.string = "#hashtag\n> quote\n- item\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try #require(textView.textStorage)
         storage.enumerateAttribute(.concealable, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
             #expect(value == nil)
         }
+    }
+
+    @Test
+    func inlineDelimitersConcealAndTheirContentStaysStyled() throws {
+        let text = "Body.\n\nSome **strong** and *em* and `code` here.\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: 0)
+        let storage = try #require(textView.textStorage)
+
+        for index in [12, 13, 20, 21, 27, 30, 36, 41] {
+            #expect(storage.attribute(.concealable, at: index, effectiveRange: nil) != nil, "delimiter at \(index)")
+            #expect(isNull(layoutManager, characterAt: index), "delimiter at \(index) is hidden")
+        }
+        for index in [7, 14, 28, 37] {
+            #expect(storage.attribute(.concealable, at: index, effectiveRange: nil) == nil, "content at \(index)")
+            #expect(!isNull(layoutManager, characterAt: index))
+        }
+        let strong = storage.attribute(.font, at: 14, effectiveRange: nil) as? NSFont
+        #expect(strong?.fontDescriptor.symbolicTraits.contains(.bold) == true)
+        let hiddenX = x(layoutManager, characterAt: 12)
+        #expect(x(layoutManager, characterAt: 14) == hiddenX, "content starts where the hidden delimiter would have")
+
+        textView.setSelectedRange(NSRange(location: 16, length: 0))
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(!isNull(layoutManager, characterAt: 12))
+        #expect(x(layoutManager, characterAt: 14) > hiddenX, "revealed delimiters push the content right")
+        #expect(textView.string == text)
     }
 
     @Test

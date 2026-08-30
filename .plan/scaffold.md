@@ -224,8 +224,8 @@ The scaffold includes:
 The scaffold excludes:
 
 - complete WYSIWYG editing;
-- concealment of inline and block-quote markers (heading markers are
-  concealed contextually; see [concealment.md](concealment.md));
+- concealment of block-quote markers (heading markers and inline
+  delimiters are concealed contextually; see [concealment.md](concealment.md));
 - CommonMark or GFM parser integration;
 - tables, task controls, rendered images, footnotes, equations, or diagrams;
 - colour themes (planned as further keys in the same config file);

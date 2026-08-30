@@ -1,7 +1,8 @@
 # Plan — contextual syntax concealment
 
-Status: Phase 1 (headings) done `2026.08.30`, WP1–WP4 complete; Phases 2
-and 3 remain separate decisions. Follows the scaffold plan
+Status: Phase 1 (headings) and Phase 2 (inline delimiters) done
+`2026.08.30`; Phase 3 (block-quote marker) is open as
+[humanitas-labs/paper#3](https://github.com/humanitas-labs/paper/issues/3). Follows the scaffold plan
 ([scaffold.md](scaffold.md), Risk 7 and §3.4), which deliberately kept
 punctuation visible until cursor behaviour was proven.
 

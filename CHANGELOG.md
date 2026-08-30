@@ -8,6 +8,8 @@
   is a glyph-generation decision in the layout manager (`.null` glyph
   properties on a `.concealable` attribute) and never edits the text, so
   saving, undo, find, copy, and select-all see the unchanged source.
+- Conceal inline delimiters (`**`, `*`, `` ` ``) the same way; bold, italic,
+  and code faces stay while the punctuation hides off the active paragraph.
 - Add concealment tests (attribute ranges, glyph properties, arrow-key,
   multi-paragraph, undo, typing paths) and a concealment render probe; the
   restyle probe now measures the concealment overhead against the same view
