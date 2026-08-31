@@ -119,10 +119,14 @@ enum Appearance {
         }
     }
 
+    /// The shipped default: the system serif, which has no user-installable
+    /// family and resolves through the `.serif` design instead.
+    static let systemSerifFamily = "New York"
+
     /// The configured family when installed, otherwise the system serif (New
     /// York) so rendering never falls back to a generic face.
     static func bodyFont(size: CGFloat = bodySize) -> NSFont {
-        if let preferred = NSFont(
+        if preferredFamily != systemSerifFamily, let preferred = NSFont(
             descriptor: NSFontDescriptor(fontAttributes: [.family: preferredFamily]),
             size: size
         ), preferred.familyName == preferredFamily {
@@ -144,12 +148,27 @@ enum Appearance {
     }
 
     /// Headings use the family's face nearest to the configured weight.
-    /// Families without that face resolve to the closest installed one.
+    /// Families without that face resolve to the closest installed one. The
+    /// system serif has no family `NSFontManager` can weight, so it takes
+    /// the system font at the configured weight in the serif design.
     static func headingFont(size: CGFloat) -> NSFont {
-        guard let family = bodyFont(size: size).familyName,
-              let font = NSFontManager.shared.font(withFamily: family, traits: [], weight: headingWeight, size: size)
-        else { return bodyFont(size: size) }
-        return font
+        let body = bodyFont(size: size)
+        if let family = body.familyName, family == preferredFamily,
+           let font = NSFontManager.shared.font(withFamily: family, traits: [], weight: headingWeight, size: size) {
+            return font
+        }
+        let weighted = NSFont.systemFont(ofSize: size, weight: systemWeight)
+        let descriptor = weighted.fontDescriptor.withDesign(.serif) ?? weighted.fontDescriptor
+        return NSFont(descriptor: descriptor, size: size) ?? body
+    }
+
+    private static var systemWeight: NSFont.Weight {
+        switch configuration.headingWeight {
+        case .regular: .regular
+        case .medium: .medium
+        case .semibold: .semibold
+        case .bold: .bold
+        }
     }
 
     static func paragraphStyle(spacing: CGFloat? = nil) -> NSParagraphStyle {

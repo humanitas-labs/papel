@@ -59,7 +59,7 @@ struct ConfigurationTests {
         let text = "# keep me\nfont.size = 14   \nmystery = 1\n\nheading.weight = medium\n"
         let merged = config.merged(into: text)
         #expect(merged.hasPrefix("# keep me\nfont.size = 15.4\nmystery = 1\n\nheading.weight = bold\n"))
-        #expect(merged.contains("\nfont.family = Test Family\n"))
+        #expect(merged.contains("\nfont.family = New York\n"))
         #expect(Configuration.parse(merged) == config)
 
         // Merging into the template only touches value lines.

@@ -18,7 +18,9 @@ struct Configuration: Equatable, Sendable {
         }
     }
 
-    var fontFamily = "Test Family"
+    /// "New York" is the system serif, present on every Mac; any installed
+    /// family name replaces it.
+    var fontFamily = "New York"
     var fontSize: Double = 14
     var lineHeight: Double = 1.38
     var paragraphSpacing: Double = 13
@@ -66,8 +68,10 @@ struct Configuration: Equatable, Sendable {
     # presets/ directory beside this one, in the same format; Settings can
     # save, apply, and delete them.
 
-    # Body typeface (an installed family name) and size in points.
-    font.family = Test Family
+    # Body typeface and size in points. New York is the system serif and is
+    # always available; any installed family name works — for example
+    # Charter, Iowan Old Style, Palatino, or Georgia.
+    font.family = New York
     font.size = 14
 
     # Line height as a multiple of the font size, and space after a paragraph
