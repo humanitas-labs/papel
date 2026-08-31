@@ -47,5 +47,3 @@ private struct DocumentView: View {
             .ignoresSafeArea()
     }
 }
-
-}
