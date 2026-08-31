@@ -2,6 +2,7 @@
 
 ## 0.2.0 — 2026.08.30
 
+- License Paper under the MIT License, move build and test instructions into `docs/build.md`, and remove the private Spatial reference image from the repository.
 - Reload documents edited by other programs: each window watches its file
   (vnode events, atomic-save rename handled) and a clean buffer adopts the
   disk content in place, selection preserved, without marking the document
@@ -149,4 +150,3 @@
 - Keep ⌃⌘F full screen working after the View menu's toolbar items are removed.
 - Add document, styler, and selection tests plus an opt-in render and restyle
   timing probe.
-

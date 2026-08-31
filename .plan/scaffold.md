@@ -132,19 +132,9 @@ scroll position are the only persistent signals inside the window.
 
 ### 3.2 — Visual references
 
-Use the references for separate purposes:
-
-1. [`editorial-typography.png`](../docs/references/editorial-typography.png)
-   defines the paper color, serif character, generous leading, paragraph
-   spacing, and long-form reading tone.
-2. [`spatial-minimal-window.png`](../docs/references/spatial-minimal-window.png)
-   defines the window restraint, open margins, full-size content, and absence of
-   normal editor chrome.
-
-Do not reproduce Spatial's sans-serif typography, back button, or ellipsis
-button. Those controls express Spatial's document hierarchy and actions. Paper
-opens filesystem documents directly, so hierarchy controls would be false
-affordances.
+[`editorial-typography.png`](../docs/references/editorial-typography.png)
+defines the paper color, serif character, generous leading, paragraph
+spacing, and long-form reading tone.
 
 Initial visual tokens:
 
@@ -868,4 +858,3 @@ Claude should execute this plan in order and retain its scope.
    review.
 10. If a requirement conflicts with source preservation or native editing
     correctness, preserve correctness and report the exact conflict.
-
