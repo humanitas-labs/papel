@@ -169,7 +169,8 @@ private struct HexField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("#RRGGBB", text: $draft)
+        TextField("Hex", text: $draft)
+            .labelsHidden()
             .font(.system(.body, design: .monospaced))
             .textFieldStyle(.roundedBorder)
             .multilineTextAlignment(.trailing)
