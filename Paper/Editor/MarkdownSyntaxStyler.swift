@@ -23,6 +23,10 @@ final class MarkdownSyntaxStyler {
     private static let codePattern = try! NSRegularExpression(
         pattern: #"`([^`\n]+)`"#
     )
+    /// `[text](destination)`; an image (`![…]`) is left alone.
+    private static let linkPattern = try! NSRegularExpression(
+        pattern: #"(?<!!)\[([^\]\n]+)\]\(([^)\s]+)\)"#
+    )
     /// Markdown has no underline syntax; `<u>…</u>` is the portable form.
     private static let underlinePattern = try! NSRegularExpression(
         pattern: #"<u>([^<\n]+)</u>"#
@@ -71,6 +75,7 @@ final class MarkdownSyntaxStyler {
         )
         applyInlineCode(to: storage, source: source, range: fullRange)
         applyUnderline(to: storage, source: source, range: fullRange)
+        applyLinks(to: storage, source: source, range: fullRange)
         applyListMarkers(to: storage, source: source, range: fullRange)
         storage.endEditing()
 
@@ -287,6 +292,22 @@ final class MarkdownSyntaxStyler {
             let contentRange = match.range(at: 1)
             storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: contentRange)
             dimDelimiters(around: contentRange, in: match.range, storage: storage)
+        }
+    }
+
+    private func applyLinks(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.linkPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match else { return }
+            let textRange = match.range(at: 1)
+            let destination = (source as NSString).substring(with: match.range(at: 2))
+            storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
+            storage.addAttribute(.linkDestination, value: destination, range: textRange)
+            // `[` and `](destination)` hide off the active paragraph.
+            dimDelimiters(around: textRange, in: match.range, storage: storage)
         }
     }
 

@@ -79,6 +79,46 @@ struct InlineFormattingTests {
     }
 
     @Test @MainActor
+    func linksRenderUnderlinedWithConcealedSyntax() throws {
+        let text = "see [the site](https://example.com/a) and ![img](x.png)\n"
+        let textView = PaperTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        textView.string = text
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try #require(textView.textStorage)
+        #expect(storage.attribute(.linkDestination, at: 6, effectiveRange: nil) as? String == "https://example.com/a")
+        #expect(storage.attribute(.underlineStyle, at: 6, effectiveRange: nil) as? Int == NSUnderlineStyle.single.rawValue)
+        #expect(storage.attribute(.concealable, at: 4, effectiveRange: nil) as? Bool == true, "[")
+        var range = NSRange()
+        #expect(storage.attribute(.concealable, at: 13, longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length)) as? Bool == true, "](…)")
+        #expect(range == NSRange(location: 13, length: 24))
+        #expect(storage.attribute(.linkDestination, at: 41, effectiveRange: nil) == nil, "images are not links")
+    }
+
+    @Test @MainActor
+    func insertLinkWrapsTheSelectionAndUsesAURLFromTheClipboard() throws {
+        let textView = PaperTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        textView.string = "read this now"
+        textView.setSelectedRange(NSRange(location: 5, length: 4))
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("not a url", forType: .string)
+        textView.insertLink(nil as Any?)
+        #expect(textView.string == "read [this]() now")
+        #expect(textView.selectedRange() == NSRange(location: 12, length: 0), "caret inside the parentheses")
+
+        textView.string = "read this now"
+        textView.setSelectedRange(NSRange(location: 7, length: 0))
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("https://example.com", forType: .string)
+        textView.insertLink(nil as Any?)
+        #expect(textView.string == "read [this](https://example.com) now", "caret takes the word")
+        #expect(textView.selectedRange() == NSRange(location: 32, length: 0))
+        #expect(PaperTextView.looksLikeURL("mailto:a@b.co"))
+        #expect(!PaperTextView.looksLikeURL("plain words"))
+    }
+
+    @Test @MainActor
     func textViewAppliesWithUndo() throws {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         let textView = PaperTextView()

@@ -13,6 +13,9 @@ extension NSAttributedString.Key {
     /// character to draw in its place off the active paragraph (`–` for `-`,
     /// `•` for `*` and `+`); the source character is untouched.
     static let listMarker = NSAttributedString.Key("paper.listMarker")
+    /// The destination of a Markdown link, as its source string, on the
+    /// link's text. Opened with ⌘-click; a plain click places the caret.
+    static let linkDestination = NSAttributedString.Key("paper.linkDestination")
 }
 
 /// TextKit 1 layout manager that computes margin decorations and conceals

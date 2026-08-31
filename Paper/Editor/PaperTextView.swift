@@ -157,6 +157,68 @@ final class PaperTextView: NSTextView {
     @objc func toggleUnderline(_ sender: Any?) { toggle(.underline) }
     @objc func toggleCode(_ sender: Any?) { toggle(.code) }
 
+    /// ⌘K: the selection (or word) becomes link text; the destination is
+    /// the clipboard when it holds a URL, otherwise the caret waits inside
+    /// the parentheses.
+    @objc func insertLink(_ sender: Any?) {
+        guard isEditable, !hasMarkedText() else { return }
+        let text = string as NSString
+        var range = selectedRange()
+        if range.length == 0 { range = InlineFormat.wordRange(at: range.location, in: text) }
+        let label = text.substring(with: range)
+        let clipboard = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let destination = Self.looksLikeURL(clipboard) ? clipboard : ""
+        let replacement = "[\(label)](\(destination))"
+        let selection: NSRange
+        if destination.isEmpty {
+            selection = NSRange(location: range.location + label.utf16.count + 3, length: 0)
+        } else if label.isEmpty {
+            selection = NSRange(location: range.location + 1, length: 0)
+        } else {
+            selection = NSRange(location: range.location + replacement.utf16.count, length: 0)
+        }
+        guard shouldChangeText(in: range, replacementString: replacement) else { return }
+        textStorage?.replaceCharacters(in: range, with: replacement)
+        didChangeText()
+        setSelectedRange(selection)
+    }
+
+    static func looksLikeURL(_ string: String) -> Bool {
+        guard !string.isEmpty, !string.contains(" "), let url = URL(string: string) else { return false }
+        return url.scheme != nil && url.host != nil || string.hasPrefix("mailto:")
+    }
+
+    /// ⌘-click on link text opens its destination; every other click is
+    /// ordinary caret placement.
+    override func mouseDown(with event: NSEvent) {
+        if event.modifierFlags.contains(.command), let destination = linkDestination(at: event) {
+            open(destination)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    private func linkDestination(at event: NSEvent) -> String? {
+        guard let storage = textStorage, storage.length > 0 else { return nil }
+        let point = convert(event.locationInWindow, from: nil)
+        let index = characterIndexForInsertion(at: point)
+        guard index < storage.length else { return nil }
+        return storage.attribute(.linkDestination, at: index, effectiveRange: nil) as? String
+    }
+
+    /// Absolute URLs open as they are; anything else is a path relative to
+    /// the document.
+    private func open(_ destination: String) {
+        if Self.looksLikeURL(destination) || destination.hasPrefix("mailto:"), let url = URL(string: destination) {
+            NSWorkspace.shared.open(url)
+            return
+        }
+        let base = window?.representedURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: NSHomeDirectory())
+        let path = (destination.removingPercentEncoding ?? destination)
+        let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : base.appendingPathComponent(path)
+        NSWorkspace.shared.open(url)
+    }
+
     private func toggle(_ format: InlineFormat) {
         guard isEditable, !hasMarkedText() else { return }
         let edit = format.toggle(in: string as NSString, selection: selectedRange())

@@ -27,6 +27,12 @@
   text with no spacing between. Leading spaces or tabs on such a line (source
   that indents the wrap under the marker) are concealed off the active
   paragraph, so the continuation starts exactly where the item's text does.
+- Style Markdown links: `[text](destination)` shows the text underlined
+  with `[` and `](destination)` concealed off the active paragraph. ⌘-click
+  opens the destination (absolute URLs as they are, paths relative to the
+  document); a plain click places the caret as usual. Format → Add Link (⌘K)
+  wraps the selection or the word under the caret, filling the destination
+  from the clipboard when it holds a URL.
 - Add inline formatting to the Format menu: ⌘B bold (`**`), ⌘I italic (`*`),
   ⌘U underline (`<u>`), ⌘E code (`` ` ``). Each toggles the delimiters
   around the selection or the word under the caret and unwraps when they are

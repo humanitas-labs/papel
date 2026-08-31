@@ -30,6 +30,9 @@ struct PaperApp: App {
                     .keyboardShortcut("u", modifiers: .command)
                 Button("Code") { NSApp.sendAction(#selector(PaperTextView.toggleCode(_:)), to: nil, from: nil) }
                     .keyboardShortcut("e", modifiers: .command)
+                Divider()
+                Button("Add Link") { NSApp.sendAction(#selector(PaperTextView.insertLink(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("k", modifiers: .command)
             }
             CommandGroup(replacing: .toolbar) {
                 Button("Toggle Full Screen") {
