@@ -86,6 +86,34 @@ struct CodeBlockTests {
     }
 
     @Test
+    func doubleBacktickSpansPairByRunLength() throws {
+        let textView = styledView("- `#`, `*`, `` ` ``, `<u>`, and `[a](b)` are concealed")
+        let storage = try #require(textView.textStorage)
+        let text = textView.string as NSString
+
+        // `` ` `` holds a literal backtick: code font and chip on it, the
+        // padding spaces hidden with the delimiters.
+        let escaped = text.range(of: "`` ` ``")
+        #expect(escaped.location != NSNotFound)
+        let literal = escaped.location + 3
+        #expect(storage.attribute(.font, at: literal, effectiveRange: nil) as? NSFont == Appearance.codeFont())
+        #expect(storage.attribute(.backgroundColor, at: literal, effectiveRange: nil) != nil)
+        #expect(storage.attribute(.backgroundColor, at: literal - 1, effectiveRange: nil) == nil)
+
+        // Mispaired runs used to chip the prose between spans.
+        let and = text.range(of: " and ")
+        for offset in 0..<and.length {
+            #expect(storage.attribute(.backgroundColor, at: and.location + offset, effectiveRange: nil) == nil)
+            #expect(storage.attribute(.font, at: and.location + offset, effectiveRange: nil) as? NSFont == Appearance.bodyFont())
+        }
+
+        // A link inside a code span stays literal.
+        let link = text.range(of: "[a](b)")
+        #expect(storage.attribute(.linkDestination, at: link.location + 1, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.font, at: link.location, effectiveRange: nil) as? NSFont == Appearance.codeFont())
+    }
+
+    @Test
     func concealingFencesDoesNotChangeTheHeight() throws {
         let text = "prose before\n\n```ini\nkey = value\nmore = 1\n```\n\nprose after"
         let textView = styledView(text)

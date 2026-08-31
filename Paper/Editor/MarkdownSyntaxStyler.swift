@@ -20,8 +20,11 @@ final class MarkdownSyntaxStyler {
     private static let emphasisPattern = try! NSRegularExpression(
         pattern: #"(?<!\*)\*([^*\n]+)\*(?!\*)"#
     )
+    /// A code span opens and closes with backtick runs of the same length,
+    /// so `` ` `` holds a literal backtick; the closer can neither borrow
+    /// from nor donate to a neighbouring run.
     private static let codePattern = try! NSRegularExpression(
-        pattern: #"`([^`\n]+)`"#
+        pattern: #"(?<!`)(`+)([^\n]+?)(?<!`)\1(?!`)"#
     )
     /// `[text](destination)`; an image (`![…]`) is left alone.
     private static let linkPattern = try! NSRegularExpression(
@@ -70,6 +73,10 @@ final class MarkdownSyntaxStyler {
         storage.setAttributes(Self.baseAttributes, range: fullRange)
         applyHeadings(to: storage, source: source, range: fullRange)
         applyBlockQuotes(to: storage, source: source, range: fullRange)
+        // Code spans go first among the inline styles: the passes below
+        // skip anything already set in the code font, so span content
+        // stays literal.
+        applyInlineCode(to: storage, source: source, range: fullRange)
         applyDelimitedStyle(
             Self.strongPattern,
             trait: .bold,
@@ -84,7 +91,6 @@ final class MarkdownSyntaxStyler {
             source: source,
             range: fullRange
         )
-        applyInlineCode(to: storage, source: source, range: fullRange)
         applyUnderline(to: storage, source: source, range: fullRange)
         applyLinks(to: storage, source: source, range: fullRange)
         applyArrows(to: storage, source: source, range: fullRange)
@@ -131,7 +137,7 @@ final class MarkdownSyntaxStyler {
         range: NSRange
     ) {
         pattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match else { return }
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             let contentRange = match.range(at: 1)
 
             storage.enumerateAttribute(.font, in: contentRange) { value, fontRange, _ in
@@ -151,10 +157,19 @@ final class MarkdownSyntaxStyler {
         source: String,
         range: NSRange
     ) {
+        let text = source as NSString
         Self.codePattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match else { return }
 
-            let contentRange = match.range(at: 1)
+            var contentRange = match.range(at: 2)
+            // One space each side is part of the delimiters when both are
+            // present (how `` ` `` carries a backtick), so it hides with
+            // them and stays outside the chip.
+            if contentRange.length > 2,
+               text.character(at: contentRange.location) == 0x20,
+               text.character(at: NSMaxRange(contentRange) - 1) == 0x20 {
+                contentRange = NSRange(location: contentRange.location + 1, length: contentRange.length - 2)
+            }
             storage.addAttribute(
                 .font,
                 value: Appearance.codeFont(),
@@ -363,7 +378,7 @@ final class MarkdownSyntaxStyler {
         range: NSRange
     ) {
         Self.underlinePattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match else { return }
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             let contentRange = match.range(at: 1)
             storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: contentRange)
             dimDelimiters(around: contentRange, in: match.range, storage: storage)
@@ -376,7 +391,7 @@ final class MarkdownSyntaxStyler {
         range: NSRange
     ) {
         Self.linkPattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match else { return }
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             let textRange = match.range(at: 1)
             let destination = (source as NSString).substring(with: match.range(at: 2))
             storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
@@ -395,13 +410,19 @@ final class MarkdownSyntaxStyler {
         range: NSRange
     ) {
         Self.arrowPattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match else { return }
-            if storage.attribute(.font, at: match.range.location, effectiveRange: nil) as? NSFont == Appearance.codeFont() { return }
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             storage.addAttribute(.concealable, value: true, range: NSRange(location: match.range.location, length: 1))
             let arrow = NSRange(location: match.range.location + 1, length: 1)
             storage.addAttribute(.glyphSubstitute, value: "→", range: arrow)
             storage.addAttribute(.font, value: Appearance.markerFont(for: "→"), range: arrow)
         }
+    }
+
+    /// Whether the character sits inside a code span (the code font is
+    /// applied by the first inline pass, so later passes can skip it).
+    private static func isCode(at location: Int, in storage: NSTextStorage) -> Bool {
+        guard location < storage.length else { return false }
+        return storage.attribute(.font, at: location, effectiveRange: nil) as? NSFont == Appearance.codeFont()
     }
 
     private func dimDelimiters(
