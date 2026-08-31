@@ -1,82 +1,105 @@
 # Paper
 
-Last updated: `2026.08.30`
+A quiet, native macOS editor for ordinary Markdown files.
 
-> A quiet native macOS editor for ordinary Markdown files.
+![A Markdown document set as a clean serif page in Paper](docs/assets/paper.png)
 
-Paper is designed around one surface: a warm, centered page with editorial
-serif typography. It has no document library, account, database, toolbar,
-sidebar, or proprietary format. The file remains Markdown on disk.
+Paper is one surface: a warm, centered page set in editorial serif type.
+No library, no database, no sidebar, no toolbar, no account, no proprietary
+format. The file on disk stays plain Markdown, byte for byte.
 
-## Current scaffold
+## The idea
 
-Version `0.1.0` proves the native document architecture:
+Markdown's markers are for writing, not for reading. Paper leaves them in
+the source and takes them out of the picture everywhere else:
 
-- SwiftUI document application with an AppKit `NSTextView` editor;
-- native new, open, save, autosave, undo, find, spelling, and multiwindow
-  behavior;
-- transparent title bar and no app-owned window chrome;
-- settings in a plain-text file, `~/.config/paper/config` (or under
-  `$XDG_CONFIG_HOME`), written with commented defaults on first launch and
-  applied live to open windows on save: typeface, size, line height, paragraph
-  spacing, measure, letter spacing, heading weight, new-window size, theme (paper, sepia, slate, mono, spatial-dark, apple-dark), and
-  per-colour hex overrides; Settings (`⌘,`) edits the
-  same keys with sliders and writes them back into the file, and saves,
-  applies, and deletes named presets stored in `~/.config/paper/presets/`;
-- typeface defaults to Test Family at 14 pt when installed and otherwise the
-  system serif; no bundled font;
-- responsive centered measure (`640 pt` maximum, `64 pt` minimum margins) with
-  adaptive warm light and dark appearances;
-- heading, block-quote, and inline markers (`#`, `>`, `**`, `*`, `` ` ``, `<u>`, `[…](…)`)
-  hidden on every paragraph the cursor is not on, with the full source shown
-  on the paragraph being edited; `-` items rendered as a dashed list and `*` items as a
-  bulleted list, hanging under their text;
-- links render as underlined text with their syntax concealed; ⌘-click opens
-  the destination and ⌘K adds a link;
-- ⌘B, ⌘I, ⌘U, and ⌘E toggle `**`, `*`, `<u>`, and `` ` `` around the
-  selection or the word under the caret; and
-- exact UTF-8 source preservation.
+- `#`, `>`, `**`, `*`, `` ` ``, `<u>`, and `[…](…)` are concealed on every
+  paragraph the caret is not on. Move onto a line and its full source is
+  back; move away and the page closes over it.
+- Concealment is a drawing decision, never an edit. Save, undo, find, copy,
+  and select-all always see the untouched source.
+- Nothing shifts. A revealed heading keeps its line height; the document
+  keeps its length.
 
-Inline rendering, export, and a file library are outside the scaffold
-boundary.
+## What the page does
 
-## Generate
+- **Typography** — a centered measure with real margins; headings stepped
+  from the body size; block quotes inset and italic behind a hairline rule.
+- **Lists** — Apple Notes' two kinds: `-` draws as a dashed list (–), `*`
+  as a bulleted one (•). Items hang under their text, hard-wrapped lines
+  align, and ordered markers may carry a letter (`1a)`).
+- **Links** — underlined text with the syntax concealed. ⌘-click opens the
+  destination; relative paths resolve against the document.
+- **Typed substitutions** — `->` becomes → as you type, like smart dashes;
+  ⌘Z gives the pair back.
+- **Wheel scrolling** — mouse-wheel notches ease toward their target
+  instead of jumping; trackpad scrolling stays native.
 
-Paper uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) so project
-structure remains reviewable in `project.yml`. The generated `Paper.xcodeproj`
-is ignored by Git; regenerate it after cloning or editing `project.yml`.
+## Shortcuts
+
+| Keys | Action |
+| --- | --- |
+| ⌘B / ⌘I / ⌘U / ⌘E | toggle `**bold**`, `*italic*`, `<u>underline</u>`, `` `code` `` around the selection or word |
+| ⌘K | add a link, destination from the clipboard when it holds a URL |
+| ⌘-click | open a link |
+| ⌘, | settings |
+
+## Settings are a text file
+
+Everything lives in `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured),
+written as a commented template on first launch and applied live to open
+windows whenever it is saved:
+
+```ini
+font.family = Test Tiempos Text
+font.size = 16
+line.height = 1.11
+letter.spacing = 0.02
+measure = 655
+theme = slate
+window.width = 1374
+window.height = 877
+```
+
+Themes: `paper`, `sepia`, `slate`, `mono`, `spatial-dark`, `apple-dark`,
+each with light and dark palettes, plus per-colour hex overrides. The
+Settings window (⌘,) edits the same keys with controls and writes them back
+into the file, comments preserved. Named presets are files too, in
+`~/.config/paper/presets/`; edits write through to the active preset.
+
+## Native
+
+A SwiftUI document app around an AppKit `NSTextView`, TextKit 1, Swift 6
+strict concurrency, zero dependencies. New, open, save, autosave, Versions,
+undo, find, spelling, dictation, and multiwindow behave the way Mac
+documents behave. UTF-8 round-trips exactly, byte-order marks and CRLF
+included.
+
+## Build
+
+Paper uses [XcodeGen](https://github.com/yonaskolb/XcodeGen); the project
+file is generated from `project.yml`.
 
 ```bash
 xcodegen generate
+xcodebuild -project Paper.xcodeproj -scheme Paper -configuration Release build
 ```
 
-## Build and test
+Tests:
 
 ```bash
 xcodebuild -project Paper.xcodeproj -scheme Paper \
-  -configuration Debug build
-
-xcodebuild -project Paper.xcodeproj -scheme Paper \
-  -configuration Debug -destination 'platform=macOS' test
+  -destination 'platform=macOS' test
 ```
 
-The build is warning-free under Swift 6 strict concurrency. Tests cover
-byte-exact UTF-8 round trips, malformed input rejection, and the invariant that
-styling never changes the text storage string.
+The build is warning-free. Tests cover byte-exact round trips, concealment
+geometry (line and document height never change on reveal), list and quote
+layout, undo paths, and the invariant that styling never edits the text.
+Setting `TEST_RUNNER_PAPER_PROBE_DIR=<dir>` additionally writes offscreen
+renders and restyle timings there for review — the screenshot above is one
+of those renders.
 
-Setting `TEST_RUNNER_PAPER_PROBE_DIR=<dir>` (containing a `fixtures/`
-directory with `sample.md`, `10k.md`, `100k.md`, and `1m.md`) makes the test
-run also write offscreen renders and restyle timings into that directory for
-visual review. Without it those probes are skipped.
+## More
 
-## Run locally
-
-After building, open the Debug application produced in Xcode's Derived Data, or
-open `Paper.xcodeproj` and run the `Paper` scheme.
-
-## Architecture
-
-- [Current architecture](docs/architecture.md)
+- [Architecture](docs/architecture.md)
 - [ADR-001 — Native document editor](docs/decisions/001-native-editor.md)
-- [Scaffold plan](.plan/scaffold.md)
-

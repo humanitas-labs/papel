@@ -26,6 +26,41 @@ struct RenderProbeTests {
         return (scrollView, textView)
     }
 
+    /// The README screenshot: a demo document through the real pipeline
+    /// with the current configuration.
+    @Test
+    func renderReadmeShot() throws {
+        guard let dir = Self.probeDirectory else { return }
+        let text = """
+        # Paper
+
+        Plain Markdown, set like a page. The file on disk is ordinary text; the markers live in the source and step out of the way while you read.
+
+        > Writing is the process by which you realize that you do not understand what you are talking about.
+
+        What it keeps out of sight until the caret arrives:
+
+        - heading marks, quote marks, and inline `code` ticks
+        - **bold**, *italic*, and [links](https://github.com/humanitas-labs/paper)
+        - typed substitutions, like -> for an arrow
+
+        1. Ordered lists hang under their text
+        2. Dashed and bulleted lists take Apple Notes' two kinds
+        3. Everything above is still just Markdown in the file
+
+        Settings live in `~/.config/paper/config`, themed, and applied live.
+
+        """
+        let (scrollView, textView) = makeEditor(width: 1374, height: 877, text: text)
+        textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
+        scrollView.layoutSubtreeIfNeeded()
+        textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+        let rep = try #require(scrollView.bitmapImageRepForCachingDisplay(in: scrollView.bounds))
+        scrollView.cacheDisplay(in: scrollView.bounds, to: rep)
+        let png = try #require(rep.representation(using: .png, properties: [:]))
+        try png.write(to: dir.appendingPathComponent("render-readme.png"))
+    }
+
     @Test(arguments: [(1120.0, 800.0), (640.0, 520.0), (1800.0, 900.0)], [NSAppearance.Name.aqua, .darkAqua])
     func renderSample(size: (Double, Double), appearance: NSAppearance.Name) throws {
         guard let dir = Self.probeDirectory else { return }
