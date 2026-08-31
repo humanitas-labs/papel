@@ -150,6 +150,43 @@ final class PaperTextView: NSTextView {
         }
     }
 
+    // MARK: - Typed substitutions
+
+    /// Typing `>` after `-` replaces the pair with `→` in the source, the
+    /// way smart dashes turn `--` into `—`; ⌘Z restores `->`. `-->`, `<->`,
+    /// and code spans are left as typed.
+    override func insertText(_ string: Any, replacementRange: NSRange) {
+        super.insertText(string, replacementRange: replacementRange)
+        guard let typed = string as? String ?? (string as? NSAttributedString)?.string, typed == ">",
+              !hasMarkedText() else { return }
+        // On the next pass of the run loop, after the keystroke's undo group
+        // has closed, so the substitution is its own undo step.
+        Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.replaceTypedArrow() }
+        }
+    }
+
+    private func replaceTypedArrow() {
+        guard selectedRange().length == 0 else { return }
+        let caret = selectedRange().location
+        let text = self.string as NSString
+        guard caret >= 2, text.character(at: caret - 1) == 0x3E, text.character(at: caret - 2) == 0x2D else { return }
+        if caret >= 3 {
+            let before = text.character(at: caret - 3)
+            if before == 0x2D || before == 0x3C { return }
+        }
+        if let font = textStorage?.attribute(.font, at: caret - 2, effectiveRange: nil) as? NSFont, font == Appearance.codeFont() { return }
+        let pair = NSRange(location: caret - 2, length: 2)
+        // Typing is coalesced into one undo action; close it on both sides
+        // so ⌘Z after the substitution gives back the typed pair.
+        breakUndoCoalescing()
+        guard shouldChangeText(in: pair, replacementString: "→") else { return }
+        textStorage?.replaceCharacters(in: pair, with: "→")
+        didChangeText()
+        setSelectedRange(NSRange(location: pair.location + 1, length: 0))
+        breakUndoCoalescing()
+    }
+
     // MARK: - Inline formatting (Format menu, ⌘B ⌘I ⌘U ⌘E)
 
     @objc func toggleBold(_ sender: Any?) { toggle(.bold) }

@@ -119,6 +119,40 @@ struct InlineFormattingTests {
     }
 
     @Test @MainActor
+    func typingAnArrowReplacesItInTheSourceWithUndo() throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
+        let textView = PaperTextView()
+        textView.frame = window.contentView!.bounds
+        textView.allowsUndo = true
+        window.contentView?.addSubview(textView)
+        textView.string = "a -"
+        textView.setSelectedRange(NSRange(location: 3, length: 0))
+        textView.insertText(">", replacementRange: NSRange(location: 3, length: 0))
+        // AppKit closes the keystroke's undo group when the event ends; the
+        // test has no event, so close it by hand before the substitution.
+        let undoManager = try #require(textView.undoManager)
+        if undoManager.groupingLevel > 0 { undoManager.endUndoGrouping() }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        #expect(textView.string == "a →")
+        #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
+        textView.undoManager?.undo()
+        #expect(textView.string == "a ->", "undo restores the typed pair")
+
+        textView.string = "a --"
+        textView.setSelectedRange(NSRange(location: 4, length: 0))
+        textView.insertText(">", replacementRange: NSRange(location: 4, length: 0))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        #expect(textView.string == "a -->", "a longer dash run is not an arrow")
+
+        textView.string = "`x -`"
+        textView.syntaxStyler.apply(to: textView)
+        textView.setSelectedRange(NSRange(location: 4, length: 0))
+        textView.insertText(">", replacementRange: NSRange(location: 4, length: 0))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        #expect(textView.string == "`x ->`", "inside a code span nothing changes")
+    }
+
+    @Test @MainActor
     func textViewAppliesWithUndo() throws {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         let textView = PaperTextView()

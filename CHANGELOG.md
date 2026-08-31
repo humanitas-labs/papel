@@ -27,6 +27,8 @@
   text with no spacing between. Leading spaces or tabs on such a line (source
   that indents the wrap under the marker) are concealed off the active
   paragraph, so the continuation starts exactly where the item's text does.
+- Replace `->` with `→` in the source as it is typed, like smart dashes;
+  ⌘Z restores the pair. `-->`, `<->`, and code spans are left as typed.
 - Draw `->` as `→` off the active paragraph (the `-` concealed, the `>`
   drawn with the arrow glyph); code spans and `-->` are left alone. The
   glyph-substitution attribute is renamed from `listMarker` to
