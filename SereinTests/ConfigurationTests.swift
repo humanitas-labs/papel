@@ -106,6 +106,8 @@ struct ThemeTests {
         #expect(config.palette.canvas == Theme.sepia.palette.canvas)
         #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)
         #expect(Configuration.parse("theme = nope").theme == .paper)
+        #expect(Configuration.parse("theme = Spatial-Dark").theme == .spatialDark)
+        #expect(Theme.spatialDark.palette.canvas == Theme.spatialDark.palette.canvasDark)
         #expect(Configuration().palette == Theme.paper.palette)
     }
 

@@ -79,7 +79,8 @@ struct Configuration: Equatable, Sendable {
     # face is used.
     heading.weight = medium
 
-    # Theme: paper, sepia, slate, or mono. Each has light and dark colours.
+    # Theme: paper, sepia, slate, mono, or spatial-dark (dark in both
+    # appearances). The others have light and dark colours.
     theme = paper
 
     # Colour overrides as #RRGGBB. Leave a value empty to use the theme's.

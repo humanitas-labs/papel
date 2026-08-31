@@ -13,6 +13,8 @@ struct Palette: Equatable, Sendable {
 /// Built-in themes, chosen by the `theme` configuration key.
 enum Theme: String, CaseIterable, Sendable {
     case paper, sepia, slate, mono
+    /// Dark in both appearances.
+    case spatialDark = "spatial-dark"
 
     var palette: Palette {
         switch self {
@@ -20,6 +22,7 @@ enum Theme: String, CaseIterable, Sendable {
         case .sepia: Palette(canvas: "#F4ECD8", ink: "#3B2F1E", canvasDark: "#2A241B", inkDark: "#E6D9BF")
         case .slate: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5")
         case .mono: Palette(canvas: "#FFFFFF", ink: "#000000", canvasDark: "#000000", inkDark: "#EDEDED")
+        case .spatialDark: Palette(canvas: "#191B1D", ink: "#F4F9FA", canvasDark: "#191B1D", inkDark: "#F4F9FA")
         }
     }
 
@@ -29,6 +32,7 @@ enum Theme: String, CaseIterable, Sendable {
         case .sepia: "Sepia"
         case .slate: "Slate"
         case .mono: "Mono"
+        case .spatialDark: "Spatial Dark"
         }
     }
 }
