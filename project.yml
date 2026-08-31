@@ -1,4 +1,4 @@
-name: Serein
+name: Paper
 
 options:
   bundleIdPrefix: org.humanitas
@@ -17,16 +17,16 @@ settings:
     SWIFT_VERSION: 6.0
 
 targets:
-  Serein:
+  Paper:
     type: application
     platform: macOS
     sources:
-      - path: Serein
+      - path: Paper
     info:
-      path: Serein/Resources/Info.plist
+      path: Paper/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Serein
-        CFBundleName: Serein
+        CFBundleDisplayName: Paper
+        CFBundleName: Paper
         CFBundleDocumentTypes:
           - CFBundleTypeName: Markdown document
             CFBundleTypeRole: Editor
@@ -54,28 +54,28 @@ targets:
         CODE_SIGN_STYLE: Automatic
         COMBINE_HIDPI_IMAGES: true
         GENERATE_INFOPLIST_FILE: false
-        INFOPLIST_FILE: Serein/Resources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.serein
-        PRODUCT_NAME: Serein
+        INFOPLIST_FILE: Paper/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.paper
+        PRODUCT_NAME: Paper
 
-  SereinTests:
+  PaperTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: SereinTests
+      - path: PaperTests
     dependencies:
-      - target: Serein
+      - target: Paper
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
-        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.serein.tests
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.paper.tests
 
 schemes:
-  Serein:
+  Paper:
     build:
       targets:
-        Serein: all
-        SereinTests:
+        Paper: all
+        PaperTests:
           - test
     run:
       config: Debug
@@ -83,5 +83,5 @@ schemes:
       config: Debug
       gatherCoverageData: true
       targets:
-        - SereinTests
+        - PaperTests
 

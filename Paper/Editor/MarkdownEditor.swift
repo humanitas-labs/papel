@@ -10,7 +10,7 @@ struct MarkdownEditor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
-        let textView = SereinTextView()
+        let textView = PaperTextView()
 
         textView.delegate = context.coordinator
         textView.string = text
@@ -28,7 +28,7 @@ struct MarkdownEditor: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        guard let textView = scrollView.documentView as? SereinTextView else { return }
+        guard let textView = scrollView.documentView as? PaperTextView else { return }
 
         context.coordinator.text = $text
 
@@ -47,7 +47,7 @@ struct MarkdownEditor: NSViewRepresentable {
         }
 
         func textDidChange(_ notification: Notification) {
-            guard let textView = notification.object as? SereinTextView else { return }
+            guard let textView = notification.object as? PaperTextView else { return }
             text.wrappedValue = textView.string
             // Restyling replaces attributes across the whole storage. During
             // input-method composition that discards marked text, so styling

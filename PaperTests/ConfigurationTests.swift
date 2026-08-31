@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import Serein
+@testable import Paper
 
 struct ConfigurationTests {
     @Test
@@ -109,6 +109,7 @@ struct ThemeTests {
         #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)
         #expect(Configuration.parse("theme = nope").theme == .paper)
         #expect(Configuration.parse("theme = Spatial-Dark").theme == .spatialDark)
+        #expect(Configuration.parse("theme = apple-dark").theme == .appleDark)
         #expect(Theme.spatialDark.palette.canvas == Theme.spatialDark.palette.canvasDark)
         #expect(Configuration().palette == Theme.paper.palette)
     }
@@ -130,7 +131,7 @@ struct ThemeTests {
 struct ConfigurationStoreTests {
     private func temporaryFile() -> URL {
         FileManager.default.temporaryDirectory
-            .appendingPathComponent("serein-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("paper-tests-\(UUID().uuidString)", isDirectory: true)
             .appendingPathComponent("config")
     }
 
@@ -193,7 +194,7 @@ struct ConfigurationStoreTests {
         #expect(store.current == config)
         let text = try String(contentsOf: url, encoding: .utf8)
         #expect(text.contains("line.height = 1.6"))
-        #expect(text.hasPrefix("# Serein configuration."))
+        #expect(text.hasPrefix("# Paper configuration."))
         #expect(Configuration.parse(text) == config)
     }
 
@@ -232,6 +233,28 @@ struct ConfigurationStoreTests {
         #expect(!store.applyPreset(named: "Missing"))
         store.deletePreset(named: "Reading")
         #expect(store.presets == ["Defaults"])
+    }
+
+    @Test
+    func legacySereinDirectoryMovesToPaperOnce() throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("paper-migrate-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let legacy = base.appendingPathComponent("serein", isDirectory: true)
+        try FileManager.default.createDirectory(at: legacy.appendingPathComponent("presets"), withIntermediateDirectories: true)
+        try "font.size = 19\n".write(to: legacy.appendingPathComponent("config"), atomically: true, encoding: .utf8)
+        try "x".write(to: legacy.appendingPathComponent("presets/Work"), atomically: true, encoding: .utf8)
+
+        ConfigurationStore.migrateLegacyConfiguration(in: base)
+        let current = base.appendingPathComponent("paper", isDirectory: true)
+        #expect(!FileManager.default.fileExists(atPath: legacy.path))
+        #expect(try String(contentsOf: current.appendingPathComponent("config"), encoding: .utf8) == "font.size = 19\n")
+        #expect(FileManager.default.fileExists(atPath: current.appendingPathComponent("presets/Work").path))
+
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        try "font.size = 8\n".write(to: legacy.appendingPathComponent("config"), atomically: true, encoding: .utf8)
+        ConfigurationStore.migrateLegacyConfiguration(in: base)
+        #expect(try String(contentsOf: current.appendingPathComponent("config"), encoding: .utf8) == "font.size = 19\n", "never overwrites an existing paper directory")
     }
 
     @Test

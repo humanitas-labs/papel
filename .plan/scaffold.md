@@ -1,15 +1,15 @@
 ---
-title: "Serein native macOS editor implementation plan"
+title: "Paper native macOS editor implementation plan"
 date: 2026-08-30
 status: approved
 affects: "Labs-owned minimal Markdown document editor"
 ---
 
-# Serein Native macOS Editor Implementation Plan
+# Paper Native macOS Editor Implementation Plan
 
 Last updated: `2026.08.30`
 
-> Build Serein as a native macOS document editor whose interface recedes into a
+> Build Paper as a native macOS document editor whose interface recedes into a
 > single warm writing surface. The first release must preserve ordinary
 > Markdown exactly, feel native under sustained use, and reproduce Spatial's
 > restraint with the editorial typography of the supplied reference.
@@ -41,7 +41,7 @@ Last updated: `2026.08.30`
 
 ## 1. Decision
 
-Build the first Serein release with Swift, SwiftUI, AppKit, and TextKit.
+Build the first Paper release with Swift, SwiftUI, AppKit, and TextKit.
 
 - SwiftUI owns the application scene and document composition.
 - AppKit `NSTextView` owns text input and rendering.
@@ -68,7 +68,7 @@ for the remainder.
 
 Verified:
 
-- `xcodegen generate` is deterministic; `Serein.xcodeproj` is generated and
+- `xcodegen generate` is deterministic; `Paper.xcodeproj` is generated and
   ignored by Git.
 - Debug build succeeds with zero warnings under Swift 6 strict concurrency.
 - 18 tests in 5 suites pass: byte-exact UTF-8 round trips (including BOM,
@@ -86,7 +86,7 @@ Verified:
   is the recorded threshold where it would need incremental styling.
 - The app launches at `1120 × 800`, opens a file from the command line, and
   autosaves typed edits to disk.
-- Serein is registered in `kdb` as `serein` / `SER` in the Labs space.
+- Paper is registered in `kdb` as `paper` / `SER` in the Labs space.
 
 Deviations from the original draft, all recorded in the tables above:
 
@@ -107,7 +107,7 @@ Deviations from the original draft, all recorded in the tables above:
   this machine) and falls back to the system serif. Nothing is bundled; the
   fallback keeps the original rule intact on machines without it.
 - Typeface, size, line height, paragraph spacing, measure, and heading
-  weight are settings in `~/.config/serein/config`, applied live to
+  weight are settings in `~/.config/paper/config`, applied live to
   open windows on save. See the configuration section below.
 
 Remaining for the user (work package 7): the interactive flows — Save As,
@@ -142,7 +142,7 @@ Use the references for separate purposes:
    normal editor chrome.
 
 Do not reproduce Spatial's sans-serif typography, back button, or ellipsis
-button. Those controls express Spatial's document hierarchy and actions. Serein
+button. Those controls express Spatial's document hierarchy and actions. Paper
 opens filesystem documents directly, so hierarchy controls would be false
 affordances.
 
@@ -241,14 +241,14 @@ The scaffold excludes:
 ### 4.1 — Runtime boundaries
 
 ```text
-SereinApp
+PaperApp
 └── DocumentGroup
     └── MarkdownDocument
         └── DocumentView
             ├── WindowConfigurator
             └── MarkdownEditor (NSViewRepresentable)
                 └── NSScrollView
-                    └── SereinTextView (NSTextView)
+                    └── PaperTextView (NSTextView)
                         ├── NSTextStorage
                         ├── NSLayoutManager
                         ├── NSTextContainer
@@ -257,12 +257,12 @@ SereinApp
 
 Each boundary has one responsibility:
 
-- `SereinApp` declares the document scene and commands.
+- `PaperApp` declares the document scene and commands.
 - `MarkdownDocument` reads and writes the source string.
 - `DocumentView` composes the window-level surface.
 - `WindowConfigurator` applies Mac window behavior not exposed by SwiftUI.
 - `MarkdownEditor` synchronizes SwiftUI document state with AppKit.
-- `SereinTextView` configures text input, layout, and native editor behavior.
+- `PaperTextView` configures text input, layout, and native editor behavior.
 - `MarkdownSyntaxStyler` applies presentation attributes without changing text.
 - `Appearance` is the single source of truth for visual tokens.
 
@@ -306,7 +306,7 @@ Do not migrate APIs preemptively.
 6. expose a deterministic empty-document initializer.
 
 The document scene should inherit native menu commands. Replace or hide only
-the toolbar command because Serein has no toolbar.
+the toolbar command because Paper has no toolbar.
 
 ### 4.4 — Editing surface
 
@@ -388,7 +388,7 @@ Restyling must be safe for:
 1. Read the workspace and project instructions before editing.
 2. Read `kernel/SOP/code.md`, `kernel/conventions/code.md`, this plan, the ADR,
    and `docs/architecture.md`.
-3. Run `git status --short --branch` inside Serein.
+3. Run `git status --short --branch` inside Paper.
 4. Confirm the repository has no remote. If a remote exists, fetch and compare
    `master` with upstream before changing code.
 5. Preserve all user changes. Do not reset or replace current files wholesale
@@ -401,14 +401,14 @@ and whether upstream comparison applies.
 
 1. Inspect `project.yml` for XcodeGen compatibility.
 2. Confirm application and test targets use macOS 15 as the deployment floor.
-3. Confirm the app target uses `org.humanitas.serein` and version `0.1.0`.
+3. Confirm the app target uses `org.humanitas.paper` and version `0.1.0`.
 4. Confirm Markdown and plain-text document types appear in the generated
    `Info.plist`.
 5. Run `xcodegen generate`.
 6. Run it a second time and inspect Git status. Generation must be deterministic
    and should not modify unrelated source files.
 
-Exit condition: `Serein.xcodeproj` exists and exposes the `Serein` scheme with
+Exit condition: `Paper.xcodeproj` exists and exposes the `Paper` scheme with
 application and test targets.
 
 ### Work package 2 — Establish a warning-free build
@@ -527,10 +527,10 @@ reproduction steps.
 6. From the Humanitas root, register the project:
 
    ```bash
-   kdb projects add serein \
+   kdb projects add paper \
      --alias SER \
-     --path labs/projects/serein \
-     --name Serein \
+     --path labs/projects/paper \
+     --name Paper \
      --description "Native macOS editor for quiet, editorial Markdown writing." \
      --space labs
    ```
@@ -550,15 +550,15 @@ ready for user review.
 | File | Responsibility | Required outcome |
 |---|---|---|
 | `project.yml` | Reproducible Xcode project definition | App and test targets, macOS 15 floor, document types, version, strict concurrency |
-| `Serein/App/SereinApp.swift` | Scene and document composition | Native document commands, no toolbar, minimum view size |
-| `Serein/App/WindowConfigurator.swift` | AppKit window policy | Transparent hidden titlebar, full-size content, no separator or toolbar |
-| `Serein/Design/Appearance.swift` | Visual source of truth | Dynamic canvas and ink, serif fonts, measure and spacing constants |
-| `Serein/Documents/MarkdownDocument.swift` | Persistent document model | Exact UTF-8 read and write, explicit errors, no normalization |
-| `Serein/Editor/MarkdownEditor.swift` | SwiftUI/AppKit bridge | Idempotent text synchronization, selection preservation, no feedback loop |
-| `Serein/Editor/SereinTextView.swift` | TextKit configuration | Native editing services, responsive insets, transparent surface |
-| `Serein/Editor/MarkdownSyntaxStyler.swift` | Source presentation | Safe attribute-only styling, no character changes |
-| `SereinTests/MarkdownDocumentTests.swift` | Document correctness | Empty, Unicode, invalid input, and byte-preservation coverage |
-| `SereinTests/MarkdownSyntaxStylerTests.swift` | Styling invariants | Source unchanged, empty and Unicode input safe, delimiters styled correctly |
+| `Paper/App/PaperApp.swift` | Scene and document composition | Native document commands, no toolbar, minimum view size |
+| `Paper/App/WindowConfigurator.swift` | AppKit window policy | Transparent hidden titlebar, full-size content, no separator or toolbar |
+| `Paper/Design/Appearance.swift` | Visual source of truth | Dynamic canvas and ink, serif fonts, measure and spacing constants |
+| `Paper/Documents/MarkdownDocument.swift` | Persistent document model | Exact UTF-8 read and write, explicit errors, no normalization |
+| `Paper/Editor/MarkdownEditor.swift` | SwiftUI/AppKit bridge | Idempotent text synchronization, selection preservation, no feedback loop |
+| `Paper/Editor/PaperTextView.swift` | TextKit configuration | Native editing services, responsive insets, transparent surface |
+| `Paper/Editor/MarkdownSyntaxStyler.swift` | Source presentation | Safe attribute-only styling, no character changes |
+| `PaperTests/MarkdownDocumentTests.swift` | Document correctness | Empty, Unicode, invalid input, and byte-preservation coverage |
+| `PaperTests/MarkdownSyntaxStylerTests.swift` | Styling invariants | Source unchanged, empty and Unicode input safe, delimiters styled correctly |
 | `docs/architecture.md` | Current architecture | Matches the verified runtime and boundaries |
 | `docs/decisions/001-native-editor.md` | Decision history | Records native architecture and revisit conditions |
 | `README.md` | Operator documentation | Accurate generate, build, test, and run commands |
@@ -567,7 +567,7 @@ ready for user review.
 
 Generated files:
 
-- `Serein.xcodeproj` is generated by XcodeGen and should be checked in if that
+- `Paper.xcodeproj` is generated by XcodeGen and should be checked in if that
   matches the neighboring Labs project convention. The authoritative structure
   remains `project.yml`.
 - Derived Data must remain outside the repository and untracked.
@@ -628,7 +628,7 @@ At `640`, `1080`, `1440`, and `1800 pt` window widths, confirm:
 Use a fixture containing:
 
 ```markdown
-# Serein
+# Paper
 
 A quiet place to write — with **strong text**, *emphasis*, and `inline code`.
 
@@ -656,7 +656,7 @@ The scaffold is done only when every statement below is true.
 
 ### File correctness
 
-- [ ] Serein creates and opens Markdown documents through native Mac commands.
+- [ ] Paper creates and opens Markdown documents through native Mac commands.
 - [ ] `.md`, `.markdown`, and `.txt` files remain ordinary filesystem files.
 - [ ] UTF-8 Markdown survives read and write byte-for-byte.
 - [ ] Styling never changes the persisted source.
@@ -684,7 +684,7 @@ The scaffold is done only when every statement below is true.
 ### Workspace completion
 
 - [ ] README, architecture, ADR, changelog, and this plan match actual behavior.
-- [ ] Serein is registered as project `serein`, alias `SER`, in the Labs space.
+- [ ] Paper is registered as project `paper`, alias `SER`, in the Labs space.
 - [ ] `kdb check` passes from the Humanitas root.
 - [ ] The user receives build, test, and manual verification results.
 - [ ] No commit is created before user approval.
@@ -700,7 +700,7 @@ Requested on `2026.08.30` after the first live session. Out of scope for the
   `ser notes.md`, `ser` (new untitled document), `ser a.md b.md` (one window
   each).
 - Preferred shape: a thin script or tiny binary on `PATH` that resolves paths
-  and calls `open -a Serein <files>` (or `NSWorkspace` directly), so launch
+  and calls `open -a Paper <files>` (or `NSWorkspace` directly), so launch
   semantics stay identical to Finder and the app needs no argument parsing.
 - Consider `--wait` (block until the window closes) so `ser` can serve as
   `EDITOR` and `GIT_EDITOR`; this needs the app to signal document close, which
@@ -719,7 +719,7 @@ can be edited in real time and grow to colour themes. The window was replaced.
 
 Implemented:
 
-- `~/.config/serein/config` (`$XDG_CONFIG_HOME` honoured), `key = value`
+- `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured), `key = value`
   lines with `#` comments, no parser dependency. Written from a commented
   template on first launch; the template parses to the defaults (tested).
 - Keys: `font.family`, `font.size`, `line.height`, `paragraph.spacing`,
@@ -792,7 +792,7 @@ storage. Inline and block-quote markers remain visible pending Phases 2–3.
 
 ## 10. Commands
 
-Run from the Serein project unless stated otherwise.
+Run from the Paper project unless stated otherwise.
 
 Inspect:
 
@@ -812,10 +812,10 @@ Build:
 
 ```bash
 xcodebuild \
-  -project Serein.xcodeproj \
-  -scheme Serein \
+  -project Paper.xcodeproj \
+  -scheme Paper \
   -configuration Debug \
-  -derivedDataPath /tmp/serein-derived-data \
+  -derivedDataPath /tmp/paper-derived-data \
   CODE_SIGNING_ALLOWED=NO \
   build
 ```
@@ -824,11 +824,11 @@ Test:
 
 ```bash
 xcodebuild \
-  -project Serein.xcodeproj \
-  -scheme Serein \
+  -project Paper.xcodeproj \
+  -scheme Paper \
   -configuration Debug \
   -destination 'platform=macOS' \
-  -derivedDataPath /tmp/serein-derived-data \
+  -derivedDataPath /tmp/paper-derived-data \
   CODE_SIGNING_ALLOWED=NO \
   test
 ```
@@ -836,13 +836,13 @@ xcodebuild \
 Launch for manual verification:
 
 ```bash
-open /tmp/serein-derived-data/Build/Products/Debug/Serein.app
+open /tmp/paper-derived-data/Build/Products/Debug/Paper.app
 ```
 
 Workspace checks from the humanitas workspace root:
 
 ```bash
-kdb projects show serein --json
+kdb projects show paper --json
 kdb check
 ```
 

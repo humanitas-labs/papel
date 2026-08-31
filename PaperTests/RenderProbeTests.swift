@@ -1,19 +1,19 @@
 import AppKit
 import Testing
-@testable import Serein
+@testable import Paper
 
 /// Offscreen renders and restyle timings for manual review. Runs only when
-/// `SEREIN_PROBE_DIR` is set (pass `TEST_RUNNER_SEREIN_PROBE_DIR=…` to
+/// `PAPER_PROBE_DIR` is set (pass `TEST_RUNNER_PAPER_PROBE_DIR=…` to
 /// `xcodebuild test`); otherwise every probe is skipped.
 @MainActor
 struct RenderProbeTests {
     nonisolated static var probeDirectory: URL? {
-        ProcessInfo.processInfo.environment["SEREIN_PROBE_DIR"].map { URL(fileURLWithPath: $0) }
+        ProcessInfo.processInfo.environment["PAPER_PROBE_DIR"].map { URL(fileURLWithPath: $0) }
     }
 
-    private func makeEditor(width: CGFloat, height: CGFloat, text: String) -> (NSScrollView, SereinTextView) {
+    private func makeEditor(width: CGFloat, height: CGFloat, text: String) -> (NSScrollView, PaperTextView) {
         let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: width, height: height))
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         scrollView.documentView = textView
         scrollView.drawsBackground = true
         scrollView.backgroundColor = Appearance.canvas
@@ -105,7 +105,7 @@ struct RenderProbeTests {
 
         // Alternate with and without the concealment delegate on the same
         // view so the overhead is measured against the same document state.
-        let layoutManager = try #require(textView.layoutManager as? SereinLayoutManager)
+        let layoutManager = try #require(textView.layoutManager as? PaperLayoutManager)
         var concealing: [Double] = []
         var plain: [Double] = []
         for iteration in 0..<10 {

@@ -1,13 +1,13 @@
 import Foundation
 import Testing
 import UniformTypeIdentifiers
-@testable import Serein
+@testable import Paper
 
 struct MarkdownDocumentTests {
     /// Sources that must survive a read and write byte-for-byte.
     static let fixtures: [String] = [
         "",
-        "# Serein\n\nA quiet place to write.\n",
+        "# Paper\n\nA quiet place to write.\n",
         "no trailing newline",
         "\n\n\nblank lines first\n\n\n",
         "tabs\there\t\ttrailing spaces   \nand more  \n",

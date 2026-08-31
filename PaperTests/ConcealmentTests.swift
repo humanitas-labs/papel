@@ -1,6 +1,6 @@
 import AppKit
 import Testing
-@testable import Serein
+@testable import Paper
 
 /// Heading markers are hidden on every paragraph the selection does not
 /// touch. These tests exercise the attribute the styler writes, the glyph
@@ -10,13 +10,13 @@ import Testing
 struct ConcealmentTests {
     private static let sample = "# Title\n\nBody text.\n\n## Second\n\nMore body.\n"
 
-    private func makeTextView(_ text: String, selectedAt location: Int) -> (SereinTextView, SereinLayoutManager) {
-        let textView = SereinTextView()
+    private func makeTextView(_ text: String, selectedAt location: Int) -> (PaperTextView, PaperLayoutManager) {
+        let textView = PaperTextView()
         textView.frame = NSRect(x: 0, y: 0, width: 900, height: 600)
         textView.string = text
         textView.syntaxStyler.apply(to: textView)
         textView.setSelectedRange(NSRange(location: location, length: 0))
-        let layoutManager = textView.layoutManager as! SereinLayoutManager
+        let layoutManager = textView.layoutManager as! PaperLayoutManager
         layoutManager.ensureLayout(for: textView.textContainer!)
         return (textView, layoutManager)
     }
@@ -35,7 +35,7 @@ struct ConcealmentTests {
 
     @Test(arguments: 1...6)
     func stylerMarksTheMarkerAndFollowingWhitespace(level: Int) throws {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = String(repeating: "#", count: level) + "  Heading\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try #require(textView.textStorage)
@@ -49,7 +49,7 @@ struct ConcealmentTests {
 
     @Test
     func listMarkersAndPlainHashesCarryNoMark() throws {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "#hashtag\n- item\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try #require(textView.textStorage)

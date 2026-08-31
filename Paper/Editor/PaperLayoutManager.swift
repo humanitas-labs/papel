@@ -2,30 +2,30 @@ import AppKit
 
 extension NSAttributedString.Key {
     /// Marks block-quote paragraphs so the text view can draw their rule.
-    static let blockQuote = NSAttributedString.Key("serein.blockQuote")
+    static let blockQuote = NSAttributedString.Key("paper.blockQuote")
 
     /// Marks Markdown punctuation that is hidden whenever the selection is
     /// not on its paragraph. A pure annotation: the characters stay in
     /// storage and in the saved file.
-    static let concealable = NSAttributedString.Key("serein.concealable")
+    static let concealable = NSAttributedString.Key("paper.concealable")
 
     /// Marks an unordered list marker character. The value is the single
     /// character to draw in its place off the active paragraph (`–` for `-`,
     /// `•` for `*` and `+`); the source character is untouched.
-    static let listMarker = NSAttributedString.Key("serein.listMarker")
+    static let listMarker = NSAttributedString.Key("paper.listMarker")
 }
 
 /// TextKit 1 layout manager that computes margin decorations and conceals
 /// marked punctuation. It does not draw decorations: `NSTextView` clips
 /// layout-manager drawing to the text container, and the block-quote rule
-/// sits in the margin outside it, so `SereinTextView` draws the rects this
+/// sits in the margin outside it, so `PaperTextView` draws the rects this
 /// returns.
 ///
 /// Concealment is a glyph-generation decision. Every `.concealable`
 /// character outside `activeRange` gets a `.null` glyph property, which lays
 /// out with zero advance and draws nothing. Storage, undo, find, and copy
 /// never see the difference.
-final class SereinLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
+final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     /// Characters whose punctuation is shown: the paragraphs touched by the
     /// selection. Empty until the text view sets it.
     private(set) var activeRange = NSRange(location: 0, length: 0)

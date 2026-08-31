@@ -1,6 +1,6 @@
 import Foundation
 
-/// Everything the user can tune, read from `~/.config/serein/config`.
+/// Everything the user can tune, read from `~/.config/paper/config`.
 /// Values are validated and clamped on parse so a typo in the file degrades
 /// to the default for that key rather than breaking the window.
 struct Configuration: Equatable, Sendable {
@@ -55,12 +55,12 @@ struct Configuration: Equatable, Sendable {
     static let windowWidthRange: ClosedRange<Double> = 640...4000
     static let windowHeightRange: ClosedRange<Double> = 520...3000
 
-    static let didChangeNotification = Notification.Name("serein.configuration.didChange")
+    static let didChangeNotification = Notification.Name("paper.configuration.didChange")
 
-    /// The file Serein writes on first launch: every key, its default, and
+    /// The file Paper writes on first launch: every key, its default, and
     /// what it does. Parsing this text yields `Configuration()`.
     static let template = """
-    # Serein configuration. Edits apply to open windows as you save.
+    # Paper configuration. Edits apply to open windows as you save.
     # Lines starting with # are comments. Unknown keys are ignored; invalid
     # values fall back to the default shown here. Presets are files in the
     # presets/ directory beside this one, in the same format; Settings can
@@ -85,8 +85,9 @@ struct Configuration: Equatable, Sendable {
     # face is used.
     heading.weight = medium
 
-    # Theme: paper, sepia, slate, mono, or spatial-dark (dark in both
-    # appearances). The others have light and dark colours.
+    # Theme: paper, sepia, slate, mono, spatial-dark, or apple-dark (the last
+    # two are dark in both appearances; the others have light and dark
+    # colours).
     theme = paper
 
     # Size of new windows in points. Each window remembers its own size

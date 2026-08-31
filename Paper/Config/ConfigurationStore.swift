@@ -7,16 +7,28 @@ import Foundation
 final class ConfigurationStore: ObservableObject {
     static let shared = ConfigurationStore(fileURL: defaultFileURL)
 
-    /// `$XDG_CONFIG_HOME/serein/config`, or `~/.config/serein/config`.
+    /// `$XDG_CONFIG_HOME/paper/config`, or `~/.config/paper/config`.
     static var defaultFileURL: URL {
+        configurationBase.appendingPathComponent("paper", isDirectory: true).appendingPathComponent("config")
+    }
+
+    private static var configurationBase: URL {
         let environment = ProcessInfo.processInfo.environment
-        let base: URL
         if let xdg = environment["XDG_CONFIG_HOME"], !xdg.isEmpty {
-            base = URL(fileURLWithPath: xdg, isDirectory: true)
-        } else {
-            base = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config", isDirectory: true)
+            return URL(fileURLWithPath: xdg, isDirectory: true)
         }
-        return base.appendingPathComponent("serein", isDirectory: true).appendingPathComponent("config")
+        return FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".config", isDirectory: true)
+    }
+
+    /// The app was first released as Serein; its `serein/` directory (config
+    /// and presets) is moved to `paper/` once, when `paper/` does not exist.
+    static func migrateLegacyConfiguration(in base: URL = configurationBase) {
+        let legacy = base.appendingPathComponent("serein", isDirectory: true)
+        let current = base.appendingPathComponent("paper", isDirectory: true)
+        let manager = FileManager.default
+        guard manager.fileExists(atPath: legacy.path), !manager.fileExists(atPath: current.path) else { return }
+        try? manager.createDirectory(at: base, withIntermediateDirectories: true)
+        try? manager.moveItem(at: legacy, to: current)
     }
 
     @Published private(set) var current = Configuration()
@@ -45,7 +57,7 @@ final class ConfigurationStore: ObservableObject {
         activePreset = UserDefaults.standard.string(forKey: activePresetKey)
     }
 
-    private var activePresetKey: String { "serein.activePreset:\(fileURL.path)" }
+    private var activePresetKey: String { "paper.activePreset:\(fileURL.path)" }
 
     private func setActivePreset(_ name: String?) {
         activePreset = name
@@ -61,6 +73,7 @@ final class ConfigurationStore: ObservableObject {
     /// Creates the config file from the template if absent, loads it, and
     /// starts watching. Safe to call more than once.
     func start() {
+        if fileURL == Self.defaultFileURL { Self.migrateLegacyConfiguration() }
         ensureFileExists()
         reload()
         loadPresets()

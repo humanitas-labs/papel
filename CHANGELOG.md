@@ -2,6 +2,10 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Rename the app from Serein to Paper: target, bundle identifier
+  (`org.humanitas.paper`), types, attribute and notification keys, and the
+  configuration directory. An existing `~/.config/serein/` (config and
+  presets) is moved to `~/.config/paper/` on first launch.
 - Conceal heading markers (`#`…`######` and the following whitespace) on
   every paragraph the selection does not touch, so heading text sits on the
   margin; the paragraph under the cursor shows its full source. Concealment
@@ -27,8 +31,9 @@
   (Settings → Window); each window keeps its own size afterwards.
 - Add `letter.spacing` (points of tracking, negative tightens) to the config
   and Settings.
-- Add themes: `theme = paper | sepia | slate | mono | spatial-dark`, each
-  with light and dark canvas and ink (Spatial Dark is dark in both), plus `color.canvas`, `color.ink`, `color.canvas.dark`,
+- Add themes: `theme = paper | sepia | slate | mono | spatial-dark |
+  apple-dark`, each with light and dark canvas and ink (the two dark themes
+  are dark in both), plus `color.canvas`, `color.ink`, `color.canvas.dark`,
   and `color.ink.dark` hex overrides. Settings gets a theme picker and colour
   wells; presets capture the theme with the type settings. Muted punctuation,
   selection, the file label, and the quote rule derive from the ink.
@@ -41,7 +46,7 @@
   since a partial invalidation double-counted paragraph spacing and shifted
   everything below.
 - Add presets: named copies of the settings saved as files in
-  `~/.config/serein/presets/`, with a picker in Settings to apply one, Update
+  `~/.config/paper/presets/`, with a picker in Settings to apply one, Update
   to write edits back into the active preset, Save as New Preset, and Delete.
   Applying writes the preset's values into the config file; the preset stays
   active (shown as Edited) while its values are changed, across launches.
@@ -62,7 +67,7 @@
 - Set body type at 14 pt on a 640 pt measure after live review; prefer the
   installed Test Family with the system serif as fallback.
 - Draw the insertion point as a 2 pt rounded bar sized to the glyph box.
-- Read settings from `~/.config/serein/config` (`key = value`, commented
+- Read settings from `~/.config/paper/config` (`key = value`, commented
   template written on first launch, `$XDG_CONFIG_HOME` honoured) and apply
   them live to open windows on save: `font.family`, `font.size`,
   `line.height`, `paragraph.spacing`, `measure`, `heading.weight`. Settings (`⌘,`) edits the same keys with

@@ -26,13 +26,13 @@ Concealment is a layout decision, not a storage edit.
 1. **Styler marks.** `MarkdownSyntaxStyler` adds a custom attribute,
    `.concealable`, to each marker range it already dims. The attribute is a
    pure annotation; the character data is untouched.
-2. **Layout manager hides.** `SereinLayoutManager` becomes its own
+2. **Layout manager hides.** `PaperLayoutManager` becomes its own
    `NSLayoutManagerDelegate` and implements
    `layoutManager(_:shouldGenerateGlyphs:properties:characterIndexes:font:forGlyphRange:)`.
    For every character that carries `.concealable` and lies outside the
    active range, it substitutes `NSGlyphProperty.null`, which makes the glyph
    unlaid: zero advance, nothing drawn. All other glyphs pass through.
-3. **Text view sets the active range.** `SereinTextView` overrides
+3. **Text view sets the active range.** `PaperTextView` overrides
    `setSelectedRanges(_:affinity:stillSelecting:)`. It computes
    `paragraphRange(for: selectedRange)` and, when it differs from the current
    active range, stores it on the layout manager and invalidates glyphs and
@@ -76,8 +76,8 @@ running app, not assumed.
 
 ### WP1 — Attribute and layout delegate
 
-- `NSAttributedString.Key.concealable` in `SereinLayoutManager.swift`.
-- `SereinLayoutManager`: `activeRange: NSRange` (default empty), delegate
+- `NSAttributedString.Key.concealable` in `PaperLayoutManager.swift`.
+- `PaperLayoutManager`: `activeRange: NSRange` (default empty), delegate
   method producing `.null` properties, helper `setActiveRange(_:)` that
   invalidates glyphs + layout for the symmetric difference of old and new.
 - Styler: apply `.concealable` to heading marker ranges (`#…` and the

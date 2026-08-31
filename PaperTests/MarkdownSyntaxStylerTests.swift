@@ -1,6 +1,6 @@
 import AppKit
 import Testing
-@testable import Serein
+@testable import Paper
 
 @MainActor
 struct MarkdownSyntaxStylerTests {
@@ -16,7 +16,7 @@ struct MarkdownSyntaxStylerTests {
 
     @Test(arguments: sources)
     func stylingLeavesSourceUnchanged(source: String) {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = source
 
         textView.syntaxStyler.apply(to: textView)
@@ -27,7 +27,7 @@ struct MarkdownSyntaxStylerTests {
 
     @Test
     func stylingPreservesSelection() {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "Some **strong** text\n"
         let selection = NSRange(location: 7, length: 6)
         textView.setSelectedRange(selection)
@@ -39,7 +39,7 @@ struct MarkdownSyntaxStylerTests {
 
     @Test
     func stylingResetsTypingAttributesToBody() {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "# Heading\n"
         textView.setSelectedRange(NSRange(location: 9, length: 0))
 
@@ -51,7 +51,7 @@ struct MarkdownSyntaxStylerTests {
 
     @Test
     func stylingDifferentiatesConstructs() {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "# Heading\n**strong** *em* `code`\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try! #require(textView.textStorage)
@@ -73,7 +73,7 @@ struct MarkdownSyntaxStylerTests {
 extension MarkdownSyntaxStylerTests {
     @Test
     func stylingMarksBlockQuotes() {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "> quoted text\n>\nplain\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try! #require(textView.textStorage)
@@ -105,7 +105,7 @@ extension MarkdownSyntaxStylerTests {
 
     @Test
     func inlineTraitsCompose() {
-        let textView = SereinTextView()
+        let textView = PaperTextView()
         textView.string = "> **bold in quote** and ***both***\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try! #require(textView.textStorage)

@@ -15,6 +15,7 @@ enum Theme: String, CaseIterable, Sendable {
     case paper, sepia, slate, mono
     /// Dark in both appearances.
     case spatialDark = "spatial-dark"
+    case appleDark = "apple-dark"
 
     var palette: Palette {
         switch self {
@@ -23,6 +24,7 @@ enum Theme: String, CaseIterable, Sendable {
         case .slate: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5")
         case .mono: Palette(canvas: "#FFFFFF", ink: "#000000", canvasDark: "#000000", inkDark: "#EDEDED")
         case .spatialDark: Palette(canvas: "#191B1D", ink: "#F4F9FA", canvasDark: "#191B1D", inkDark: "#F4F9FA")
+        case .appleDark: Palette(canvas: "#212323", ink: "#DDDDDD", canvasDark: "#212323", inkDark: "#DDDDDD")
         }
     }
 
@@ -33,6 +35,7 @@ enum Theme: String, CaseIterable, Sendable {
         case .slate: "Slate"
         case .mono: "Mono"
         case .spatialDark: "Spatial Dark"
+        case .appleDark: "Apple Dark"
         }
     }
 }

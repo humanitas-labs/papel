@@ -1,19 +1,19 @@
 import AppKit
 import Testing
-@testable import Serein
+@testable import Paper
 
 /// Unordered list markers render as Apple Notes' two list kinds off the
 /// active paragraph: `-` as an en dash, `*` and `+` as a bullet. The source
 /// characters never change.
 @MainActor
 struct ListMarkerTests {
-    private func makeTextView(_ text: String, selectedAt location: Int) -> (SereinTextView, SereinLayoutManager) {
-        let textView = SereinTextView()
+    private func makeTextView(_ text: String, selectedAt location: Int) -> (PaperTextView, PaperLayoutManager) {
+        let textView = PaperTextView()
         textView.frame = NSRect(x: 0, y: 0, width: 900, height: 600)
         textView.string = text
         textView.syntaxStyler.apply(to: textView)
         textView.setSelectedRange(NSRange(location: location, length: 0))
-        let layoutManager = textView.layoutManager as! SereinLayoutManager
+        let layoutManager = textView.layoutManager as! PaperLayoutManager
         layoutManager.ensureLayout(for: textView.textContainer!)
         return (textView, layoutManager)
     }
@@ -31,9 +31,9 @@ struct ListMarkerTests {
         // may be a cascade fallback when the body face lacks it.
         let dashFont = try #require(storage.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
         let bulletFont = try #require(storage.attribute(.font, at: 7, effectiveRange: nil) as? NSFont)
-        let dash = try #require(SereinLayoutManager.glyph(for: "–", in: dashFont))
-        let bullet = try #require(SereinLayoutManager.glyph(for: "•", in: bulletFont))
-        let hyphen = try #require(SereinLayoutManager.glyph(for: "-", in: dashFont))
+        let dash = try #require(PaperLayoutManager.glyph(for: "–", in: dashFont))
+        let bullet = try #require(PaperLayoutManager.glyph(for: "•", in: bulletFont))
+        let hyphen = try #require(PaperLayoutManager.glyph(for: "-", in: dashFont))
 
         #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) as? String == "–")
         #expect(storage.attribute(.listMarker, at: 7, effectiveRange: nil) as? String == "•")

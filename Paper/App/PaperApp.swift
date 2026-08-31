@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SereinApp: App {
+struct PaperApp: App {
     /// Observed so scene-level values such as the default window size
     /// follow the configuration.
     @ObservedObject private var store = ConfigurationStore.shared

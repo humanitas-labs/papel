@@ -1,10 +1,10 @@
-# Serein Architecture
+# Paper Architecture
 
 Last updated: `2026.08.30`
 
 ## 1. Objective
 
-Serein is a native macOS document editor. Ordinary Markdown text is the only
+Paper is a native macOS document editor. Ordinary Markdown text is the only
 persistent state. The application owns presentation and editing behavior, not a
 document library or storage system.
 
@@ -17,7 +17,7 @@ MarkdownDocument
     ↕ SwiftUI binding
 MarkdownEditor
     ↕ NSViewRepresentable
-SereinTextView / SereinLayoutManager / TextKit
+PaperTextView / PaperLayoutManager / TextKit
     → temporary source styling, contextual concealment, margin decorations
 ```
 
@@ -35,10 +35,10 @@ with optional hex overrides; every other tone is the ink at an opacity, and
 the resolved `NSColor`s are cached per palette so attribute runs merge.
 
 Concealment is layered on styling without touching storage. The styler
-annotates heading, block-quote, and inline markers with a `.concealable` attribute; `SereinLayoutManager`
+annotates heading, block-quote, and inline markers with a `.concealable` attribute; `PaperLayoutManager`
 is its own `NSLayoutManagerDelegate` and, while generating glyphs, gives every
 concealable character outside its `activeRange` a `.null` glyph property
-(zero advance, nothing drawn). `SereinTextView` overrides the
+(zero advance, nothing drawn). `PaperTextView` overrides the
 `setSelectedRanges` primitive, which every selection path funnels through,
 and sets the active range to the union of the paragraphs the selection
 touches; only ranges that carry markers are invalidated, so moving through
@@ -51,7 +51,7 @@ substitution edits the text, so saving, undo, find, copy, and select-all
 operate on the unchanged source.
 
 `ConfigurationStore` owns that configuration. It reads `key = value` lines
-from `~/.config/serein/config` (honouring `$XDG_CONFIG_HOME`), writes the
+from `~/.config/paper/config` (honouring `$XDG_CONFIG_HOME`), writes the
 commented template when the file is missing, and watches both the file and its
 directory with `DispatchSource` so in-place and atomic saves alike reload it.
 Parsing never fails: unknown keys are ignored and invalid or out-of-range

@@ -1,11 +1,11 @@
 import AppKit
 
-final class SereinTextView: NSTextView {
+final class PaperTextView: NSTextView {
     let syntaxStyler = MarkdownSyntaxStyler()
 
     init() {
         let storage = NSTextStorage()
-        let layoutManager = SereinLayoutManager()
+        let layoutManager = PaperLayoutManager()
         let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
 
         storage.addLayoutManager(layoutManager)
@@ -39,7 +39,7 @@ final class SereinTextView: NSTextView {
     /// selections reveal everything between them as well, which is rare and
     /// harmless.
     private func revealSelectedParagraphs() {
-        guard let layoutManager = layoutManager as? SereinLayoutManager,
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
               let storage = textStorage else { return }
         let text = storage.string as NSString
         var active: NSRange?
@@ -131,7 +131,7 @@ final class SereinTextView: NSTextView {
     }
 
     private func drawQuoteRules(in dirtyRect: NSRect) {
-        guard let layoutManager = layoutManager as? SereinLayoutManager,
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
               let container = textContainer else { return }
         let origin = textContainerOrigin
         let containerRect = dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y)

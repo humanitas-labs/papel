@@ -165,7 +165,7 @@ enum Appearance {
     /// back to the source character.
     static func markerFont(for symbol: String) -> NSFont {
         let body = bodyFont()
-        if SereinLayoutManager.glyph(for: symbol.first ?? " ", in: body) != nil { return body }
+        if PaperLayoutManager.glyph(for: symbol.first ?? " ", in: body) != nil { return body }
         let fallback = CTFontCreateForString(body, symbol as CFString, CFRange(location: 0, length: symbol.utf16.count))
         return fallback as NSFont
     }
