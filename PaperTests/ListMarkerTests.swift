@@ -23,6 +23,24 @@ struct ListMarkerTests {
     }
 
     @Test
+    func anEmptyItemIsStyledLikeItsListBeforeAnyTextIsTyped() throws {
+        // The state right after Return continues a list: `- ` and a caret.
+        let text = "- one\n- "
+        let (textView, _) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        let empty = (text as NSString).range(of: "- ", options: .backwards)
+        #expect(storage.attribute(.glyphSubstitute, at: empty.location, effectiveRange: nil) as? String == "–")
+        let style = try #require(
+            storage.attribute(.paragraphStyle, at: empty.location, effectiveRange: nil) as? NSParagraphStyle
+        )
+        let first = try #require(
+            storage.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        )
+        #expect(style.firstLineHeadIndent == first.firstLineHeadIndent,
+                "the empty item's marker sits where the list's markers sit")
+    }
+
+    @Test
     func dashAndStarRenderAsDashAndBulletOffTheActiveParagraph() throws {
         let text = "- dash\n* star\n+ plus\n1. one\n\nbody\n"
         let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
@@ -205,11 +223,12 @@ struct ListMarkerTests {
     }
 
     @Test
-    func markersNeedContentAndAreNotMatchedMidLine() throws {
+    func markersNeedTheirSpaceAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)
         #expect(storage.attribute(.glyphSubstitute, at: 0, effectiveRange: nil) == nil, "bare dash")
-        #expect(storage.attribute(.glyphSubstitute, at: 2, effectiveRange: nil) == nil, "dash with only trailing space")
+        #expect(storage.attribute(.glyphSubstitute, at: 2, effectiveRange: nil) as? String == "–",
+                "an empty item is already a list item")
         #expect(storage.attribute(.glyphSubstitute, at: 7, effectiveRange: nil) == nil, "mid-line dash")
         #expect(storage.attribute(.glyphSubstitute, at: 13, effectiveRange: nil) as? String == "–", "nested item")
     }

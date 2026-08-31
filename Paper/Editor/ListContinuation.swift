@@ -34,6 +34,22 @@ enum ListContinuation {
             content.length -= 1
         }
 
+        // The empty-item check comes first: an empty item also matches the
+        // list pattern (it styles as a list before any text is typed), and
+        // Return on it must end the list, not continue it.
+        if selection.length == 0,
+           selection.location == NSMaxRange(content),
+           let match = emptyItemPattern.firstMatch(in: text as String, range: content),
+           match.range == content {
+            // Return on an empty item takes the marker away and leaves the
+            // caret on the now-plain line.
+            return Edit(
+                range: content,
+                replacement: "",
+                selection: NSRange(location: content.location, length: 0)
+            )
+        }
+
         if let match = MarkdownSyntaxStyler.listMarkerPattern.firstMatch(in: text as String, range: content),
            match.range.location == content.location {
             // The caret must sit in the item's text; Return inside the
@@ -66,19 +82,6 @@ enum ListContinuation {
                 range: range,
                 replacement: replacement,
                 selection: NSRange(location: range.location + replacement.utf16.count, length: 0)
-            )
-        }
-
-        if selection.length == 0,
-           selection.location == NSMaxRange(content),
-           let match = emptyItemPattern.firstMatch(in: text as String, range: content),
-           match.range == content {
-            // Return on an empty item takes the marker away and leaves the
-            // caret on the now-plain line.
-            return Edit(
-                range: content,
-                replacement: "",
-                selection: NSRange(location: content.location, length: 0)
             )
         }
 

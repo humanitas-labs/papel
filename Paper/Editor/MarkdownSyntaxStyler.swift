@@ -39,7 +39,10 @@ final class MarkdownSyntaxStyler {
         pattern: #"<u>([^<\n]+)</u>"#
     )
     nonisolated static let listMarkerPattern = try! NSRegularExpression(
-        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S)"#
+        // `\S` or end of line: an item freshly continued by Return is just
+        // `- ` and must already sit like a list item, not inherit the
+        // previous line's indent until its first character.
+        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S|$)"#
     )
 
     /// Unordered markers render as Apple Notes' two list kinds: `-` as a
