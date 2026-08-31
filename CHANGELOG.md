@@ -10,6 +10,10 @@
   saving, undo, find, copy, and select-all see the unchanged source.
 - Conceal inline delimiters (`**`, `*`, `` ` ``) the same way; bold, italic,
   and code faces stay while the punctuation hides off the active paragraph.
+- Render unordered list markers as Apple Notes' two list kinds off the
+  active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
+  (`•`), by glyph substitution in the layout manager; the source characters
+  are untouched. Wrapped item lines hang under the item's text.
 - Add concealment tests (attribute ranges, glyph properties, arrow-key,
   multi-paragraph, undo, typing paths) and a concealment render probe; the
   restyle probe now measures the concealment overhead against the same view

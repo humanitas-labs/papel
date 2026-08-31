@@ -31,7 +31,9 @@ Version `0.1.0` proves the native document architecture:
   adaptive warm light and dark appearances;
 - heading markers and inline delimiters (`**`, `*`, `` ` ``) hidden on every
   paragraph the cursor is not on, with the full source shown on the paragraph
-  being edited; block-quote and list markers visible but subdued; and
+  being edited; `-` items rendered as a dashed list and `*` items as a
+  bulleted list, hanging under their text; block-quote markers visible but
+  subdued; and
 - exact UTF-8 source preservation.
 
 Inline rendering, concealment of block-quote markers, export, themes beyond typeface and size,

@@ -23,8 +23,18 @@ final class MarkdownSyntaxStyler {
         pattern: #"`([^`\n]+)`"#
     )
     private static let listMarkerPattern = try! NSRegularExpression(
-        pattern: #"(?m)^[\t ]*(?:[-+*]|\d+[.)])[\t ]+"#
+        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[.)])[\t ]+(?=\S)"#
     )
+
+    /// Unordered markers render as Apple Notes' two list kinds: `-` as a
+    /// dashed list, `*` and `+` as a bulleted one.
+    static func renderedListMarker(for source: String) -> String? {
+        switch source {
+        case "-": "–"
+        case "*", "+": "•"
+        default: nil
+        }
+    }
     private static let blockQuotePattern = try! NSRegularExpression(
         pattern: #"(?m)^([\t ]*(?:>[\t ]?)+)(.*)$"#
     )
@@ -137,7 +147,28 @@ final class MarkdownSyntaxStyler {
     ) {
         Self.listMarkerPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match else { return }
-            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: match.range)
+            let markerRange = match.range(at: 1)
+            let prefix = (source as NSString).substring(with: match.range)
+            let marker = (source as NSString).substring(with: markerRange)
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: markerRange)
+
+            var rendered = Array(prefix)
+            if let symbol = Self.renderedListMarker(for: marker) {
+                storage.addAttribute(.listMarker, value: symbol, range: markerRange)
+                // The prefix is ASCII, so UTF-16 and Character offsets agree.
+                rendered[markerRange.location - match.range.location] = Character(symbol)
+            }
+            // Wrapped lines hang under the item's text, measured from the
+            // prefix as it renders. Quote lines keep their own style, which
+            // already hangs under the quote marker.
+            let paragraphRange = (source as NSString).paragraphRange(for: match.range)
+            if storage.attribute(.blockQuote, at: match.range.location, effectiveRange: nil) == nil {
+                storage.addAttribute(
+                    .paragraphStyle,
+                    value: Appearance.hangingParagraphStyle(under: String(rendered)),
+                    range: paragraphRange
+                )
+            }
         }
     }
 
@@ -158,7 +189,7 @@ final class MarkdownSyntaxStyler {
             let marker = (source as NSString).substring(with: markerRange)
             storage.addAttribute(
                 .paragraphStyle,
-                value: Appearance.quoteParagraphStyle(hangingUnder: marker),
+                value: Appearance.hangingParagraphStyle(under: marker),
                 range: match.range
             )
             // Include the trailing newline so consecutive quote lines form one

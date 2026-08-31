@@ -8,6 +8,11 @@ extension NSAttributedString.Key {
     /// not on its paragraph. A pure annotation: the characters stay in
     /// storage and in the saved file.
     static let concealable = NSAttributedString.Key("serein.concealable")
+
+    /// Marks an unordered list marker character. The value is the single
+    /// character to draw in its place off the active paragraph (`–` for `-`,
+    /// `•` for `*` and `+`); the source character is untouched.
+    static let listMarker = NSAttributedString.Key("serein.listMarker")
 }
 
 /// TextKit 1 layout manager that computes margin decorations and conceals
@@ -36,15 +41,15 @@ final class SereinLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     }
 
     /// Changes the revealed range, regenerating glyphs only for the parts of
-    /// the old and new ranges that carry concealable punctuation. Paragraphs
-    /// without markers cost nothing to enter or leave.
+    /// the old and new ranges that carry concealable punctuation or list
+    /// markers. Paragraphs without either cost nothing to enter or leave.
     func setActiveRange(_ range: NSRange) {
         let previous = activeRange
         guard range != previous else { return }
         activeRange = range
 
         for stale in [previous, range] {
-            guard let clipped = clip(stale), containsConcealable(clipped) else { continue }
+            guard let clipped = clip(stale), containsRenderMarks(clipped) else { continue }
             invalidateGlyphs(forCharacterRange: clipped, changeInLength: 0, actualCharacterRange: nil)
             // Layout must be invalidated through to the end: with contiguous
             // layout, re-laying only the paragraph leaves the fragments after
@@ -68,11 +73,11 @@ final class SereinLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         return clipped.length > 0 ? clipped : nil
     }
 
-    private func containsConcealable(_ range: NSRange) -> Bool {
+    private func containsRenderMarks(_ range: NSRange) -> Bool {
         guard let storage = textStorage else { return false }
         var found = false
-        storage.enumerateAttribute(.concealable, in: range) { value, _, stop in
-            if value != nil {
+        storage.enumerateAttributes(in: range) { attributes, _, stop in
+            if attributes[.concealable] != nil || attributes[.listMarker] != nil {
                 found = true
                 stop.pointee = true
             }
@@ -95,43 +100,77 @@ final class SereinLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         // Most batches lie inside one unmarked attribute run; leave those to
         // the default generation without touching every glyph.
         var runRange = NSRange(location: NSNotFound, length: 0)
-        var runConcealable = storage.attribute(
-            .concealable, at: characterIndexes[0], effectiveRange: &runRange
-        ) != nil
-        if !runConcealable, NSMaxRange(runRange) > characterIndexes[glyphRange.length - 1] {
+        var run = markers(at: characterIndexes[0], in: storage, effectiveRange: &runRange)
+        if run.isEmpty, NSMaxRange(runRange) > characterIndexes[glyphRange.length - 1] {
             return 0
         }
 
-        var replaced: [NSLayoutManager.GlyphProperty]?
+        var replacedProperties: [NSLayoutManager.GlyphProperty]?
+        var replacedGlyphs: [CGGlyph]?
         for offset in 0..<glyphRange.length {
             let index = characterIndexes[offset]
             if !NSLocationInRange(index, runRange) {
                 // One lookup per attribute run. `effectiveRange` (not the
                 // longest) matters: merging unmarked runs would scan the
                 // document to the next heading for every batch of glyphs.
-                runConcealable = storage.attribute(
-                    .concealable, at: index, effectiveRange: &runRange
-                ) != nil
+                run = markers(at: index, in: storage, effectiveRange: &runRange)
             }
-            guard runConcealable, !NSLocationInRange(index, activeRange) else { continue }
+            guard !run.isEmpty, !NSLocationInRange(index, activeRange) else { continue }
 
-            if replaced == nil {
-                replaced = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
+            if run.contains(.concealable) {
+                if replacedProperties == nil {
+                    replacedProperties = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
+                }
+                replacedProperties?[offset] = .null
+            } else if let rendered = run.listMarker, let glyph = Self.glyph(for: rendered, in: font) {
+                if replacedGlyphs == nil {
+                    replacedGlyphs = Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
+                }
+                replacedGlyphs?[offset] = glyph
             }
-            replaced?[offset] = .null
         }
 
-        guard let replaced else { return 0 }
-        replaced.withUnsafeBufferPointer { buffer in
-            layoutManager.setGlyphs(
-                glyphs,
-                properties: buffer.baseAddress!,
-                characterIndexes: characterIndexes,
-                font: font,
-                forGlyphRange: glyphRange
-            )
+        guard replacedProperties != nil || replacedGlyphs != nil else { return 0 }
+        let finalProperties = replacedProperties ?? Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
+        let finalGlyphs = replacedGlyphs ?? Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
+        finalProperties.withUnsafeBufferPointer { propertyBuffer in
+            finalGlyphs.withUnsafeBufferPointer { glyphBuffer in
+                layoutManager.setGlyphs(
+                    glyphBuffer.baseAddress!,
+                    properties: propertyBuffer.baseAddress!,
+                    characterIndexes: characterIndexes,
+                    font: font,
+                    forGlyphRange: glyphRange
+                )
+            }
         }
         return glyphRange.length
+    }
+
+    /// The rendering marks on the attribute run at `index`.
+    private struct Marks {
+        var concealable = false
+        var listMarker: Character?
+        var isEmpty: Bool { !concealable && listMarker == nil }
+        func contains(_ key: NSAttributedString.Key) -> Bool { key == .concealable && concealable }
+    }
+
+    private func markers(at index: Int, in storage: NSTextStorage, effectiveRange: NSRangePointer) -> Marks {
+        let attributes = storage.attributes(at: index, effectiveRange: effectiveRange)
+        var marks = Marks()
+        marks.concealable = attributes[.concealable] != nil
+        marks.listMarker = (attributes[.listMarker] as? String)?.first
+        return marks
+    }
+
+    /// The font's glyph for a single character, or nil when the font lacks
+    /// it (the source character is drawn instead).
+    static func glyph(for character: Character, in font: NSFont) -> CGGlyph? {
+        let units = Array(String(character).utf16)
+        guard units.count == 1 else { return nil }
+        var glyph: CGGlyph = 0
+        guard CTFontGetGlyphsForCharacters(font, units, &glyph, 1), glyph != 0 else { return nil }
+        return glyph
     }
 
     // MARK: - Margin decorations

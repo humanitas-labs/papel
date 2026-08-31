@@ -109,13 +109,14 @@ enum Appearance {
         return style
     }
 
-    /// Block quotes keep the marker at the margin and hang wrapped lines under
-    /// the quoted text, measured from the marker's rendered width.
-    static func quoteParagraphStyle(hangingUnder marker: String) -> NSParagraphStyle {
+    /// Block quotes and list items keep their marker at the margin and hang
+    /// wrapped lines under the text, measured from the prefix's rendered
+    /// width in the body font.
+    static func hangingParagraphStyle(under prefix: String) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineHeightMultiple = lineHeightMultiple
         style.paragraphSpacing = paragraphSpacing
-        style.headIndent = (marker as NSString).size(withAttributes: [.font: bodyFont()]).width
+        style.headIndent = (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
         return style
     }
 

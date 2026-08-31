@@ -40,8 +40,12 @@ concealable character outside its `activeRange` a `.null` glyph property
 and sets the active range to the union of the paragraphs the selection
 touches; only ranges that carry markers are invalidated, so moving through
 plain paragraphs costs nothing. The revealed range is frozen while an input
-method holds marked text. Invariant: concealment never edits the text, so
-saving, undo, find, copy, and select-all operate on the unchanged source.
+method holds marked text. List markers use the same
+delegate the other way round: a `.listMarker` attribute names the character
+to draw (`–` for `-`, `•` for `*`/`+`) and the delegate substitutes that
+glyph off the active paragraph. Invariant: neither concealment nor
+substitution edits the text, so saving, undo, find, copy, and select-all
+operate on the unchanged source.
 
 `ConfigurationStore` owns that configuration. It reads `key = value` lines
 from `~/.config/serein/config` (honouring `$XDG_CONFIG_HOME`), writes the
