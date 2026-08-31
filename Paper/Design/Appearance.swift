@@ -30,9 +30,6 @@ enum Appearance {
 
     /// File-name label: system sans, light beige-grey, evenly inset from the
     /// top-left corner below the traffic lights, in and out of full screen.
-    static let labelSize: CGFloat = 12
-    static let labelInset: CGFloat = 24
-    static var labelInk: NSColor { ink.withAlphaComponent(0.34) }
 
     /// List items are inset from the margin by this much, scaled with the
     /// body size so the marker sits like an Apple Notes bullet.

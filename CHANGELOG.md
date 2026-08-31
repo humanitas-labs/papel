@@ -34,6 +34,8 @@
   marker is kerned half a body size clear of the text (after its last
   character only, so `1.` is not spread apart), and wrapped lines hang under
   the item's text.
+- Remove the file-name label from the top-left corner; the deeper title
+  area put it under the traffic lights.
 - Give the window Spatial's chrome: an empty unified toolbar deepens the
   title area so the traffic lights sit further in and down, and the content
   is masked with a continuous 16 pt corner over a clear window so the shadow
@@ -48,7 +50,7 @@
   are dark in both), plus `color.canvas`, `color.ink`, `color.canvas.dark`,
   and `color.ink.dark` hex overrides. Settings gets a theme picker and colour
   wells; presets capture the theme with the type settings. Muted punctuation,
-  selection, the file label, and the quote rule derive from the ink.
+  selection, and the quote rule derive from the ink.
 - Add concealment tests (attribute ranges, glyph properties, arrow-key,
   multi-paragraph, undo, typing paths) and a concealment render probe; the
   restyle probe now measures the concealment overhead against the same view

@@ -43,29 +43,9 @@ private struct DocumentView: View {
         MarkdownEditor(text: $document.text)
             .background(Color(nsColor: Appearance.canvas))
             .background(WindowConfigurator())
-            .overlay(alignment: .topLeading) { FileNameLabel(fileURL: fileURL) }
             .frame(minWidth: 640, minHeight: 520)
             .ignoresSafeArea()
     }
 }
 
-/// Quiet context label inset from the top-left corner, below the traffic
-/// lights: the document's file name, or "Untitled" before the first save. It
-/// never takes clicks, so dragging the window by its background still works.
-private struct FileNameLabel: View {
-    let fileURL: URL?
-    @ObservedObject private var store = ConfigurationStore.shared
-
-    var body: some View {
-        Text(fileURL?.lastPathComponent ?? "Untitled")
-            .font(.system(size: Appearance.labelSize, weight: .medium))
-            .foregroundStyle(Color(nsColor: Appearance.labelInk))
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .padding(.leading, Appearance.labelInset)
-            .padding(.top, Appearance.labelInset)
-            .allowsHitTesting(false)
-            .accessibilityAddTraits(.isStaticText)
-    }
 }
-
