@@ -89,7 +89,7 @@ struct Configuration: Equatable, Sendable {
     # face is used.
     heading.weight = medium
 
-    # Theme: paper, sepia, slate, mono, spatial, or apple. Each has light
+    # Theme: paper, slate, mono, spatial, or apple. Each has light
     # and dark colours; the colour overrides below tune any of them.
     theme = paper
 

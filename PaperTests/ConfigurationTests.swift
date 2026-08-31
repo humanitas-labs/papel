@@ -91,12 +91,12 @@ struct ThemeTests {
     @Test
     func themeKeysParseAndOverridesApply() {
         let config = Configuration.parse("""
-        theme = Sepia
+        theme = Slate
         color.ink = #102030
         color.canvas =
         color.ink.dark = nonsense
         """)
-        #expect(config.theme == .sepia)
+        #expect(config.theme == .slate)
         #expect(config.ink == "#102030")
         #expect(config.canvas == nil)
         #expect(config.inkDark == nil, "invalid hex inherits the theme")
@@ -105,8 +105,8 @@ struct ThemeTests {
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowWidth == 1200)
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowHeight == 520, "clamped")
         #expect(Configuration.parse("letter.spacing = 9").letterSpacing == 3, "clamped")
-        #expect(config.palette.canvas == Theme.sepia.palette.canvas)
-        #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)
+        #expect(config.palette.canvas == Theme.slate.palette.canvas)
+        #expect(config.palette.inkDark == Theme.slate.palette.inkDark)
         #expect(Configuration.parse("theme = nope").theme == .paper)
         #expect(Configuration.parse("theme = spatial").theme == .spatial)
         #expect(Configuration.parse("theme = Apple").theme == .apple)
@@ -162,6 +162,27 @@ struct ConfigurationStoreTests {
         store.start()
         #expect(store.current.fontSize == 21)
         #expect(try String(contentsOf: url, encoding: .utf8) == "font.size = 21")
+    }
+
+    @Test
+    func renamingAPresetMovesItsFileAndFollowsTheActiveName() throws {
+        let url = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
+        store.start()
+        store.savePreset(named: "Draft")
+        #expect(store.activePreset == "Draft")
+
+        #expect(store.renamePreset(named: "Draft", to: "Final"))
+        #expect(store.presets.contains("Final") && !store.presets.contains("Draft"))
+        #expect(store.activePreset == "Final")
+        #expect(store.preset(named: "Final") == store.current)
+
+        store.savePreset(named: "Other", Configuration())
+        #expect(!store.renamePreset(named: "Final", to: "Other"), "an existing name is refused")
+        #expect(!store.renamePreset(named: "Final", to: "a/b"), "path separators are refused")
+        #expect(store.activePreset == "Final")
     }
 
     @Test(arguments: [true, false])
