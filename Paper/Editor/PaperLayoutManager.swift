@@ -194,8 +194,18 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
 
         var rects: [NSRect] = []
-        storage.enumerateAttribute(.blockQuote, in: characterRange) { value, range, _ in
+        var measured: [NSRange] = []
+        storage.enumerateAttribute(.blockQuote, in: characterRange) { value, partial, _ in
             guard value != nil else { return }
+            // Measure the whole quote run even when the dirty rect covers
+            // one line of it: the rect is a union of glyph boxes, and a
+            // single fragment's box leaves its leading strip unpainted (a
+            // slit in the rule) until a full redraw. Drawing is clipped to
+            // the dirty rect regardless.
+            var range = NSRange()
+            _ = storage.attribute(.blockQuote, at: partial.location, longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length))
+            guard !measured.contains(range) else { return }
+            measured.append(range)
             let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
             // The line-height leading sits above the glyphs in each fragment,
             // so measure from the glyph box (ascent + descent at the

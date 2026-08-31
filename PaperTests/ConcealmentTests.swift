@@ -249,6 +249,19 @@ struct ConcealmentTests {
         let rects = layoutManager.quoteRuleRects(forGlyphRange: glyphs)
         #expect(rects.count == 1)
         #expect(rects.first?.maxY == last.maxY, "rule reaches the last wrapped line; rects \(rects), last \(last)")
+
+        // A partial redraw of one wrapped line still measures the whole
+        // run, so the leading strip above that line is not left as a slit.
+        var secondLine = NSRange()
+        var glyphIndex = glyphs.location
+        var fragments2 = 0
+        layoutManager.enumerateLineFragments(forGlyphRange: glyphs) { _, _, _, range, stop in
+            fragments2 += 1
+            if fragments2 == 2 { secondLine = range; stop.pointee = true }
+        }
+        glyphIndex = secondLine.location
+        let partial = layoutManager.quoteRuleRects(forGlyphRange: NSRange(location: glyphIndex, length: 1))
+        #expect(partial == rects, "partial \(partial) vs full \(rects)")
     }
 
     @Test

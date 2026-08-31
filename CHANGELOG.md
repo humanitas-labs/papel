@@ -34,6 +34,9 @@
   marker is kerned half a body size clear of the text (after its last
   character only, so `1.` is not spread apart), and wrapped lines hang under
   the item's text.
+- Draw the quote rule from the whole quote run on every redraw; a partial
+  redraw of one wrapped line used to leave a slit in the rule at that line's
+  leading until the next full redraw.
 - Remove the file-name label from the top-left corner; the deeper title
   area put it under the traffic lights.
 - Give the window Spatial's chrome: an empty unified toolbar deepens the
