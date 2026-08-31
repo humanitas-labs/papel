@@ -21,9 +21,15 @@ struct ConcealmentTests {
         return (textView, layoutManager)
     }
 
+    /// Concealed characters are control glyphs with zero advancement: they
+    /// stay in their own line fragment (a `.null` glyph at a paragraph start
+    /// would attach to the previous line and eat its paragraph spacing) but
+    /// draw nothing and take no space.
     private func isNull(_ layoutManager: NSLayoutManager, characterAt index: Int) -> Bool {
         let glyph = layoutManager.glyphIndexForCharacter(at: index)
-        return layoutManager.propertyForGlyph(at: glyph) == .null
+        guard layoutManager.propertyForGlyph(at: glyph).contains(.controlCharacter) else { return false }
+        let next = layoutManager.location(forGlyphAt: glyph + 1).x
+        return layoutManager.location(forGlyphAt: glyph).x == next
     }
 
     /// Horizontal offset of a character beyond the container's fragment

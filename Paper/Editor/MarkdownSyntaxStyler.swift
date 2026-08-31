@@ -99,6 +99,13 @@ final class MarkdownSyntaxStyler {
         applyArrows(to: storage, source: source, range: fullRange)
         applyListMarkers(to: storage, source: source, range: fullRange)
         applyCodeBlocks(to: storage, source: source, range: fullRange)
+        // Concealed characters stay in the layout as zero-advance control
+        // glyphs; a kern (the letter spacing) on them would still widen the
+        // line off the active paragraph, so they carry none.
+        storage.enumerateAttribute(.concealable, in: fullRange) { value, range, _ in
+            guard value != nil else { return }
+            storage.addAttribute(.kern, value: 0, range: range)
+        }
         storage.endEditing()
 
         textView.typingAttributes = Self.baseAttributes

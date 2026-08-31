@@ -129,7 +129,15 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
                 if replacedProperties == nil {
                     replacedProperties = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
                 }
-                replacedProperties?[offset] = .null
+                // Control glyphs with zero advancement, not `.null`: a null
+                // glyph at a paragraph's start attaches to the previous
+                // line's fragment, and that fragment then drops its
+                // paragraph spacing — the layout jumped when a heading's
+                // concealed marker followed an empty line. A control glyph
+                // stays in its own fragment, draws nothing, and takes no
+                // width (the zero advancement comes from the control-action
+                // delegate below).
+                replacedProperties?[offset] = .controlCharacter
             } else if let rendered = run.substitute, let glyph = Self.glyph(for: rendered, in: font) {
                 if replacedGlyphs == nil {
                     replacedGlyphs = Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
@@ -153,6 +161,22 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             }
         }
         return glyphRange.length
+    }
+
+    /// Concealed characters were generated as control glyphs; they take no
+    /// space. Real control characters (tabs, line breaks) keep their action.
+    func layoutManager(
+        _ layoutManager: NSLayoutManager,
+        shouldUse action: NSLayoutManager.ControlCharacterAction,
+        forControlCharacterAt charIndex: Int
+    ) -> NSLayoutManager.ControlCharacterAction {
+        guard let storage = textStorage, charIndex < storage.length,
+              storage.attribute(.concealable, at: charIndex, effectiveRange: nil) != nil,
+              !NSLocationInRange(charIndex, activeRange)
+        else { return action }
+        let character = (storage.string as NSString).character(at: charIndex)
+        guard character != 0x0A, character != 0x0D, character != 0x09 else { return action }
+        return .zeroAdvancement
     }
 
     /// The rendering marks on the attribute run at `index`.
