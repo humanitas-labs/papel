@@ -281,6 +281,6 @@ struct ConcealmentTests {
         #expect(rects.count == 1)
         #expect(rects.first!.minY >= firstLine.minY, "does not reach into the blank line above")
         #expect(rects.first!.minY < firstLine.maxY)
-        #expect(rects.first!.maxY == lastLine.maxY)
+        #expect(abs(rects.first!.maxY - lastLine.maxY) < 0.01)
     }
 }

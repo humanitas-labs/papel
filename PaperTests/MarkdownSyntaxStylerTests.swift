@@ -156,7 +156,7 @@ struct ConfigurationDrivenAppearanceTests {
             #expect(MarkdownSyntaxStyler.baseAttributes[.kern] as? CGFloat == 0.5)
             #expect(Appearance.bodySize == 20)
             #expect(Appearance.bodyFont().familyName == "Georgia")
-            #expect(Appearance.headingSize(level: 1) == 30)
+            #expect(Appearance.headingSize(level: 1) == 32)
             #expect(Appearance.headingSize(level: 2) == 26)
             #expect(Appearance.headingSize(level: 6) == 22)
             #expect(Appearance.paragraphStyle().lineHeightMultiple == 1.5)

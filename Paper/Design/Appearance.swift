@@ -65,10 +65,10 @@ enum Appearance {
     /// stands on the margin itself, aligned with the surrounding text.
     static var quoteIndent: CGFloat { listIndent }
 
-    /// `#` sits at body + 10 pt; `##` starts at body + 6 pt and each further
+    /// `#` sits at body + 12 pt; `##` starts at body + 6 pt and each further
     /// level steps down 2 pt, never below body + 2 pt.
     static func headingSize(level: Int) -> CGFloat {
-        level == 1 ? bodySize + 10 : max(bodySize + 2, bodySize + 6 - CGFloat(level - 2) * 2)
+        level == 1 ? bodySize + 12 : max(bodySize + 2, bodySize + 6 - CGFloat(level - 2) * 2)
     }
 
     /// Canvas and ink come from the configured theme (plus any overrides)
