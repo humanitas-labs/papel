@@ -86,6 +86,7 @@ extension MarkdownSyntaxStylerTests {
 
         #expect(markerColor == Appearance.mutedInk)
         #expect(quoteFont?.fontDescriptor.symbolicTraits.contains(.italic) == true)
+        #expect(storage.attribute(.foregroundColor, at: 3, effectiveRange: nil) as? NSColor == Appearance.quoteInk)
         #expect(quoteStyle?.headIndent == 0, "quote text sits on the margin")
         #expect(quoteStyle?.paragraphSpacing == 0, "followed by another quote line")
         #expect((storage.attribute(.paragraphStyle, at: 14, effectiveRange: nil) as? NSParagraphStyle)?.paragraphSpacing == Appearance.paragraphSpacing, "last quote line keeps the spacing")

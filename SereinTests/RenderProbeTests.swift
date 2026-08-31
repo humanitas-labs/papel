@@ -68,6 +68,34 @@ struct RenderProbeTests {
         try png.write(to: dir.appendingPathComponent(name))
     }
 
+    /// A hard-wrapped quote (one `>` per line) and a soft one, cursor
+    /// elsewhere, to check the rule spans the block and the markers hide.
+    @Test
+    func renderQuotes() throws {
+        guard let dir = Self.probeDirectory else { return }
+        let text = """
+        # Quotes
+
+        > Determine whether Weekend Fund can serve as the principal investing
+        > platform while Humanitas builds Media, its founder network, and its
+        > operating capabilities.
+
+        Plain paragraph between.
+
+        > A single soft-wrapped quote line that runs long enough to wrap onto a second line inside the measure.
+
+        - item after
+        """
+        let (scrollView, textView) = makeEditor(width: 1120, height: 600, text: text)
+        textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
+        scrollView.layoutSubtreeIfNeeded()
+        textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+        let rep = try #require(scrollView.bitmapImageRepForCachingDisplay(in: scrollView.bounds))
+        scrollView.cacheDisplay(in: scrollView.bounds, to: rep)
+        let png = try #require(rep.representation(using: .png, properties: [:]))
+        try png.write(to: dir.appendingPathComponent("render-quotes.png"))
+    }
+
     @Test(arguments: ["10k", "100k", "1m"])
     func profileRestyle(fixture: String) throws {
         guard let dir = Self.probeDirectory else { return }

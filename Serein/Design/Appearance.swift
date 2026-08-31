@@ -59,6 +59,8 @@ enum Appearance {
     static var canvas: NSColor { colors.canvas }
     static var ink: NSColor { colors.ink }
     static var mutedInk: NSColor { colors.mutedInk }
+    /// Quoted text: softer than body ink, well above punctuation.
+    static var quoteInk: NSColor { colors.quoteInk }
 
     /// Selection highlight: a quiet grey made from the ink rather than the
     /// system accent blue, so it sits inside the canvas palette.
@@ -71,6 +73,7 @@ enum Appearance {
         let canvas: NSColor
         let ink: NSColor
         let mutedInk: NSColor
+        let quoteInk: NSColor
         let selection: NSColor
     }
 
@@ -85,6 +88,7 @@ enum Appearance {
             canvas: dynamic(light: palette.canvas, dark: palette.canvasDark),
             ink: ink,
             mutedInk: ink.withAlphaComponent(0.28),
+            quoteInk: ink.withAlphaComponent(0.62),
             selection: ink.withAlphaComponent(0.13)
         )
         cachedColors = colors

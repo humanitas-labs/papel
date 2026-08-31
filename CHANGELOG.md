@@ -8,6 +8,9 @@
   is a glyph-generation decision in the layout manager (`.null` glyph
   properties on a `.concealable` attribute) and never edits the text, so
   saving, undo, find, copy, and select-all see the unchanged source.
+- Restore the block-quote rule, which the opaque canvas had been painting
+  over, by drawing it in `drawBackground(in:)`; quoted text is set in a
+  softer ink (62 %).
 - Conceal block-quote markers (`>`, nested `> >`, and their spaces) off the
   active paragraph; quote text sits on the margin with the rule as the only
   cue, and consecutive quote lines keep only line spacing between them so a

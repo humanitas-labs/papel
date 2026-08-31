@@ -195,6 +195,7 @@ final class MarkdownSyntaxStyler {
             storage.addAttribute(.concealable, value: true, range: markerRange)
             if contentRange.length > 0 {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: contentRange)
+                storage.addAttribute(.foregroundColor, value: Appearance.quoteInk, range: contentRange)
             }
             // Quote text sits on the margin. Consecutive quote lines (a
             // hard-wrapped quote) keep only line spacing between them so

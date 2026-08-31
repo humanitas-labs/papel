@@ -186,9 +186,16 @@ final class SereinLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         storage.enumerateAttribute(.blockQuote, in: characterRange) { value, range, _ in
             guard value != nil else { return }
             let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            // The line-height leading sits above the glyphs in each fragment,
+            // so measure from the glyph box (ascent + descent at the
+            // fragment's bottom), as the caret does, or the rule starts a
+            // leading's height above the first line.
+            let font = Appearance.italicFont()
+            let glyphBox = font.ascender - font.descender
             var union = NSRect.null
             enumerateLineFragments(forGlyphRange: glyphs) { _, usedRect, _, _, _ in
-                union = union.union(usedRect)
+                let height = min(usedRect.height, glyphBox)
+                union = union.union(NSRect(x: usedRect.minX, y: usedRect.maxY - height, width: usedRect.width, height: height))
             }
             guard !union.isNull else { return }
             if let last = rects.last, abs(last.maxY - union.minY) <= Appearance.paragraphSpacing + 1 {

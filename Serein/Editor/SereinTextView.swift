@@ -121,12 +121,13 @@ final class SereinTextView: NSTextView {
         super.setNeedsDisplay(padded, avoidAdditionalLayout: flag)
     }
 
-    /// Draws block-quote rules in the margin before the text. They must come
-    /// first: `NSTextView.draw` leaves the context clipped to the text
-    /// container, so anything drawn in the margin afterwards is discarded.
-    override func draw(_ dirtyRect: NSRect) {
-        drawQuoteRules(in: dirtyRect)
-        super.draw(dirtyRect)
+    /// Draws block-quote rules in the margin right after the canvas fill and
+    /// before the glyphs. Drawing them in `draw(_:)` fails both ways: before
+    /// `super` the background fill covers them, after it the context is
+    /// clipped to the text container and the margin is discarded.
+    override func drawBackground(in rect: NSRect) {
+        super.drawBackground(in: rect)
+        drawQuoteRules(in: rect)
     }
 
     private func drawQuoteRules(in dirtyRect: NSRect) {
