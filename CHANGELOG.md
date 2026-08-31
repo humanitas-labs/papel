@@ -23,7 +23,9 @@
   and code faces stay while the punctuation hides off the active paragraph.
 - Align hard-wrapped list items: non-blank lines following an item without
   a marker of their own are styled as continuations, flush under the item's
-  text with no spacing between.
+  text with no spacing between. Leading spaces or tabs on such a line (source
+  that indents the wrap under the marker) are concealed off the active
+  paragraph, so the continuation starts exactly where the item's text does.
 - Render unordered list markers as Apple Notes' two list kinds off the
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters

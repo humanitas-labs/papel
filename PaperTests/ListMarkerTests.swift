@@ -97,6 +97,55 @@ struct ListMarkerTests {
     }
 
     @Test
+    func indentedContinuationsConcealTheirLeadingWhitespace() throws {
+        let text = "- first line of an item\n  second line\n\tthird line\nfourth\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        var range = NSRange()
+        #expect(storage.attribute(.concealable, at: 24, effectiveRange: &range) as? Bool == true)
+        #expect(range == NSRange(location: 24, length: 2), "both leading spaces")
+        #expect(storage.attribute(.concealable, at: 38, effectiveRange: &range) as? Bool == true)
+        #expect(range == NSRange(location: 38, length: 1), "a leading tab")
+        #expect(storage.attribute(.concealable, at: 50, effectiveRange: nil) == nil, "an unindented continuation has nothing to hide")
+
+        // Off the active paragraph the continuation's text starts where the
+        // item's text does; on it, the source whitespace shows.
+        let itemX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 2)).x
+        let concealedX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 26)).x
+        #expect(abs(itemX - concealedX) < 0.5, "item text at \(itemX), continuation at \(concealedX)")
+        textView.setSelectedRange(NSRange(location: 30, length: 0))
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        let revealedX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 26)).x
+        #expect(revealedX > itemX + 1)
+        #expect(textView.string == text)
+    }
+
+    @Test
+    func wrappedLinesStartExactlyUnderTheFirstLinesText() throws {
+        let text = "- " + Array(repeating: "wrapping words", count: 40).joined(separator: " ") + "\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let container = try #require(textView.textContainer)
+        textView.setFrameSize(NSSize(width: 320, height: 600))
+        layoutManager.ensureLayout(for: container)
+
+        // x of the first content glyph on line 1 versus the first glyph on line 2.
+        let firstContent = layoutManager.glyphIndexForCharacter(at: 2)
+        let firstLine = layoutManager.lineFragmentRect(forGlyphAt: firstContent, effectiveRange: nil)
+        var secondLineRange = NSRange()
+        _ = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.numberOfGlyphs - 2, effectiveRange: nil)
+        var glyphIndex = firstContent
+        while glyphIndex < layoutManager.numberOfGlyphs {
+            let rect = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: &secondLineRange)
+            if rect.minY > firstLine.minY { break }
+            glyphIndex = NSMaxRange(secondLineRange)
+        }
+        #expect(glyphIndex < layoutManager.numberOfGlyphs, "the item wraps")
+        let firstX = layoutManager.location(forGlyphAt: firstContent).x
+        let secondX = layoutManager.location(forGlyphAt: glyphIndex).x
+        #expect(abs(firstX - secondX) < 0.5, "first line text at \(firstX), wrapped line at \(secondX)")
+    }
+
+    @Test
     func markersNeedContentAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)

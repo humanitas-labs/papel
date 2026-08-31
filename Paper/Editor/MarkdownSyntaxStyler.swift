@@ -185,6 +185,14 @@ final class MarkdownSyntaxStyler {
                         ),
                         range: continuation
                     )
+                    // Source that hard-wraps under the marker indents the
+                    // continuation with spaces; the paragraph already sits
+                    // under the text, so that whitespace is concealed off the
+                    // active paragraph rather than rendered on top.
+                    let leading = Self.leadingWhitespace(of: continuation, in: source)
+                    if leading.length > 0 {
+                        storage.addAttribute(.concealable, value: true, range: leading)
+                    }
                 }
             }
         }
@@ -241,6 +249,13 @@ final class MarkdownSyntaxStyler {
             cursor = NSMaxRange(paragraph)
         }
         return found
+    }
+
+    private static func leadingWhitespace(of paragraph: NSRange, in source: String) -> NSRange {
+        let text = source as NSString
+        var end = paragraph.location
+        while end < NSMaxRange(paragraph), [0x20, 0x09].contains(text.character(at: end)) { end += 1 }
+        return NSRange(location: paragraph.location, length: end - paragraph.location)
     }
 
     private static func startsBlock(_ line: String) -> Bool {
