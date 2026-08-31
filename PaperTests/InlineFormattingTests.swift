@@ -159,6 +159,45 @@ struct InlineFormattingTests {
     }
 
     @Test @MainActor
+    func typingAfterTwoDashesMakesAnEmDashButRunesSurvive() throws {
+        let textView = PaperTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        let host = TestUndoHost()
+        host.attach(to: textView)
+
+        textView.string = "pause --"
+        textView.setSelectedRange(NSRange(location: 8, length: 0))
+        textView.insertText(" ", replacementRange: NSRange(location: 8, length: 0))
+        textView.flushPendingSubstitution()
+        #expect(textView.string == "pause — ", "a space after the pair lands the em dash")
+
+        textView.string = "a--"
+        textView.setSelectedRange(NSRange(location: 3, length: 0))
+        textView.insertText("b", replacementRange: NSRange(location: 3, length: 0))
+        textView.flushPendingSubstitution()
+        #expect(textView.string == "a—b")
+        #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
+
+        // A third dash never converts, so `---` rules and front matter
+        // stay typeable; a space after three dashes stays literal too.
+        textView.string = "--"
+        textView.setSelectedRange(NSRange(location: 2, length: 0))
+        textView.insertText("-", replacementRange: NSRange(location: 2, length: 0))
+        textView.flushPendingSubstitution()
+        #expect(textView.string == "---")
+        textView.insertText(" ", replacementRange: NSRange(location: 3, length: 0))
+        textView.flushPendingSubstitution()
+        #expect(textView.string == "--- ")
+
+        textView.string = "`a--`"
+        textView.syntaxStyler.apply(to: textView)
+        textView.setSelectedRange(NSRange(location: 4, length: 0))
+        textView.insertText("b", replacementRange: NSRange(location: 4, length: 0))
+        textView.flushPendingSubstitution()
+        #expect(textView.string == "`a--b`", "code spans keep their dashes")
+    }
+
+    @Test @MainActor
     func textViewAppliesWithUndo() throws {
         let textView = PaperTextView()
         textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)

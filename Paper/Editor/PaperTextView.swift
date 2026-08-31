@@ -242,18 +242,24 @@ final class PaperTextView: NSTextView {
 
     // MARK: - Typed substitutions
 
-    /// Typing `>` after `-` replaces the pair with `→` in the source, the
-    /// way smart dashes turn `--` into `—`; ⌘Z restores `->`. `-->`, `<->`,
-    /// and code spans are left as typed.
+    /// Typing `>` after `-` replaces the pair with `→`; a word or space
+    /// after `--` replaces the pair with `—` (Paper's own smart dashes —
+    /// the system's are disabled because they eat `---`). ⌘Z restores the
+    /// typed pair. `-->`, `<->`, `---`, and code spans are left as typed.
     override func insertText(_ string: Any, replacementRange: NSRange) {
         super.insertText(string, replacementRange: replacementRange)
-        guard let typed = string as? String ?? (string as? NSAttributedString)?.string, typed == ">",
-              !hasMarkedText() else { return }
+        guard let typed = string as? String ?? (string as? NSAttributedString)?.string,
+              typed.utf16.count == 1, !hasMarkedText() else { return }
+        let isDashTrigger = typed == " " || typed.rangeOfCharacter(from: .alphanumerics) != nil
+        guard typed == ">" || isDashTrigger else { return }
         // On the next pass of the run loop, after the keystroke's undo group
         // has closed, so the substitution is its own undo step.
         pendingSubstitution?.invalidate()
         pendingSubstitution = Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.replaceTypedArrow() }
+            MainActor.assumeIsolated {
+                self?.replaceTypedArrow()
+                self?.replaceTypedDashes()
+            }
         }
     }
 
@@ -287,6 +293,34 @@ final class PaperTextView: NSTextView {
         textStorage?.replaceCharacters(in: pair, with: "→")
         didChangeText()
         setSelectedRange(NSRange(location: pair.location + 1, length: 0))
+        breakUndoCoalescing()
+    }
+
+    /// `--` becomes `—` when the character after it lands — never a third
+    /// `-` (so `---` rules and front-matter fences survive), never after a
+    /// `-`, `|`, `:`, `<` or `>` (runs, tables, arrows), never in code.
+    private func replaceTypedDashes() {
+        guard selectedRange().length == 0 else { return }
+        let caret = selectedRange().location
+        let text = self.string as NSString
+        guard caret >= 3,
+              // The trigger is the just-typed word character or space — a
+              // third `-` keeps a rule typeable and `>` keeps `-->` literal.
+              ![0x2D, 0x3E].contains(text.character(at: caret - 1)),
+              text.character(at: caret - 2) == 0x2D,
+              text.character(at: caret - 3) == 0x2D else { return }
+        if caret >= 4 {
+            let before = text.character(at: caret - 4)
+            if [0x2D, 0x7C, 0x3A, 0x3C, 0x3E].contains(before) { return }
+        }
+        if let font = textStorage?.attribute(.font, at: caret - 2, effectiveRange: nil) as? NSFont,
+           font == Appearance.codeFont() { return }
+        let pair = NSRange(location: caret - 3, length: 2)
+        breakUndoCoalescing()
+        guard shouldChangeText(in: pair, replacementString: "—") else { return }
+        textStorage?.replaceCharacters(in: pair, with: "—")
+        didChangeText()
+        setSelectedRange(NSRange(location: caret - 1, length: 0))
         breakUndoCoalescing()
     }
 
@@ -431,7 +465,10 @@ final class PaperTextView: NSTextView {
         isContinuousSpellCheckingEnabled = true
         isGrammarCheckingEnabled = true
         isAutomaticQuoteSubstitutionEnabled = true
-        isAutomaticDashSubstitutionEnabled = true
+        // The system's dash substitution is syntax-blind: it eats the second
+        // `-` of a thematic break or front-matter fence. Paper does its own,
+        // Markdown-aware, in the typed-substitution path.
+        isAutomaticDashSubstitutionEnabled = false
         isAutomaticTextReplacementEnabled = true
         isAutomaticSpellingCorrectionEnabled = false
 
