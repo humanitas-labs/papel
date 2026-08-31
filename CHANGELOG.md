@@ -2,6 +2,16 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Reload documents edited by other programs: each window watches its file
+  (vnode events, atomic-save rename handled) and a clean buffer adopts the
+  disk content in place, selection preserved, without marking the document
+  edited. A buffer with unsaved changes keeps them and surfaces the
+  conflict on save, as before.
+- Open links on a plain click (drag still selects; ⌘-click still works)
+  and show a pointing-hand cursor over link text.
+- Native mouse-wheel scrolling: the custom notch-easing animation is
+  removed — it fought the system's acceleration and launched the viewport
+  on physical mice.
 - Render fenced code blocks: backtick or tilde fences set their lines in
   the code font on a quiet rounded band (the theme's ink at 5.5 % over the
   canvas). Content is literal — emphasis, lists, links, and arrows inside
