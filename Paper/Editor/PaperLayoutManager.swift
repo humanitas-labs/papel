@@ -4,6 +4,10 @@ extension NSAttributedString.Key {
     /// Marks block-quote paragraphs so the text view can draw their rule.
     static let blockQuote = NSAttributedString.Key("paper.blockQuote")
 
+    /// Marks fenced-code-block paragraphs (fences included) so the text
+    /// view can draw their background band.
+    static let codeBlock = NSAttributedString.Key("paper.codeBlock")
+
     /// Marks Markdown punctuation that is hidden whenever the selection is
     /// not on its paragraph. A pure annotation: the characters stay in
     /// storage and in the saved file.
@@ -188,6 +192,36 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             }
         }
         return false
+    }
+
+    /// Rects (in text-container coordinates) covering each fenced code
+    /// block that intersects `glyphRange`. Fence lines count: concealed off
+    /// the active paragraph, they read as the band's vertical padding.
+    @MainActor
+    func codeBlockRects(forGlyphRange glyphRange: NSRange) -> [NSRect] {
+        guard let storage = textStorage else { return [] }
+        let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+
+        var rects: [NSRect] = []
+        var measured: [NSRange] = []
+        storage.enumerateAttribute(.codeBlock, in: characterRange) { value, partial, _ in
+            guard value != nil else { return }
+            // As with the quote rule, measure the whole block even when the
+            // dirty rect covers one line of it, or partial redraws leave
+            // unpainted strips; drawing is clipped to the dirty rect anyway.
+            var range = NSRange()
+            _ = storage.attribute(.codeBlock, at: partial.location, longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length))
+            guard !measured.contains(range) else { return }
+            measured.append(range)
+            let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            var union = NSRect.null
+            enumerateLineFragments(forGlyphRange: glyphs) { fragment, _, _, _, _ in
+                union = union.union(fragment)
+            }
+            guard !union.isNull else { return }
+            rects.append(union)
+        }
+        return rects
     }
 
     /// Rects (in text-container coordinates) covering each contiguous run of

@@ -103,6 +103,41 @@ struct RenderProbeTests {
         try png.write(to: dir.appendingPathComponent(name))
     }
 
+    /// Fenced blocks between prose, caret elsewhere: mono content, hidden
+    /// fences, and a band that fits the theme.
+    @Test
+    func renderCodeBlock() throws {
+        guard let dir = Self.probeDirectory else { return }
+        let text = """
+        # Code
+
+        Settings are a text file:
+
+        ```ini
+        font.family = Test Tiempos Text
+        measure = 655
+        theme = slate
+        ```
+
+        And the build is two lines, with **markers** left literal:
+
+        ```bash
+        xcodegen generate
+        xcodebuild -project Paper.xcodeproj -scheme Paper build  # not *italic*
+        ```
+
+        - a list after, to check spacing
+        """
+        let (scrollView, textView) = makeEditor(width: 1120, height: 700, text: text)
+        textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
+        scrollView.layoutSubtreeIfNeeded()
+        textView.layoutManager?.ensureLayout(for: textView.textContainer!)
+        let rep = try #require(scrollView.bitmapImageRepForCachingDisplay(in: scrollView.bounds))
+        scrollView.cacheDisplay(in: scrollView.bounds, to: rep)
+        let png = try #require(rep.representation(using: .png, properties: [:]))
+        try png.write(to: dir.appendingPathComponent("render-code.png"))
+    }
+
     /// A hard-wrapped quote (one `>` per line) and a soft one, cursor
     /// elsewhere, to check the rule spans the block and the markers hide.
     @Test

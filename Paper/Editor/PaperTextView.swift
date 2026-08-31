@@ -127,7 +127,32 @@ final class PaperTextView: NSTextView {
     /// clipped to the text container and the margin is discarded.
     override func drawBackground(in rect: NSRect) {
         super.drawBackground(in: rect)
+        drawCodeBlockBands(in: rect)
         drawQuoteRules(in: rect)
+    }
+
+    private func drawCodeBlockBands(in dirtyRect: NSRect) {
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
+              let container = textContainer else { return }
+        let origin = textContainerOrigin
+        let containerRect = dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
+        let rects = layoutManager.codeBlockRects(forGlyphRange: glyphRange)
+        guard !rects.isEmpty else { return }
+
+        Appearance.codeBlockBackground.setFill()
+        for rect in rects {
+            NSBezierPath(
+                roundedRect: NSRect(
+                    x: origin.x,
+                    y: origin.y + rect.minY,
+                    width: container.size.width,
+                    height: rect.height
+                ),
+                xRadius: Appearance.codeBlockCornerRadius,
+                yRadius: Appearance.codeBlockCornerRadius
+            ).fill()
+        }
     }
 
     private func drawQuoteRules(in dirtyRect: NSRect) {

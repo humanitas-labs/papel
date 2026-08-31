@@ -51,6 +51,13 @@ final class MarkdownSyntaxStyler {
     private static let blockQuotePattern = try! NSRegularExpression(
         pattern: #"(?m)^([\t ]*(?:>[\t ]?)+)(.*)$"#
     )
+    /// A fenced code block: an opening fence line (with an optional info
+    /// string), its lines, and a matching closing fence. An unterminated
+    /// fence stays ordinary text, so a half-typed fence never swallows the
+    /// rest of the document.
+    private static let codeBlockPattern = try! NSRegularExpression(
+        pattern: #"(?ms)^(`{3,}|~{3,})[^\n]*$\n(.*?)^\1[`~]*[\t ]*$"#
+    )
 
     func apply(to textView: NSTextView) {
         guard let storage = textView.textStorage else { return }
@@ -82,6 +89,7 @@ final class MarkdownSyntaxStyler {
         applyLinks(to: storage, source: source, range: fullRange)
         applyArrows(to: storage, source: source, range: fullRange)
         applyListMarkers(to: storage, source: source, range: fullRange)
+        applyCodeBlocks(to: storage, source: source, range: fullRange)
         storage.endEditing()
 
         textView.typingAttributes = Self.baseAttributes
@@ -214,6 +222,53 @@ final class MarkdownSyntaxStyler {
                         storage.addAttribute(.concealable, value: true, range: leading)
                     }
                 }
+            }
+        }
+    }
+
+    /// Fenced source is literal, so this pass runs last and starts the
+    /// block's attributes over: emphasis, lists, links, and arrows styled
+    /// by the passes above are cleared, everything is set in the code font,
+    /// and the fence lines dim and hide off the active paragraph. The
+    /// `.codeBlock` mark lets the text view draw the background band.
+    private func applyCodeBlocks(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        let text = source as NSString
+        Self.codeBlockPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match else { return }
+            let block = text.paragraphRange(for: match.range)
+
+            var attributes = Self.baseAttributes
+            attributes[.font] = Appearance.codeFont()
+            // No spacing inside the block, so the band is one unbroken
+            // panel; the closing fence keeps the ordinary spacing to
+            // whatever follows.
+            attributes[.paragraphStyle] = Appearance.flushParagraphStyle(
+                indent: Appearance.codeBlockInset, spacing: 0
+            )
+            storage.setAttributes(attributes, range: block)
+            let closingLine = text.paragraphRange(for: NSRange(location: NSMaxRange(match.range) - 1, length: 0))
+            storage.addAttribute(
+                .paragraphStyle,
+                value: Appearance.flushParagraphStyle(indent: Appearance.codeBlockInset),
+                range: closingLine
+            )
+            storage.addAttribute(.codeBlock, value: true, range: block)
+
+            let openingLine = text.paragraphRange(for: NSRange(location: match.range.location, length: 0))
+            for line in [openingLine, closingLine] {
+                var fence = line
+                while fence.length > 0 {
+                    let last = text.character(at: NSMaxRange(fence) - 1)
+                    guard last == 0x0A || last == 0x0D else { break }
+                    fence.length -= 1
+                }
+                guard fence.length > 0 else { continue }
+                storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: fence)
+                storage.addAttribute(.concealable, value: true, range: fence)
             }
         }
     }
