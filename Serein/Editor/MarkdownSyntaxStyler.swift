@@ -167,7 +167,7 @@ final class MarkdownSyntaxStyler {
             if storage.attribute(.blockQuote, at: match.range.location, effectiveRange: nil) == nil {
                 storage.addAttribute(
                     .paragraphStyle,
-                    value: Appearance.hangingParagraphStyle(under: String(rendered)),
+                    value: Appearance.hangingParagraphStyle(under: String(rendered), indent: Appearance.listIndent),
                     range: paragraphRange
                 )
             }

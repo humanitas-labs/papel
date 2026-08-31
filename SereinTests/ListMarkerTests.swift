@@ -60,8 +60,10 @@ struct ListMarkerTests {
         let quoted = storage.attribute(.paragraphStyle, at: 18, effectiveRange: nil) as? NSParagraphStyle
         let expected = ("– " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
 
-        #expect(item?.headIndent == expected)
+        #expect(item?.firstLineHeadIndent == Appearance.listIndent)
+        #expect(item?.headIndent == Appearance.listIndent + expected)
         #expect(plain?.headIndent == 0)
+        #expect(quoted?.firstLineHeadIndent == 0)
         #expect(quoted?.headIndent == ("> " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width)
         #expect(storage.attribute(.listMarker, at: 17, effectiveRange: nil) as? String == "–", "a list inside a quote still gets its marker")
     }

@@ -34,6 +34,10 @@ enum Appearance {
     static let labelInset: CGFloat = 24
     static var labelInk: NSColor { ink.withAlphaComponent(0.34) }
 
+    /// List items are inset from the margin by this much, scaled with the
+    /// body size so the marker sits like an Apple Notes bullet.
+    static var listIndent: CGFloat { (bodySize * 1.4).rounded() }
+
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
     static let quoteRuleWidth: CGFloat = 2
     static let quoteRuleOffset: CGFloat = 14
@@ -136,14 +140,15 @@ enum Appearance {
         return style
     }
 
-    /// Block quotes and list items keep their marker at the margin and hang
+    /// Block quotes and list items start their marker at `indent` and hang
     /// wrapped lines under the text, measured from the prefix's rendered
     /// width in the body font.
-    static func hangingParagraphStyle(under prefix: String) -> NSParagraphStyle {
+    static func hangingParagraphStyle(under prefix: String, indent: CGFloat = 0) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineHeightMultiple = lineHeightMultiple
         style.paragraphSpacing = paragraphSpacing
-        style.headIndent = (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
+        style.firstLineHeadIndent = indent
+        style.headIndent = indent + (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
         return style
     }
 
