@@ -60,10 +60,10 @@
   since a partial invalidation double-counted paragraph spacing and shifted
   everything below.
 - Add presets: named copies of the settings saved as files in
-  `~/.config/paper/presets/`, with a picker in Settings to apply one, Update
-  to write edits back into the active preset, Save as New Preset, and Delete.
-  Applying writes the preset's values into the config file; the preset stays
-  active (shown as Edited) while its values are changed, across launches.
+  `~/.config/paper/presets/`, with a picker in Settings to apply one, Save
+  as New Preset, and Delete. Applying writes the preset's values into the
+  config file; the preset stays active across launches, and edits made while
+  it is active are written into it, so there is no separate update step.
 - Highlight selected text in a warm grey drawn from the ink instead of the
   system accent blue.
 - Draw the canvas in the text view again so it is opaque and scrolling blits

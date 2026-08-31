@@ -63,9 +63,9 @@ through `ConfigurationStore.write`, which merges values into the existing
 file text so comments, order, and unknown keys survive; the file and the
 window can never disagree. Presets are whole-configuration files in
 `presets/` beside the config, in the same format; applying one writes its
-values through the same path, so a preset is a snapshot, never a live link.
-The store remembers the active preset (per config file, in `UserDefaults`)
-so edits can be written back into it with Update.
+values through the same path. The store remembers the active preset (per
+config file, in `UserDefaults`) and writes every later edit into it as well,
+so the active preset and the live settings never drift.
 
 ## 3. Application boundaries
 

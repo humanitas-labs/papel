@@ -227,8 +227,9 @@ struct ConfigurationStoreTests {
         var tweaked = store.current
         tweaked.lineHeight = 1.6
         store.write(tweaked)
-        #expect(store.matchingPreset == nil, "editing after applying does not touch the preset")
-        #expect(store.preset(named: "Defaults") == Configuration())
+        #expect(store.matchingPreset == "Defaults", "editing after applying writes into the preset")
+        #expect(store.preset(named: "Defaults") == tweaked)
+        #expect(store.preset(named: "Reading") == large, "other presets are untouched")
 
         #expect(!store.applyPreset(named: "Missing"))
         store.deletePreset(named: "Reading")
@@ -258,7 +259,7 @@ struct ConfigurationStoreTests {
     }
 
     @Test
-    func activePresetSurvivesEditsAndUpdatesInPlace() throws {
+    func activePresetReceivesEditsAsTheyAreMade() throws {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
@@ -267,18 +268,24 @@ struct ConfigurationStoreTests {
 
         store.savePreset(named: "Work")
         #expect(store.activePreset == "Work")
-        #expect(!store.activePresetIsEdited)
 
         var edited = store.current
         edited.fontSize = 17
         store.write(edited)
         #expect(store.activePreset == "Work", "editing keeps the preset active")
-        #expect(store.activePresetIsEdited)
-        #expect(store.matchingPreset == nil)
+        #expect(store.preset(named: "Work")?.fontSize == 17, "the edit is written into the preset")
+        #expect(store.matchingPreset == "Work")
 
-        store.savePreset(named: "Work")
-        #expect(!store.activePresetIsEdited)
+        // Switching presets must not write the new values into the old one.
+        var other = store.current
+        other.fontSize = 21
+        store.savePreset(named: "Other", other)
+        store.applyPreset(named: "Other")
+        #expect(store.current.fontSize == 21)
         #expect(store.preset(named: "Work")?.fontSize == 17)
+        store.applyPreset(named: "Work")
+        #expect(store.current.fontSize == 17)
+        store.deletePreset(named: "Other")
 
         let reopened = ConfigurationStore(fileURL: url)
         reopened.start()

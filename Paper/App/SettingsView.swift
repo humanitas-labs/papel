@@ -59,22 +59,11 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Presets") {
-                HStack {
-                    Picker("Preset", selection: presetSelection) {
-                        Text("None").tag("")
-                        ForEach(store.presets, id: \.self) { Text($0).tag($0) }
-                    }
-                    if store.activePresetIsEdited {
-                        Text("Edited")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                Picker("Preset", selection: presetSelection) {
+                    Text("None").tag("")
+                    ForEach(store.presets, id: \.self) { Text($0).tag($0) }
                 }
                 HStack {
-                    if let active = store.activePreset {
-                        Button("Update “\(active)”") { store.savePreset(named: active) }
-                            .disabled(!store.activePresetIsEdited)
-                    }
                     Button("Save as New Preset…") {
                         presetName = ""
                         isNamingPreset = true

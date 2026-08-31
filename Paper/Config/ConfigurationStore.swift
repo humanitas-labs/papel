@@ -35,9 +35,10 @@ final class ConfigurationStore: ObservableObject {
     /// Names of the saved presets, sorted, refreshed whenever the presets
     /// directory changes.
     @Published private(set) var presets: [String] = []
-    /// The preset last applied or saved. Stays active while its values are
-    /// edited so the edits can be written back into it; cleared when the
-    /// preset is deleted. Persisted per config file across launches.
+    /// The preset last applied or saved. Edits made while it is active are
+    /// written into it, so the preset and the live settings never drift;
+    /// cleared when the preset is deleted. Persisted per config file across
+    /// launches.
     @Published private(set) var activePreset: String?
     let fileURL: URL
 
@@ -62,12 +63,6 @@ final class ConfigurationStore: ObservableObject {
     private func setActivePreset(_ name: String?) {
         activePreset = name
         UserDefaults.standard.set(name, forKey: activePresetKey)
-    }
-
-    /// Whether the live configuration differs from the active preset's file.
-    var activePresetIsEdited: Bool {
-        guard let activePreset, let saved = preset(named: activePreset) else { return false }
-        return saved != current
     }
 
     /// Creates the config file from the template if absent, loads it, and
@@ -127,12 +122,13 @@ final class ConfigurationStore: ObservableObject {
     }
 
     /// Writes the preset's values into the live configuration and the config
-    /// file. Later edits change the file, not the preset.
+    /// file. Later edits are written into the preset as well.
     @discardableResult
     func applyPreset(named name: String) -> Bool {
         guard let configuration = preset(named: name) else { return false }
-        write(configuration)
+        // Activate first so the write does not land in the previous preset.
         setActivePreset(name)
+        write(configuration)
         return true
     }
 
@@ -151,13 +147,17 @@ final class ConfigurationStore: ObservableObject {
     }
 
     /// Applies a configuration and writes it into the file, preserving the
-    /// file's comments and layout. The resulting watch event reloads an
-    /// identical value and is a no-op.
+    /// file's comments and layout, and into the active preset when its values
+    /// differ. The resulting watch events reload identical values and are
+    /// no-ops.
     func write(_ configuration: Configuration) {
         apply(configuration)
         ensureFileExists()
         let existing = (try? String(contentsOf: fileURL, encoding: .utf8)) ?? Configuration.template
         try? configuration.merged(into: existing).write(to: fileURL, atomically: true, encoding: .utf8)
+        if let activePreset, preset(named: activePreset) != configuration {
+            savePreset(named: activePreset, configuration)
+        }
     }
 
     func reload() {
