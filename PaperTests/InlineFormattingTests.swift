@@ -64,6 +64,21 @@ struct InlineFormattingTests {
     }
 
     @Test @MainActor
+    func underlineTagsRenderAsUnderlineAndConceal() throws {
+        let text = "a <u>word</u> here\n"
+        let textView = PaperTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        textView.string = text
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try #require(textView.textStorage)
+        #expect(storage.attribute(.underlineStyle, at: 5, effectiveRange: nil) as? Int == NSUnderlineStyle.single.rawValue)
+        #expect(storage.attribute(.underlineStyle, at: 2, effectiveRange: nil) == nil, "the tag itself is not underlined")
+        #expect(storage.attribute(.concealable, at: 2, effectiveRange: nil) as? Bool == true, "<u>")
+        #expect(storage.attribute(.concealable, at: 9, effectiveRange: nil) as? Bool == true, "</u>")
+        #expect(storage.attribute(.concealable, at: 5, effectiveRange: nil) == nil)
+    }
+
+    @Test @MainActor
     func textViewAppliesWithUndo() throws {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         let textView = PaperTextView()

@@ -23,6 +23,10 @@ final class MarkdownSyntaxStyler {
     private static let codePattern = try! NSRegularExpression(
         pattern: #"`([^`\n]+)`"#
     )
+    /// Markdown has no underline syntax; `<u>…</u>` is the portable form.
+    private static let underlinePattern = try! NSRegularExpression(
+        pattern: #"<u>([^<\n]+)</u>"#
+    )
     private static let listMarkerPattern = try! NSRegularExpression(
         pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S)"#
     )
@@ -66,6 +70,7 @@ final class MarkdownSyntaxStyler {
             range: fullRange
         )
         applyInlineCode(to: storage, source: source, range: fullRange)
+        applyUnderline(to: storage, source: source, range: fullRange)
         applyListMarkers(to: storage, source: source, range: fullRange)
         storage.endEditing()
 
@@ -272,6 +277,19 @@ final class MarkdownSyntaxStyler {
 
     /// Delimiters are dimmed and, off the active paragraph, concealed; the
     /// styled content between them stays.
+    private func applyUnderline(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.underlinePattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match else { return }
+            let contentRange = match.range(at: 1)
+            storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: contentRange)
+            dimDelimiters(around: contentRange, in: match.range, storage: storage)
+        }
+    }
+
     private func dimDelimiters(
         around contentRange: NSRange,
         in matchRange: NSRange,

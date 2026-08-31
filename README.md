@@ -27,7 +27,7 @@ Version `0.1.0` proves the native document architecture:
   system serif; no bundled font;
 - responsive centered measure (`640 pt` maximum, `64 pt` minimum margins) with
   adaptive warm light and dark appearances;
-- heading, block-quote, and inline markers (`#`, `>`, `**`, `*`, `` ` ``)
+- heading, block-quote, and inline markers (`#`, `>`, `**`, `*`, `` ` ``, `<u>`)
   hidden on every paragraph the cursor is not on, with the full source shown
   on the paragraph being edited; `-` items rendered as a dashed list and `*` items as a
   bulleted list, hanging under their text;

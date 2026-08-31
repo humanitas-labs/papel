@@ -31,7 +31,8 @@
   ⌘U underline (`<u>`), ⌘E code (`` ` ``). Each toggles the delimiters
   around the selection or the word under the caret and unwraps when they are
   already there; a caret in whitespace inserts an empty pair to type into.
-  Edits are plain source changes with undo.
+  Edits are plain source changes with undo. `<u>…</u>` renders underlined,
+  with the tags muted and concealed off the active paragraph.
 - Treat ordered markers with a letter suffix (`1a)`, `1b.`) as list items, with
   the same indent, gap, and hanging wrap as `1.`.
 - Render unordered list markers as Apple Notes' two list kinds off the
