@@ -143,7 +143,7 @@ final class PaperTextView: NSTextView {
         let rects = layoutManager.thematicBreakRects(forGlyphRange: glyphRange)
         guard !rects.isEmpty else { return }
 
-        Appearance.mutedInk.setFill()
+        Appearance.thematicBreakInk.setFill()
         for fragment in rects {
             NSRect(
                 x: origin.x + container.lineFragmentPadding,

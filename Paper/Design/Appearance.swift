@@ -47,8 +47,11 @@ enum Appearance {
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
     static let windowCornerRadius: CGFloat = 16
     static let quoteRuleWidth: CGFloat = 2
-    /// A thematic break (`---`) draws as a hairline across the measure.
+    /// A thematic break (`---`) draws as a hairline across the measure, in
+    /// a whisper of the ink so it reads as a fold in the page, not a line
+    /// of text.
     static let thematicBreakThickness: CGFloat = 1
+    static var thematicBreakInk: NSColor { colors.hairline }
 
     /// Fenced code blocks: content inset from the band's edge and the
     /// band's corner rounding. The band itself spans the text container.
@@ -92,6 +95,7 @@ enum Appearance {
         let quoteInk: NSColor
         let selection: NSColor
         let codeBackground: NSColor
+        let hairline: NSColor
     }
 
     private static var cachedColors: Colors?
@@ -107,7 +111,8 @@ enum Appearance {
             mutedInk: ink.withAlphaComponent(0.28),
             quoteInk: ink.withAlphaComponent(0.62),
             selection: ink.withAlphaComponent(0.13),
-            codeBackground: ink.withAlphaComponent(0.055)
+            codeBackground: ink.withAlphaComponent(0.055),
+            hairline: ink.withAlphaComponent(0.10)
         )
         cachedColors = colors
         return colors
