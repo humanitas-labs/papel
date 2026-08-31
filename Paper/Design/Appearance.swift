@@ -46,7 +46,7 @@ enum Appearance {
     /// Fenced code blocks: content inset from the band's edge and the
     /// band's corner rounding. The band itself spans the text container.
     static var codeBlockInset: CGFloat { (bodySize * 0.75).rounded() }
-    static let codeBlockCornerRadius: CGFloat = 8
+    static let codeBlockCornerRadius: CGFloat = 12
     static var codeBlockBackground: NSColor { ink.withAlphaComponent(0.055) }
     /// Quote text is inset from the margin by the list indent; the rule
     /// stands on the margin itself, aligned with the surrounding text.
