@@ -146,6 +146,31 @@ struct ListMarkerTests {
     }
 
     @Test
+    func orderedMarkersKernOnlyAfterTheirLastCharacter() throws {
+        let text = "12. " + Array(repeating: "wrapping words", count: 40).joined(separator: " ") + "\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        #expect(storage.attribute(.kern, at: 0, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing)
+        #expect(storage.attribute(.kern, at: 1, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing)
+        #expect(storage.attribute(.kern, at: 2, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing + Appearance.listMarkerGap)
+
+        textView.setFrameSize(NSSize(width: 320, height: 600))
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        let firstContent = layoutManager.glyphIndexForCharacter(at: 4)
+        let firstLine = layoutManager.lineFragmentRect(forGlyphAt: firstContent, effectiveRange: nil)
+        var lineRange = NSRange()
+        var glyphIndex = firstContent
+        while glyphIndex < layoutManager.numberOfGlyphs {
+            let rect = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: &lineRange)
+            if rect.minY > firstLine.minY { break }
+            glyphIndex = NSMaxRange(lineRange)
+        }
+        let firstX = layoutManager.location(forGlyphAt: firstContent).x
+        let secondX = layoutManager.location(forGlyphAt: glyphIndex).x
+        #expect(abs(firstX - secondX) < 0.5, "first line text at \(firstX), wrapped line at \(secondX)")
+    }
+
+    @Test
     func markersNeedContentAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)

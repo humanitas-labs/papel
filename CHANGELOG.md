@@ -30,8 +30,9 @@
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters
   are untouched. Items are inset from the margin (1.4 × body size), the
-  marker is kerned half a body size clear of the text, and wrapped lines
-  hang under the item's text.
+  marker is kerned half a body size clear of the text (after its last
+  character only, so `1.` is not spread apart), and wrapped lines hang under
+  the item's text.
 - Add `window.width` and `window.height` for the size of new windows
   (default 1400 × 900, Settings → Window); each window keeps its own size
   afterwards.

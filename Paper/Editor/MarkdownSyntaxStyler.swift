@@ -152,9 +152,14 @@ final class MarkdownSyntaxStyler {
             let prefix = (source as NSString).substring(with: match.range)
             let marker = (source as NSString).substring(with: markerRange)
             storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: markerRange)
-            // Kerning on the marker widens the gap to the text without a
-            // source change; the hanging indent accounts for it below.
-            storage.addAttribute(.kern, value: Appearance.letterSpacing + Appearance.listMarkerGap, range: markerRange)
+            // Kerning after the marker's last character widens the gap to
+            // the text without a source change; the hanging indent accounts
+            // for it below. Kern is per glyph, so an ordered marker like
+            // `1.` gets it only after the period, not between its glyphs.
+            storage.addAttribute(
+                .kern, value: Appearance.letterSpacing + Appearance.listMarkerGap,
+                range: NSRange(location: NSMaxRange(markerRange) - 1, length: 1)
+            )
 
             var rendered = Array(prefix)
             if let symbol = Self.renderedListMarker(for: marker) {
