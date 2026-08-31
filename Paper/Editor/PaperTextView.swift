@@ -283,14 +283,24 @@ final class PaperTextView: NSTextView {
         return url.scheme != nil && url.host != nil || string.hasPrefix("mailto:")
     }
 
-    /// ⌘-click on link text opens its destination; every other click is
-    /// ordinary caret placement.
+    /// A clean click on link text opens its destination — the caret goes in
+    /// by clicking beside the link or dragging across it. ⌘-click opens too.
+    /// `super.mouseDown` runs the whole tracking loop, so afterwards a drag
+    /// shows up as a non-empty selection and the click is left alone.
     override func mouseDown(with event: NSEvent) {
-        if event.modifierFlags.contains(.command), let destination = linkDestination(at: event) {
+        let destination = linkDestination(at: event)
+        if event.modifierFlags.contains(.command), let destination {
             open(destination)
             return
         }
+        let plainClick = event.clickCount == 1
+            && event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
         super.mouseDown(with: event)
+        if plainClick, let destination, selectedRange().length == 0,
+           let up = NSApp.currentEvent, up.type == .leftMouseUp,
+           linkDestination(at: up) == destination {
+            open(destination)
+        }
     }
 
     private func linkDestination(at event: NSEvent) -> String? {
