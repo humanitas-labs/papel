@@ -52,6 +52,45 @@ struct ListContinuationTests {
         #expect(selection == NSRange(location: 8, length: 0))
     }
 
+    private func tabbed(
+        in text: String, at selection: NSRange, outdent: Bool = false
+    ) -> (text: String, selection: NSRange)? {
+        guard let edit = ListContinuation.indent(in: text as NSString, selection: selection, outdent: outdent)
+        else { return nil }
+        let result = (text as NSString).replacingCharacters(in: edit.range, with: edit.replacement)
+        return (result, edit.selection)
+    }
+
+    @Test
+    func tabIndentsTheWholeItemFromAnywhereInIt() {
+        let (text, selection) = tabbed(in: "- one\n- two", at: NSRange(location: 11, length: 0))!
+        #expect(text == "- one\n  - two", "the marker moves, not the text after the caret")
+        #expect(selection == NSRange(location: 13, length: 0))
+    }
+
+    @Test
+    func tabIndentsAFreshlyContinuedEmptyItem() {
+        let (text, selection) = tabbed(in: "- one\n- ", at: NSRange(location: 8, length: 0))!
+        #expect(text == "- one\n  - ")
+        #expect(selection == NSRange(location: 10, length: 0))
+    }
+
+    @Test
+    func shiftTabOutdentsSpacesOrATab() {
+        let (spaced, selection) = tabbed(in: "  - two", at: NSRange(location: 7, length: 0), outdent: true)!
+        #expect(spaced == "- two")
+        #expect(selection == NSRange(location: 5, length: 0))
+        let (tabby, _) = tabbed(in: "\t- two", at: NSRange(location: 6, length: 0), outdent: true)!
+        #expect(tabby == "- two")
+    }
+
+    @Test
+    func tabOutsideAListAndOutdentAtTheMarginAreOrdinary() {
+        #expect(tabbed(in: "plain text", at: NSRange(location: 5, length: 0)) == nil)
+        #expect(tabbed(in: "- two", at: NSRange(location: 5, length: 0), outdent: true) == nil,
+                "nothing left to outdent")
+    }
+
     @Test
     func returnOnAnEmptyItemRemovesTheMarker() {
         let (text, selection) = returnPressed(in: "- one\n- ", at: NSRange(location: 8, length: 0))!

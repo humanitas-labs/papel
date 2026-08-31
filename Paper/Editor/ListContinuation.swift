@@ -88,6 +88,60 @@ enum ListContinuation {
         return nil
     }
 
+    /// One level of list nesting in the source.
+    static let indentUnit = "  "
+
+    /// The edit Tab (`outdent: false`) or Shift-Tab (`outdent: true`) should
+    /// perform at `selection`: the caret's list item shifts one indent level
+    /// as a whole, marker included. Nil outside a list item — a plain tab is
+    /// right there — and nil when there is nothing left to outdent.
+    static func indent(in text: NSString, selection: NSRange, outdent: Bool) -> Edit? {
+        guard selection.location <= text.length,
+              NSMaxRange(selection) <= text.length else { return nil }
+        let paragraph = text.paragraphRange(for: selection)
+        var content = paragraph
+        while content.length > 0 {
+            let last = text.character(at: NSMaxRange(content) - 1)
+            guard last == 0x0A || last == 0x0D else { break }
+            content.length -= 1
+        }
+        guard let match = MarkdownSyntaxStyler.listMarkerPattern.firstMatch(in: text as String, range: content),
+              match.range.location == content.location else { return nil }
+
+        if !outdent {
+            return Edit(
+                range: NSRange(location: paragraph.location, length: 0),
+                replacement: Self.indentUnit,
+                selection: NSRange(
+                    location: selection.location + Self.indentUnit.utf16.count,
+                    length: selection.length
+                )
+            )
+        }
+
+        // Outdent removes one tab or up to an indent unit's spaces from the
+        // line start, whatever the writer indented with.
+        var removed = 0
+        if content.length > 0, text.character(at: content.location) == 0x09 {
+            removed = 1
+        } else {
+            while removed < Self.indentUnit.utf16.count,
+                  content.length > removed,
+                  text.character(at: content.location + removed) == 0x20 {
+                removed += 1
+            }
+        }
+        guard removed > 0 else { return nil }
+        return Edit(
+            range: NSRange(location: paragraph.location, length: removed),
+            replacement: "",
+            selection: NSRange(
+                location: max(paragraph.location, selection.location - removed),
+                length: selection.length
+            )
+        )
+    }
+
     /// The marker for the item after one marked `marker`: unordered markers
     /// repeat, numbers count up, and a letter suffix advances instead
     /// (`1a)` → `1b)`).

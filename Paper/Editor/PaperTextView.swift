@@ -195,6 +195,28 @@ final class PaperTextView: NSTextView {
         setSelectedRange(edit.selection)
     }
 
+    /// Tab in a list item indents the whole item a level; Shift-Tab takes
+    /// one back. Anywhere else both keep their ordinary meaning.
+    override func insertTab(_ sender: Any?) {
+        guard applyListIndent(outdent: false) else { return super.insertTab(sender) }
+    }
+
+    override func insertBacktab(_ sender: Any?) {
+        guard applyListIndent(outdent: true) else { return super.insertBacktab(sender) }
+    }
+
+    private func applyListIndent(outdent: Bool) -> Bool {
+        guard isEditable, !hasMarkedText(),
+              let edit = ListContinuation.indent(in: string as NSString, selection: selectedRange(), outdent: outdent)
+        else { return false }
+        breakUndoCoalescing()
+        guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return true }
+        textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
+        didChangeText()
+        setSelectedRange(edit.selection)
+        return true
+    }
+
     // MARK: - Typed substitutions
 
     /// Typing `>` after `-` replaces the pair with `→` in the source, the
