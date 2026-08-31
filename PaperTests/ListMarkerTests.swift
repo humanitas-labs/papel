@@ -41,6 +41,24 @@ struct ListMarkerTests {
     }
 
     @Test
+    func nestedItemsStepByAFullNestingIncrement() throws {
+        let text = "- top\n  - nested\n    - deeper\n"
+        let (textView, _) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        func style(at index: Int) throws -> NSParagraphStyle {
+            try #require(storage.attribute(.paragraphStyle, at: index, effectiveRange: nil) as? NSParagraphStyle)
+        }
+        // The marker's visual position is the indent plus the rendered
+        // leading spaces; together they land on the nesting step.
+        let spaces = ("  " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
+        #expect(try style(at: 0).firstLineHeadIndent == Appearance.listIndent)
+        #expect(abs(try style(at: 6).firstLineHeadIndent + spaces
+                    - (Appearance.listIndent + Appearance.listNestIndent)) < 0.5)
+        #expect(abs(try style(at: 17).firstLineHeadIndent + 2 * spaces
+                    - (Appearance.listIndent + 2 * Appearance.listNestIndent)) < 0.5)
+    }
+
+    @Test
     func dashAndStarRenderAsDashAndBulletOffTheActiveParagraph() throws {
         let text = "- dash\n* star\n+ plus\n1. one\n\nbody\n"
         let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)

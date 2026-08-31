@@ -39,6 +39,11 @@ enum Appearance {
     /// so the text sits clear of the bullet as in Apple Notes.
     static var listMarkerGap: CGFloat { (bodySize * 0.5).rounded() }
 
+    /// How far each nesting level steps a list item's marker. The source's
+    /// two spaces per level are far narrower than a legible step, so the
+    /// paragraph indent makes up the difference.
+    static var listNestIndent: CGFloat { bodySize.rounded() }
+
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
     static let windowCornerRadius: CGFloat = 16
     static let quoteRuleWidth: CGFloat = 2

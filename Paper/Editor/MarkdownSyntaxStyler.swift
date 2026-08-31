@@ -185,6 +185,34 @@ final class MarkdownSyntaxStyler {
         }
     }
 
+    /// The first-line indent for a list item whose match starts at
+    /// `location`: the base list indent plus a full nesting step per two
+    /// leading spaces (or a tab), less the width those characters already
+    /// take when rendered — so the marker lands on the step and the layout
+    /// never depends on which paragraph is active.
+    private static func nestedIndent(at location: Int, in source: String) -> CGFloat {
+        let text = source as NSString
+        var index = location
+        var level = 0
+        var spaces = 0
+        var whitespace = ""
+        while index < text.length {
+            switch text.character(at: index) {
+            case 0x09: level += 1; whitespace += "\t"
+            case 0x20: spaces += 1; whitespace += " "
+            default: index = text.length; continue
+            }
+            index += 1
+        }
+        level += spaces / 2
+        guard level > 0 else { return Appearance.listIndent }
+        let width = (whitespace as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
+        return max(
+            Appearance.listIndent,
+            Appearance.listIndent + CGFloat(level) * Appearance.listNestIndent - width
+        )
+    }
+
     private func applyListMarkers(
         to storage: NSTextStorage,
         source: String,
@@ -222,7 +250,9 @@ final class MarkdownSyntaxStyler {
                 // they align under the item's text with no spacing between.
                 let continuations = Self.continuationParagraphs(after: paragraphRange, in: source, limit: range.length)
                 let itemStyle = Appearance.hangingParagraphStyle(
-                    under: String(rendered), indent: Appearance.listIndent, gap: Appearance.listMarkerGap,
+                    under: String(rendered),
+                    indent: Self.nestedIndent(at: match.range.location, in: source),
+                    gap: Appearance.listMarkerGap,
                     spacing: continuations.isEmpty ? nil : 0
                 )
                 storage.addAttribute(.paragraphStyle, value: itemStyle, range: paragraphRange)
