@@ -137,10 +137,10 @@ enum Appearance {
         return font
     }
 
-    static func paragraphStyle() -> NSParagraphStyle {
+    static func paragraphStyle(spacing: CGFloat? = nil) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineHeightMultiple = lineHeightMultiple
-        style.paragraphSpacing = paragraphSpacing
+        style.paragraphSpacing = spacing ?? paragraphSpacing
         return style
     }
 

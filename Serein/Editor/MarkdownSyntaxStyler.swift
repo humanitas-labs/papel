@@ -190,18 +190,26 @@ final class MarkdownSyntaxStyler {
             let contentRange = match.range(at: 2)
 
             storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: markerRange)
+            // The whole marker group (`>`, nested `> >`, and their spaces)
+            // hides off the active paragraph; the margin rule is the cue.
+            storage.addAttribute(.concealable, value: true, range: markerRange)
             if contentRange.length > 0 {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: contentRange)
             }
-            let marker = (source as NSString).substring(with: markerRange)
+            // Quote text sits on the margin. Consecutive quote lines (a
+            // hard-wrapped quote) keep only line spacing between them so
+            // they read as one block under one rule.
+            let paragraphRange = (source as NSString).paragraphRange(for: match.range)
+            let next = NSMaxRange(paragraphRange)
+            let continues = next < range.length
+                && Self.blockQuotePattern.firstMatch(in: source, range: NSRange(location: next, length: range.length - next))?.range.location == next
             storage.addAttribute(
                 .paragraphStyle,
-                value: Appearance.hangingParagraphStyle(under: marker),
+                value: Appearance.paragraphStyle(spacing: continues ? 0 : nil),
                 range: match.range
             )
             // Include the trailing newline so consecutive quote lines form one
             // run and draw a single unbroken rule.
-            let paragraphRange = (source as NSString).paragraphRange(for: match.range)
             storage.addAttribute(.blockQuote, value: true, range: paragraphRange)
         }
     }

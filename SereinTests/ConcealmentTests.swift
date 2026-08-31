@@ -48,14 +48,35 @@ struct ConcealmentTests {
     }
 
     @Test
-    func listMarkersQuotesAndPlainHashesCarryNoMark() throws {
+    func listMarkersAndPlainHashesCarryNoMark() throws {
         let textView = SereinTextView()
-        textView.string = "#hashtag\n> quote\n- item\n"
+        textView.string = "#hashtag\n- item\n"
         textView.syntaxStyler.apply(to: textView)
         let storage = try #require(textView.textStorage)
         storage.enumerateAttribute(.concealable, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
             #expect(value == nil)
         }
+    }
+
+    @Test
+    func quoteMarkersConcealAndTheTextSitsOnTheMargin() throws {
+        let text = "Body.\n\n> quoted\n> > nested\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: 0)
+        let storage = try #require(textView.textStorage)
+
+        #expect(storage.attribute(.concealable, at: 7, effectiveRange: nil) != nil)
+        #expect(isNull(layoutManager, characterAt: 7), "`>`")
+        #expect(isNull(layoutManager, characterAt: 8), "its space")
+        #expect(!isNull(layoutManager, characterAt: 9))
+        #expect(x(layoutManager, characterAt: 9) == 0, "quoted text on the margin")
+        for index in 16...19 { #expect(isNull(layoutManager, characterAt: index), "nested `> > ` at \(index)") }
+        #expect(x(layoutManager, characterAt: 20) == 0)
+
+        textView.setSelectedRange(NSRange(location: 10, length: 0))
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(!isNull(layoutManager, characterAt: 7))
+        #expect(x(layoutManager, characterAt: 9) > 0)
+        #expect(textView.string == text)
     }
 
     @Test
