@@ -18,6 +18,7 @@ extension NSAttributedString.Key {
     /// list marker, `•` for `*` and `+`, `→` for the `>` of `->`). The
     /// source character is untouched.
     static let glyphSubstitute = NSAttributedString.Key("paper.glyphSubstitute")
+    static let thematicBreak = NSAttributedString.Key("paper.thematicBreak")
     /// The destination of a Markdown link, as its source string, on the
     /// link's text. Opened with ⌘-click; a plain click places the caret.
     static let linkDestination = NSAttributedString.Key("paper.linkDestination")
@@ -291,6 +292,31 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             }
             guard bottom > top else { return }
             rects.append(NSRect(x: 0, y: top, width: 0, height: bottom - top))
+        }
+        return rects
+    }
+
+    /// Line-fragment rects (in text-container coordinates) of each concealed
+    /// thematic break intersecting `glyphRange`. The active paragraph shows
+    /// its source instead, so it yields no rect.
+    @MainActor
+    func thematicBreakRects(forGlyphRange glyphRange: NSRange) -> [NSRect] {
+        guard let storage = textStorage else { return [] }
+        let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+        var rects: [NSRect] = []
+        var measured: [NSRange] = []
+        storage.enumerateAttribute(.thematicBreak, in: characterRange) { value, partial, _ in
+            guard value != nil else { return }
+            var range = NSRange()
+            _ = storage.attribute(
+                .thematicBreak, at: partial.location,
+                longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length)
+            )
+            guard !measured.contains(range) else { return }
+            measured.append(range)
+            guard NSIntersectionRange(range, self.activeRange).length == 0 else { return }
+            let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            rects.append(self.lineFragmentRect(forGlyphAt: glyphs.location, effectiveRange: nil))
         }
         return rects
     }

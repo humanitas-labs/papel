@@ -129,6 +129,29 @@ final class PaperTextView: NSTextView {
         super.drawBackground(in: rect)
         drawCodeBlockBands(in: rect)
         drawQuoteRules(in: rect)
+        drawThematicBreaks(in: rect)
+    }
+
+    /// A concealed `---`/`***`/`___` line draws as a hairline across the
+    /// measure, vertically centred on its (empty-looking) line fragment.
+    private func drawThematicBreaks(in dirtyRect: NSRect) {
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
+              let container = textContainer else { return }
+        let origin = textContainerOrigin
+        let containerRect = dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
+        let rects = layoutManager.thematicBreakRects(forGlyphRange: glyphRange)
+        guard !rects.isEmpty else { return }
+
+        Appearance.mutedInk.setFill()
+        for fragment in rects {
+            NSRect(
+                x: origin.x + container.lineFragmentPadding,
+                y: origin.y + fragment.midY - Appearance.thematicBreakThickness / 2,
+                width: container.size.width - 2 * container.lineFragmentPadding,
+                height: Appearance.thematicBreakThickness
+            ).fill()
+        }
     }
 
     private func drawCodeBlockBands(in dirtyRect: NSRect) {

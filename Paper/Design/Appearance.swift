@@ -47,6 +47,8 @@ enum Appearance {
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
     static let windowCornerRadius: CGFloat = 16
     static let quoteRuleWidth: CGFloat = 2
+    /// A thematic break (`---`) draws as a hairline across the measure.
+    static let thematicBreakThickness: CGFloat = 1
 
     /// Fenced code blocks: content inset from the band's edge and the
     /// band's corner rounding. The band itself spans the text container.

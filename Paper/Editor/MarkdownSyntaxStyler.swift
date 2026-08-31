@@ -74,6 +74,7 @@ final class MarkdownSyntaxStyler {
 
         storage.beginEditing()
         storage.setAttributes(Self.baseAttributes, range: fullRange)
+        applyThematicBreaks(to: storage, source: source, range: fullRange)
         applyHeadings(to: storage, source: source, range: fullRange)
         applyBlockQuotes(to: storage, source: source, range: fullRange)
         // Code spans go first among the inline styles: the passes below
@@ -110,6 +111,27 @@ final class MarkdownSyntaxStyler {
 
         textView.typingAttributes = Self.baseAttributes
         textView.setSelectedRange(selection)
+    }
+
+    /// `---`, `***`, or `___` alone on a line is a thematic break: the
+    /// source conceals off the active paragraph and a hairline rule draws
+    /// across the measure instead. Inside a code fence the later code pass
+    /// resets the line, so fenced runes stay literal.
+    private static let thematicBreakPattern = try! NSRegularExpression(
+        pattern: #"(?m)^(?:-{3,}|\*{3,}|_{3,})[\t ]*$"#
+    )
+
+    private func applyThematicBreaks(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.thematicBreakPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match else { return }
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: match.range)
+            storage.addAttribute(.concealable, value: true, range: match.range)
+            storage.addAttribute(.thematicBreak, value: true, range: match.range)
+        }
     }
 
     private func applyHeadings(
