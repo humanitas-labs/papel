@@ -160,6 +160,9 @@ final class MarkdownSyntaxStyler {
                 value: Appearance.codeFont(),
                 range: contentRange
             )
+            // The band colour marks the span as a chip: the layout manager
+            // recognises it in `fillBackgroundRectArray` and rounds it.
+            storage.addAttribute(.backgroundColor, value: Appearance.codeBlockBackground, range: contentRange)
             dimDelimiters(around: contentRange, in: match.range, storage: storage)
         }
     }

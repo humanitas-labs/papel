@@ -181,6 +181,44 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         return glyph
     }
 
+    /// Inline `code` spans carry the band colour as a background attribute;
+    /// those fills are drawn as rounded chips hugging the glyph box instead
+    /// of full-height rectangles. Every other background (selection included)
+    /// keeps the default drawing.
+    override func fillBackgroundRectArray(
+        _ rectArray: UnsafePointer<NSRect>,
+        count rectCount: Int,
+        forCharacterRange charRange: NSRange,
+        color: NSColor
+    ) {
+        let chip: (height: CGFloat, radius: CGFloat)? = MainActor.assumeIsolated {
+            guard color == Appearance.codeBlockBackground else { return nil }
+            // The line-height leading sits above the glyphs, so the chip
+            // anchors to the fragment's bottom edge, like the caret.
+            let font = Appearance.codeFont()
+            return (font.ascender - font.descender + 4, Appearance.codeChipCornerRadius)
+        }
+        guard let chip else {
+            super.fillBackgroundRectArray(rectArray, count: rectCount, forCharacterRange: charRange, color: color)
+            return
+        }
+        let height = chip.height
+        color.setFill()
+        for index in 0..<rectCount {
+            let rect = rectArray[index]
+            NSBezierPath(
+                roundedRect: NSRect(
+                    x: rect.minX - 2,
+                    y: rect.maxY - min(height, rect.height),
+                    width: rect.width + 4,
+                    height: min(height, rect.height)
+                ),
+                xRadius: chip.radius,
+                yRadius: chip.radius
+            ).fill()
+        }
+    }
+
     // MARK: - Margin decorations
 
     private func hasVisibleGlyphs(in range: NSRange) -> Bool {

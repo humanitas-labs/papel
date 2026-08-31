@@ -47,7 +47,10 @@ enum Appearance {
     /// band's corner rounding. The band itself spans the text container.
     static var codeBlockInset: CGFloat { (bodySize * 0.75).rounded() }
     static let codeBlockCornerRadius: CGFloat = 12
-    static var codeBlockBackground: NSColor { ink.withAlphaComponent(0.055) }
+    static let codeChipCornerRadius: CGFloat = 4
+    /// One cached instance per palette: the chip drawing in the layout
+    /// manager recognises spans by this exact colour.
+    static var codeBlockBackground: NSColor { colors.codeBackground }
     /// Quote text is inset from the margin by the list indent; the rule
     /// stands on the margin itself, aligned with the surrounding text.
     static var quoteIndent: CGFloat { listIndent }
@@ -81,6 +84,7 @@ enum Appearance {
         let mutedInk: NSColor
         let quoteInk: NSColor
         let selection: NSColor
+        let codeBackground: NSColor
     }
 
     private static var cachedColors: Colors?
@@ -95,7 +99,8 @@ enum Appearance {
             ink: ink,
             mutedInk: ink.withAlphaComponent(0.28),
             quoteInk: ink.withAlphaComponent(0.62),
-            selection: ink.withAlphaComponent(0.13)
+            selection: ink.withAlphaComponent(0.13),
+            codeBackground: ink.withAlphaComponent(0.055)
         )
         cachedColors = colors
         return colors

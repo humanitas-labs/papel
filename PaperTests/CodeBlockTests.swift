@@ -71,6 +71,21 @@ struct CodeBlockTests {
     }
 
     @Test
+    func inlineCodeSpansCarryTheChipColour() throws {
+        let textView = styledView("prose `span` more\n```\nblock\n```")
+        let storage = try #require(textView.textStorage)
+        let text = textView.string as NSString
+        let span = text.range(of: "span")
+        let chip = storage.attribute(.backgroundColor, at: span.location, effectiveRange: nil) as? NSColor
+        #expect(chip == Appearance.codeBlockBackground)
+        #expect(storage.attribute(.backgroundColor, at: span.location - 1, effectiveRange: nil) == nil,
+                "the backtick sits outside the chip")
+        let block = text.range(of: "block")
+        #expect(storage.attribute(.backgroundColor, at: block.location, effectiveRange: nil) == nil,
+                "the band, not a chip, backs fenced content")
+    }
+
+    @Test
     func concealingFencesDoesNotChangeTheHeight() throws {
         let text = "prose before\n\n```ini\nkey = value\nmore = 1\n```\n\nprose after"
         let textView = styledView(text)
