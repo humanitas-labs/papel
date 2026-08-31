@@ -2,6 +2,12 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Continue lists on Return: pressing Return in a list item's text starts
+  the next item with the same indent, block-quote prefix, and marker gap —
+  unordered markers repeat, numbers count up, and a letter suffix advances
+  (`1a)` → `1b)`). Return on an empty item removes its marker instead,
+  ending the list. Splitting an item mid-line hands the tail to the new
+  item. The continuation is one undo step.
 - Rename the app from Serein to Paper: target, bundle identifier
   (`org.humanitas.paper`), types, attribute and notification keys, and the
   configuration directory. An existing `~/.config/serein/` (config and

@@ -150,6 +150,24 @@ final class PaperTextView: NSTextView {
         }
     }
 
+    // MARK: - List continuation
+
+    /// Return inside a list item starts the next item; Return on an empty
+    /// item removes its marker. Everything else is an ordinary newline.
+    override func insertNewline(_ sender: Any?) {
+        guard isEditable, !hasMarkedText(),
+              let edit = ListContinuation.edit(in: string as NSString, selection: selectedRange())
+        else {
+            super.insertNewline(sender)
+            return
+        }
+        breakUndoCoalescing()
+        guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
+        textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
+        didChangeText()
+        setSelectedRange(edit.selection)
+    }
+
     // MARK: - Typed substitutions
 
     /// Typing `>` after `-` replaces the pair with `→` in the source, the

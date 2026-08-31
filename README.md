@@ -6,7 +6,6 @@
 
 Paper is one surface: a warm, centered page set in editorial serif type. No library, no database, no sidebar, no toolbar, no account, no proprietary format. The file on disk stays plain Markdown, byte for byte.
 
-
 ## The idea
 
 Markdown's markers are for writing, not for reading. Paper leaves them in the source and takes them out of the picture everywhere else:
@@ -25,12 +24,14 @@ Markdown's markers are for writing, not for reading. Paper leaves them in the so
   from the body size; block quotes inset and italic behind a hairline rule.
 - *Lists* — Apple Notes' two kinds: `-` draws as a dashed list (–), `*`
   as a bulleted one (•). Items hang under their text, hard-wrapped lines
-  align, and ordered markers may carry a letter (`1a)`).
-- **Links** — underlined text with the syntax concealed. ⌘-click opens the
+  align, and ordered markers may carry a letter (`1a)`). Return continues
+  the list — markers repeat, numbers count up — and Return on an empty
+  item ends it.
+- *Links* — underlined text with the syntax concealed. ⌘-click opens the
   destination; relative paths resolve against the document.
-- **Typed substitutions** — `->` becomes → as you type, like smart dashes;
+- *Typed substitutions* — `->` becomes → as you type, like smart dashes;
   ⌘Z gives the pair back.
-- **Wheel scrolling** — mouse-wheel notches ease toward their target
+- *Wheel scrolling* — mouse-wheel notches ease toward their target
   instead of jumping; trackpad scrolling stays native.
 
 ## Shortcuts

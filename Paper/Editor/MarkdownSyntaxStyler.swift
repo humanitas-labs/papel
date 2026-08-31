@@ -35,7 +35,7 @@ final class MarkdownSyntaxStyler {
     private static let underlinePattern = try! NSRegularExpression(
         pattern: #"<u>([^<\n]+)</u>"#
     )
-    private static let listMarkerPattern = try! NSRegularExpression(
+    nonisolated static let listMarkerPattern = try! NSRegularExpression(
         pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S)"#
     )
 
