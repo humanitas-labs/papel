@@ -221,16 +221,16 @@ final class MarkdownSyntaxStyler {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: contentRange)
                 storage.addAttribute(.foregroundColor, value: Appearance.quoteInk, range: contentRange)
             }
-            // Quote text sits on the margin. Consecutive quote lines (a
-            // hard-wrapped quote) keep only line spacing between them so
-            // they read as one block under one rule.
+            // Quote text is inset so the rule stands on the text margin.
+            // Consecutive quote lines (a hard-wrapped quote) keep only line
+            // spacing between them so they read as one block under one rule.
             let paragraphRange = (source as NSString).paragraphRange(for: match.range)
             let next = NSMaxRange(paragraphRange)
             let continues = next < range.length
                 && Self.blockQuotePattern.firstMatch(in: source, range: NSRange(location: next, length: range.length - next))?.range.location == next
             storage.addAttribute(
                 .paragraphStyle,
-                value: Appearance.paragraphStyle(spacing: continues ? 0 : nil),
+                value: Appearance.flushParagraphStyle(indent: Appearance.quoteIndent, spacing: continues ? 0 : nil),
                 range: match.range
             )
             // Include the trailing newline so consecutive quote lines form one

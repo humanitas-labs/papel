@@ -43,8 +43,11 @@ enum Appearance {
     static var listMarkerGap: CGFloat { (bodySize * 0.5).rounded() }
 
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
+    static let windowCornerRadius: CGFloat = 16
     static let quoteRuleWidth: CGFloat = 2
-    static let quoteRuleOffset: CGFloat = 14
+    /// Quote text is inset from the margin by the list indent; the rule
+    /// stands on the margin itself, aligned with the surrounding text.
+    static var quoteIndent: CGFloat { listIndent }
 
     /// `#` sits at body + 10 pt; `##` starts at body + 6 pt and each further
     /// level steps down 2 pt, never below body + 2 pt.

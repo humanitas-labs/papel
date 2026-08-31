@@ -65,8 +65,8 @@ struct ListMarkerTests {
         #expect(storage.attribute(.kern, at: 0, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing + Appearance.listMarkerGap)
         #expect(storage.attribute(.kern, at: 2, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing)
         #expect(plain?.headIndent == 0)
-        #expect(quoted?.firstLineHeadIndent == 0)
-        #expect(quoted?.headIndent == 0)
+        #expect(quoted?.firstLineHeadIndent == Appearance.quoteIndent)
+        #expect(quoted?.headIndent == Appearance.quoteIndent)
         #expect(storage.attribute(.listMarker, at: 17, effectiveRange: nil) as? String == "–", "a list inside a quote still gets its marker")
     }
 

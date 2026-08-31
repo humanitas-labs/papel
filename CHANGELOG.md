@@ -16,9 +16,10 @@
   over, by drawing it in `drawBackground(in:)`; quoted text is set in a
   softer ink (62 %).
 - Conceal block-quote markers (`>`, nested `> >`, and their spaces) off the
-  active paragraph; quote text sits on the margin with the rule as the only
-  cue, and consecutive quote lines keep only line spacing between them so a
-  hard-wrapped quote reads as one block.
+  active paragraph; quote text is inset by the list indent with the rule
+  standing on the text margin as the only cue, and consecutive quote lines
+  keep only line spacing between them so a hard-wrapped quote reads as one
+  block.
 - Conceal inline delimiters (`**`, `*`, `` ` ``) the same way; bold, italic,
   and code faces stay while the punctuation hides off the active paragraph.
 - Align hard-wrapped list items: non-blank lines following an item without
@@ -33,6 +34,10 @@
   marker is kerned half a body size clear of the text (after its last
   character only, so `1.` is not spread apart), and wrapped lines hang under
   the item's text.
+- Give the window Spatial's chrome: an empty unified toolbar deepens the
+  title area so the traffic lights sit further in and down, and the content
+  is masked with a continuous 16 pt corner over a clear window so the shadow
+  follows the rounder edge.
 - Add `window.width` and `window.height` for the size of new windows
   (default 1400 × 900, Settings → Window); each window keeps its own size
   afterwards.

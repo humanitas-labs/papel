@@ -142,7 +142,7 @@ final class PaperTextView: NSTextView {
         Appearance.mutedInk.setFill()
         for rect in rects {
             NSRect(
-                x: origin.x - Appearance.quoteRuleOffset,
+                x: origin.x + container.lineFragmentPadding,
                 y: origin.y + rect.minY,
                 width: Appearance.quoteRuleWidth,
                 height: rect.height

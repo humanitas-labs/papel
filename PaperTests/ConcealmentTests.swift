@@ -59,7 +59,7 @@ struct ConcealmentTests {
     }
 
     @Test
-    func quoteMarkersConcealAndTheTextSitsOnTheMargin() throws {
+    func quoteMarkersConcealAndTheTextIsInset() throws {
         let text = "Body.\n\n> quoted\n> > nested\n"
         let (textView, layoutManager) = makeTextView(text, selectedAt: 0)
         let storage = try #require(textView.textStorage)
@@ -68,9 +68,9 @@ struct ConcealmentTests {
         #expect(isNull(layoutManager, characterAt: 7), "`>`")
         #expect(isNull(layoutManager, characterAt: 8), "its space")
         #expect(!isNull(layoutManager, characterAt: 9))
-        #expect(x(layoutManager, characterAt: 9) == 0, "quoted text on the margin")
+        #expect(x(layoutManager, characterAt: 9) == Appearance.quoteIndent, "quoted text inset from the margin")
         for index in 16...19 { #expect(isNull(layoutManager, characterAt: index), "nested `> > ` at \(index)") }
-        #expect(x(layoutManager, characterAt: 20) == 0)
+        #expect(x(layoutManager, characterAt: 20) == Appearance.quoteIndent)
 
         textView.setSelectedRange(NSRange(location: 10, length: 0))
         layoutManager.ensureLayout(for: textView.textContainer!)
@@ -231,6 +231,24 @@ struct ConcealmentTests {
         #expect(layoutManager.usedRect(for: container).height == base)
         let after = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 45), effectiveRange: nil).minY
         #expect(after == thirdBodyY)
+    }
+
+    @Test
+    func quoteRuleSpansEveryWrappedLineOfASingleMarkerQuote() throws {
+        let text = "\n> " + Array(repeating: "quoted words", count: 40).joined(separator: " ") + "\n\nbody\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let container = try #require(textView.textContainer)
+        textView.setFrameSize(NSSize(width: 320, height: 800))
+        layoutManager.ensureLayout(for: container)
+        let quote = NSRange(location: 1, length: text.utf16.count - 8)
+        let glyphs = layoutManager.glyphRange(forCharacterRange: quote, actualCharacterRange: nil)
+        var fragments = 0
+        var last = NSRect.zero
+        layoutManager.enumerateLineFragments(forGlyphRange: glyphs) { _, used, _, _, _ in fragments += 1; last = used }
+        #expect(fragments > 3, "the quote wraps")
+        let rects = layoutManager.quoteRuleRects(forGlyphRange: glyphs)
+        #expect(rects.count == 1)
+        #expect(rects.first?.maxY == last.maxY, "rule reaches the last wrapped line; rects \(rects), last \(last)")
     }
 
     @Test
