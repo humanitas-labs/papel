@@ -16,3 +16,4 @@ Package.resolved
 
 # Personal work log
 .journal/
+dist/
