@@ -30,7 +30,7 @@ struct Configuration: Equatable, Sendable {
     /// Size of a newly opened window in points; macOS restores each window's
     /// last size after that.
     var windowWidth: Double = 1400
-    var windowHeight: Double = 900
+    var windowHeight: Double = 884
     /// Hex overrides for the theme's colours; nil inherits the theme.
     var canvas: String?
     var ink: String?
@@ -93,7 +93,7 @@ struct Configuration: Equatable, Sendable {
     # Size of new windows in points. Each window remembers its own size
     # after that.
     window.width = 1400
-    window.height = 900
+    window.height = 884
 
     # Colour overrides as #RRGGBB. Leave a value empty to use the theme's.
     color.canvas =

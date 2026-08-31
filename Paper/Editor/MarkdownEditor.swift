@@ -9,7 +9,7 @@ struct MarkdownEditor: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = PaperScrollView()
+        let scrollView = NSScrollView()
         let textView = PaperTextView()
 
         textView.delegate = context.coordinator
