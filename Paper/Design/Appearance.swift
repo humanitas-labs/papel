@@ -15,7 +15,7 @@ enum Appearance {
     static var headingWeight: Int { configuration.headingWeight.fontManagerWeight }
 
     static let minimumHorizontalMargin: CGFloat = 64
-    static let topMargin: CGFloat = 90
+    static let topMargin: CGFloat = 80
     static let codeScale: CGFloat = 0.88
 
     /// The insertion point is a rounded bar sized to the glyph box of the
