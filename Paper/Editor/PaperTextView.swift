@@ -161,12 +161,25 @@ final class PaperTextView: NSTextView {
               !hasMarkedText() else { return }
         // On the next pass of the run loop, after the keystroke's undo group
         // has closed, so the substitution is its own undo step.
-        Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] _ in
+        pendingSubstitution?.invalidate()
+        pendingSubstitution = Timer.scheduledTimer(withTimeInterval: 0, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.replaceTypedArrow() }
         }
     }
 
+    private var pendingSubstitution: Timer?
+
+    /// Runs a scheduled substitution now. Tests use it instead of pumping
+    /// the run loop, which is not safe inside the document-based test host.
+    func flushPendingSubstitution() {
+        guard let pendingSubstitution else { return }
+        pendingSubstitution.fire()
+        pendingSubstitution.invalidate()
+        self.pendingSubstitution = nil
+    }
+
     private func replaceTypedArrow() {
+        pendingSubstitution = nil
         guard selectedRange().length == 0 else { return }
         let caret = selectedRange().location
         let text = self.string as NSString

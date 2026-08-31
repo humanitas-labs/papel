@@ -190,9 +190,9 @@ struct ConcealmentTests {
     @Test
     func undoRevealsTheParagraphItLandsOn() throws {
         let (textView, layoutManager) = makeTextView(Self.sample, selectedAt: 12)
-        // Undo registration needs a responder chain with an undo manager.
-        let window = NSWindow(contentRect: textView.frame, styleMask: [.titled], backing: .buffered, defer: false)
-        window.contentView = textView
+        // Undo registration needs an undo manager; the delegate supplies it.
+        let host = TestUndoHost()
+        host.attach(to: textView)
         let undoManager = try #require(textView.undoManager)
         textView.setSelectedRange(NSRange(location: 7, length: 0))
         textView.insertText("!", replacementRange: NSRange(location: 7, length: 0))

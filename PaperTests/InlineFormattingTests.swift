@@ -120,45 +120,49 @@ struct InlineFormattingTests {
 
     @Test @MainActor
     func typingAnArrowReplacesItInTheSourceWithUndo() throws {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         let textView = PaperTextView()
-        textView.frame = window.contentView!.bounds
-        textView.allowsUndo = true
-        window.contentView?.addSubview(textView)
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        let host = TestUndoHost()
+        host.attach(to: textView)
+        // AppKit groups undo per event; the test has no events, so the
+        // keystroke and the substitution are grouped by hand as they would
+        // be across two run-loop passes.
+        let undoManager = host.undoManager
+        undoManager.groupsByEvent = false
         textView.string = "a -"
         textView.setSelectedRange(NSRange(location: 3, length: 0))
+        undoManager.beginUndoGrouping()
         textView.insertText(">", replacementRange: NSRange(location: 3, length: 0))
-        // AppKit closes the keystroke's undo group when the event ends; the
-        // test has no event, so close it by hand before the substitution.
-        let undoManager = try #require(textView.undoManager)
-        if undoManager.groupingLevel > 0 { undoManager.endUndoGrouping() }
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        undoManager.endUndoGrouping()
+        undoManager.beginUndoGrouping()
+        textView.flushPendingSubstitution()
+        undoManager.endUndoGrouping()
         #expect(textView.string == "a →")
         #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
-        textView.undoManager?.undo()
+        undoManager.undo()
         #expect(textView.string == "a ->", "undo restores the typed pair")
+        undoManager.groupsByEvent = true
 
         textView.string = "a --"
         textView.setSelectedRange(NSRange(location: 4, length: 0))
         textView.insertText(">", replacementRange: NSRange(location: 4, length: 0))
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        textView.flushPendingSubstitution()
         #expect(textView.string == "a -->", "a longer dash run is not an arrow")
 
         textView.string = "`x -`"
         textView.syntaxStyler.apply(to: textView)
         textView.setSelectedRange(NSRange(location: 4, length: 0))
         textView.insertText(">", replacementRange: NSRange(location: 4, length: 0))
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        textView.flushPendingSubstitution()
         #expect(textView.string == "`x ->`", "inside a code span nothing changes")
     }
 
     @Test @MainActor
     func textViewAppliesWithUndo() throws {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300), styleMask: [.titled], backing: .buffered, defer: false)
         let textView = PaperTextView()
-        textView.frame = window.contentView!.bounds
-        textView.allowsUndo = true
-        window.contentView?.addSubview(textView)
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        let host = TestUndoHost()
+        host.attach(to: textView)
         textView.string = "plain words"
         textView.setSelectedRange(NSRange(location: 6, length: 5))
         textView.toggleBold(nil as Any?)
