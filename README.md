@@ -1,17 +1,15 @@
 # Paper
 
-A quiet, native macOS editor for ordinary Markdown files.
+> A quiet, native macOS editor for ordinary Markdown files.
 
 ![A Markdown document set as a clean serif page in Paper](docs/assets/paper.png)
 
-Paper is one surface: a warm, centered page set in editorial serif type.
-No library, no database, no sidebar, no toolbar, no account, no proprietary
-format. The file on disk stays plain Markdown, byte for byte.
+Paper is one surface: a warm, centered page set in editorial serif type. No library, no database, no sidebar, no toolbar, no account, no proprietary format. The file on disk stays plain Markdown, byte for byte.
+
 
 ## The idea
 
-Markdown's markers are for writing, not for reading. Paper leaves them in
-the source and takes them out of the picture everywhere else:
+Markdown's markers are for writing, not for reading. Paper leaves them in the source and takes them out of the picture everywhere else:
 
 - `#`, `>`, `**`, `*`, `` ` ``, `<u>`, and `[…](…)` are concealed on every
   paragraph the caret is not on. Move onto a line and its full source is
@@ -23,9 +21,9 @@ the source and takes them out of the picture everywhere else:
 
 ## What the page does
 
-- **Typography** — a centered measure with real margins; headings stepped
+- *Typography* — a centered measure with real margins; headings stepped
   from the body size; block quotes inset and italic behind a hairline rule.
-- **Lists** — Apple Notes' two kinds: `-` draws as a dashed list (–), `*`
+- *Lists* — Apple Notes' two kinds: `-` draws as a dashed list (–), `*`
   as a bulleted one (•). Items hang under their text, hard-wrapped lines
   align, and ordered markers may carry a letter (`1a)`).
 - **Links** — underlined text with the syntax concealed. ⌘-click opens the
@@ -44,11 +42,10 @@ the source and takes them out of the picture everywhere else:
 | ⌘-click | open a link |
 | ⌘, | settings |
 
+
 ## Settings are a text file
 
-Everything lives in `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured),
-written as a commented template on first launch and applied live to open
-windows whenever it is saved:
+Everything lives in `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
 
 ```ini
 font.family = Test Tiempos Text
