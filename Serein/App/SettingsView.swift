@@ -129,6 +129,14 @@ struct SettingsView: View {
             }
 
 
+            Section("Window") {
+                numberRow("Width", binding(\.windowWidth), in: Configuration.windowWidthRange, unit: "pt")
+                numberRow("Height", binding(\.windowHeight), in: Configuration.windowHeightRange, unit: "pt")
+                Text("Applies to new windows; each window keeps its own size afterwards.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 HStack {
                     Button("Reset to Defaults") { store.write(Configuration()) }

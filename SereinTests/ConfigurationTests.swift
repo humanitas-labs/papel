@@ -102,6 +102,8 @@ struct ThemeTests {
         #expect(config.inkDark == nil, "invalid hex inherits the theme")
         #expect(config.palette.ink == "#102030")
         #expect(Configuration.parse("letter.spacing = -0.4").letterSpacing == -0.4)
+        #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowWidth == 1200)
+        #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowHeight == 520, "clamped")
         #expect(Configuration.parse("letter.spacing = 9").letterSpacing == 3, "clamped")
         #expect(config.palette.canvas == Theme.sepia.palette.canvas)
         #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)

@@ -27,6 +27,10 @@ struct Configuration: Equatable, Sendable {
     var letterSpacing: Double = 0
     var headingWeight: HeadingWeight = .medium
     var theme: Theme = .paper
+    /// Size of a newly opened window in points; macOS restores each window's
+    /// last size after that.
+    var windowWidth: Double = 1120
+    var windowHeight: Double = 800
     /// Hex overrides for the theme's colours; nil inherits the theme.
     var canvas: String?
     var ink: String?
@@ -48,6 +52,8 @@ struct Configuration: Equatable, Sendable {
     static let paragraphSpacingRange: ClosedRange<Double> = 0...60
     static let measureRange: ClosedRange<Double> = 320...1200
     static let letterSpacingRange: ClosedRange<Double> = -1...3
+    static let windowWidthRange: ClosedRange<Double> = 640...4000
+    static let windowHeightRange: ClosedRange<Double> = 520...3000
 
     static let didChangeNotification = Notification.Name("serein.configuration.didChange")
 
@@ -82,6 +88,11 @@ struct Configuration: Equatable, Sendable {
     # Theme: paper, sepia, slate, mono, or spatial-dark (dark in both
     # appearances). The others have light and dark colours.
     theme = paper
+
+    # Size of new windows in points. Each window remembers its own size
+    # after that.
+    window.width = 1120
+    window.height = 800
 
     # Colour overrides as #RRGGBB. Leave a value empty to use the theme's.
     color.canvas =
@@ -128,6 +139,10 @@ struct Configuration: Equatable, Sendable {
             letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
         case "heading.weight":
             headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
+        case "window.width":
+            windowWidth = Self.number(value, in: Self.windowWidthRange) ?? windowWidth
+        case "window.height":
+            windowHeight = Self.number(value, in: Self.windowHeightRange) ?? windowHeight
         case "theme":
             theme = Theme(rawValue: value.lowercased()) ?? theme
         case "color.canvas":
@@ -154,6 +169,8 @@ struct Configuration: Equatable, Sendable {
             ("letter.spacing", Self.format(letterSpacing)),
             ("heading.weight", headingWeight.rawValue),
             ("theme", theme.rawValue),
+            ("window.width", Self.format(windowWidth)),
+            ("window.height", Self.format(windowHeight)),
             ("color.canvas", canvas ?? ""),
             ("color.ink", ink ?? ""),
             ("color.canvas.dark", canvasDark ?? ""),

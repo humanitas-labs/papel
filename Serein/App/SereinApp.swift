@@ -2,6 +2,9 @@ import SwiftUI
 
 @main
 struct SereinApp: App {
+    /// Observed so scene-level values such as the default window size
+    /// follow the configuration.
+    @ObservedObject private var store = ConfigurationStore.shared
     init() {
         ConfigurationStore.shared.start()
     }
@@ -11,7 +14,7 @@ struct SereinApp: App {
             DocumentView(document: configuration.$document, fileURL: configuration.fileURL)
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 1120, height: 800)
+        .defaultSize(width: store.current.windowWidth, height: store.current.windowHeight)
         .commands {
             // Replacing the toolbar group empties SwiftUI's View menu, which
             // also drops AppKit's Enter Full Screen item and its ⌃⌘F shortcut.
