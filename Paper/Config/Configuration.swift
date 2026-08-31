@@ -89,9 +89,8 @@ struct Configuration: Equatable, Sendable {
     # face is used.
     heading.weight = medium
 
-    # Theme: paper, sepia, slate, mono, spatial-dark, or apple-dark (the last
-    # two are dark in both appearances; the others have light and dark
-    # colours).
+    # Theme: paper, sepia, slate, mono, spatial, or apple. Each has light
+    # and dark colours; the colour overrides below tune any of them.
     theme = paper
 
     # Size of new windows in points. Each window remembers its own size
@@ -149,7 +148,7 @@ struct Configuration: Equatable, Sendable {
         case "window.height":
             windowHeight = Self.number(value, in: Self.windowHeightRange) ?? windowHeight
         case "theme":
-            theme = Theme(rawValue: value.lowercased()) ?? theme
+            theme = Theme(configName: value.lowercased()) ?? theme
         case "color.canvas":
             canvas = HexColor.normalized(value)
         case "color.ink":

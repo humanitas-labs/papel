@@ -12,10 +12,17 @@ struct Palette: Equatable, Sendable {
 
 /// Built-in themes, chosen by the `theme` configuration key.
 enum Theme: String, CaseIterable, Sendable {
-    case paper, sepia, slate, mono
-    /// Dark in both appearances.
-    case spatialDark = "spatial-dark"
-    case appleDark = "apple-dark"
+    case paper, sepia, slate, mono, spatial, apple
+
+    /// The stored name, accepting the pre-0.2 `spatial-dark` and
+    /// `apple-dark` spellings from older config files.
+    init?(configName: String) {
+        switch configName {
+        case "spatial-dark": self = .spatial
+        case "apple-dark": self = .apple
+        default: self.init(rawValue: configName)
+        }
+    }
 
     var palette: Palette {
         switch self {
@@ -23,8 +30,8 @@ enum Theme: String, CaseIterable, Sendable {
         case .sepia: Palette(canvas: "#F4ECD8", ink: "#3B2F1E", canvasDark: "#2A241B", inkDark: "#E6D9BF")
         case .slate: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5")
         case .mono: Palette(canvas: "#FFFFFF", ink: "#000000", canvasDark: "#000000", inkDark: "#EDEDED")
-        case .spatialDark: Palette(canvas: "#191B1D", ink: "#F4F9FA", canvasDark: "#191B1D", inkDark: "#F4F9FA")
-        case .appleDark: Palette(canvas: "#212323", ink: "#DDDDDD", canvasDark: "#212323", inkDark: "#DDDDDD")
+        case .spatial: Palette(canvas: "#FFFFFF", ink: "#161819", canvasDark: "#191B1D", inkDark: "#F4F9FA")
+        case .apple: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD")
         }
     }
 
@@ -34,8 +41,8 @@ enum Theme: String, CaseIterable, Sendable {
         case .sepia: "Sepia"
         case .slate: "Slate"
         case .mono: "Mono"
-        case .spatialDark: "Spatial Dark"
-        case .appleDark: "Apple Dark"
+        case .spatial: "Spatial"
+        case .apple: "Apple"
         }
     }
 }

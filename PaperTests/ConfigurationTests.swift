@@ -108,9 +108,14 @@ struct ThemeTests {
         #expect(config.palette.canvas == Theme.sepia.palette.canvas)
         #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)
         #expect(Configuration.parse("theme = nope").theme == .paper)
-        #expect(Configuration.parse("theme = Spatial-Dark").theme == .spatialDark)
-        #expect(Configuration.parse("theme = apple-dark").theme == .appleDark)
-        #expect(Theme.spatialDark.palette.canvas == Theme.spatialDark.palette.canvasDark)
+        #expect(Configuration.parse("theme = spatial").theme == .spatial)
+        #expect(Configuration.parse("theme = Apple").theme == .apple)
+        // Pre-0.2 configs spell the dark pair with a suffix; they resolve
+        // to the renamed themes.
+        #expect(Configuration.parse("theme = Spatial-Dark").theme == .spatial)
+        #expect(Configuration.parse("theme = apple-dark").theme == .apple)
+        #expect(Theme.spatial.palette.canvas != Theme.spatial.palette.canvasDark,
+                "spatial now has a light appearance")
         #expect(Configuration().palette == Theme.paper.palette)
     }
 
