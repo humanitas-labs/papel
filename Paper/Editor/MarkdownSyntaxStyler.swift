@@ -24,7 +24,7 @@ final class MarkdownSyntaxStyler {
         pattern: #"`([^`\n]+)`"#
     )
     private static let listMarkerPattern = try! NSRegularExpression(
-        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[.)])[\t ]+(?=\S)"#
+        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S)"#
     )
 
     /// Unordered markers render as Apple Notes' two list kinds: `-` as a

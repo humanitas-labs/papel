@@ -27,6 +27,8 @@
   text with no spacing between. Leading spaces or tabs on such a line (source
   that indents the wrap under the marker) are concealed off the active
   paragraph, so the continuation starts exactly where the item's text does.
+- Treat ordered markers with a letter suffix (`1a)`, `1b.`) as list items, with
+  the same indent, gap, and hanging wrap as `1.`.
 - Render unordered list markers as Apple Notes' two list kinds off the
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters

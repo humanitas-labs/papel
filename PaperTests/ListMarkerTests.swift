@@ -171,6 +171,22 @@ struct ListMarkerTests {
     }
 
     @Test
+    func orderedMarkersMayCarryALetterSuffix() throws {
+        let text = "1a) Commercial society.\n1b. Revolutions.\n2A) Upper.\n\na) bare letter\n"
+        let (textView, _) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        func style(_ index: Int) -> NSParagraphStyle? {
+            storage.attribute(.paragraphStyle, at: index, effectiveRange: nil) as? NSParagraphStyle
+        }
+        #expect(style(4)?.firstLineHeadIndent == Appearance.listIndent, "1a)")
+        #expect(storage.attribute(.kern, at: 2, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing + Appearance.listMarkerGap, "gap after `)`")
+        #expect(style(28)?.firstLineHeadIndent == Appearance.listIndent, "1b.")
+        #expect(style(45)?.firstLineHeadIndent == Appearance.listIndent, "2A)")
+        #expect(style(56)?.firstLineHeadIndent == 0, "a bare letter is prose, not a marker")
+        #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) == nil, "ordered markers keep their glyphs")
+    }
+
+    @Test
     func markersNeedContentAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)
