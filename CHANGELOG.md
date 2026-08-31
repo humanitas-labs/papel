@@ -27,6 +27,10 @@
   text with no spacing between. Leading spaces or tabs on such a line (source
   that indents the wrap under the marker) are concealed off the active
   paragraph, so the continuation starts exactly where the item's text does.
+- Draw `->` as `→` off the active paragraph (the `-` concealed, the `>`
+  drawn with the arrow glyph); code spans and `-->` are left alone. The
+  glyph-substitution attribute is renamed from `listMarker` to
+  `glyphSubstitute` now that it serves more than list markers.
 - Style Markdown links: `[text](destination)` shows the text underlined
   with `[` and `](destination)` concealed off the active paragraph. ⌘-click
   opens the destination (absolute URLs as they are, paths relative to the

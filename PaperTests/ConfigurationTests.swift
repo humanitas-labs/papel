@@ -140,6 +140,7 @@ struct ConfigurationStoreTests {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         #expect(try String(contentsOf: url, encoding: .utf8) == Configuration.template)
         #expect(store.current == Configuration())
@@ -152,6 +153,7 @@ struct ConfigurationStoreTests {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try "font.size = 21".write(to: url, atomically: true, encoding: .utf8)
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         #expect(store.current.fontSize == 21)
         #expect(try String(contentsOf: url, encoding: .utf8) == "font.size = 21")
@@ -162,6 +164,7 @@ struct ConfigurationStoreTests {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         #expect(store.current.fontSize == 14)
 
@@ -187,6 +190,7 @@ struct ConfigurationStoreTests {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         var config = Configuration()
         config.lineHeight = 1.6
@@ -203,6 +207,7 @@ struct ConfigurationStoreTests {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         #expect(store.presets.isEmpty)
         #expect(store.matchingPreset == nil)
@@ -263,6 +268,7 @@ struct ConfigurationStoreTests {
         let url = temporaryFile()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
         defer { store.deletePreset(named: "Work") }
 

@@ -27,6 +27,10 @@ final class MarkdownSyntaxStyler {
     private static let linkPattern = try! NSRegularExpression(
         pattern: #"(?<!!)\[([^\]\n]+)\]\(([^)\s]+)\)"#
     )
+    /// `->` in prose draws as a single arrow off the active paragraph.
+    private static let arrowPattern = try! NSRegularExpression(
+        pattern: #"(?<![-<])->(?!>)"#
+    )
     /// Markdown has no underline syntax; `<u>…</u>` is the portable form.
     private static let underlinePattern = try! NSRegularExpression(
         pattern: #"<u>([^<\n]+)</u>"#
@@ -76,6 +80,7 @@ final class MarkdownSyntaxStyler {
         applyInlineCode(to: storage, source: source, range: fullRange)
         applyUnderline(to: storage, source: source, range: fullRange)
         applyLinks(to: storage, source: source, range: fullRange)
+        applyArrows(to: storage, source: source, range: fullRange)
         applyListMarkers(to: storage, source: source, range: fullRange)
         storage.endEditing()
 
@@ -173,7 +178,7 @@ final class MarkdownSyntaxStyler {
 
             var rendered = Array(prefix)
             if let symbol = Self.renderedListMarker(for: marker) {
-                storage.addAttribute(.listMarker, value: symbol, range: markerRange)
+                storage.addAttribute(.glyphSubstitute, value: symbol, range: markerRange)
                 storage.addAttribute(.font, value: Appearance.markerFont(for: symbol), range: markerRange)
                 // The prefix is ASCII, so UTF-16 and Character offsets agree.
                 rendered[markerRange.location - match.range.location] = Character(symbol)
@@ -308,6 +313,24 @@ final class MarkdownSyntaxStyler {
             storage.addAttribute(.linkDestination, value: destination, range: textRange)
             // `[` and `](destination)` hide off the active paragraph.
             dimDelimiters(around: textRange, in: match.range, storage: storage)
+        }
+    }
+
+    /// `->` renders as `→`: the `-` is concealed and the `>` is drawn with
+    /// the arrow glyph, so the pair takes one glyph's width off the active
+    /// paragraph and reads as typed on it. Code spans keep their source.
+    private func applyArrows(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.arrowPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match else { return }
+            if storage.attribute(.font, at: match.range.location, effectiveRange: nil) as? NSFont == Appearance.codeFont() { return }
+            storage.addAttribute(.concealable, value: true, range: NSRange(location: match.range.location, length: 1))
+            let arrow = NSRange(location: match.range.location + 1, length: 1)
+            storage.addAttribute(.glyphSubstitute, value: "→", range: arrow)
+            storage.addAttribute(.font, value: Appearance.markerFont(for: "→"), range: arrow)
         }
     }
 

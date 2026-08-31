@@ -60,6 +60,12 @@ final class ConfigurationStore: ObservableObject {
 
     private var activePresetKey: String { "paper.activePreset:\(fileURL.path)" }
 
+    /// Removes the remembered active preset for a config file. Tests use it
+    /// so temporary stores leave nothing behind in the user's defaults.
+    static func forgetActivePreset(for fileURL: URL) {
+        UserDefaults.standard.removeObject(forKey: "paper.activePreset:\(fileURL.path)")
+    }
+
     private func setActivePreset(_ name: String?) {
         activePreset = name
         UserDefaults.standard.set(name, forKey: activePresetKey)

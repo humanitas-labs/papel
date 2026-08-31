@@ -35,10 +35,10 @@ struct ListMarkerTests {
         let bullet = try #require(PaperLayoutManager.glyph(for: "•", in: bulletFont))
         let hyphen = try #require(PaperLayoutManager.glyph(for: "-", in: dashFont))
 
-        #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) as? String == "–")
-        #expect(storage.attribute(.listMarker, at: 7, effectiveRange: nil) as? String == "•")
-        #expect(storage.attribute(.listMarker, at: 14, effectiveRange: nil) as? String == "•")
-        #expect(storage.attribute(.listMarker, at: 21, effectiveRange: nil) == nil, "ordered markers are untouched")
+        #expect(storage.attribute(.glyphSubstitute, at: 0, effectiveRange: nil) as? String == "–")
+        #expect(storage.attribute(.glyphSubstitute, at: 7, effectiveRange: nil) as? String == "•")
+        #expect(storage.attribute(.glyphSubstitute, at: 14, effectiveRange: nil) as? String == "•")
+        #expect(storage.attribute(.glyphSubstitute, at: 21, effectiveRange: nil) == nil, "ordered markers are untouched")
         #expect(glyph(layoutManager, characterAt: 0) == dash)
         #expect(glyph(layoutManager, characterAt: 7) == bullet)
         #expect(glyph(layoutManager, characterAt: 14) == bullet)
@@ -67,7 +67,7 @@ struct ListMarkerTests {
         #expect(plain?.headIndent == 0)
         #expect(quoted?.firstLineHeadIndent == Appearance.quoteIndent)
         #expect(quoted?.headIndent == Appearance.quoteIndent)
-        #expect(storage.attribute(.listMarker, at: 17, effectiveRange: nil) as? String == "–", "a list inside a quote still gets its marker")
+        #expect(storage.attribute(.glyphSubstitute, at: 17, effectiveRange: nil) as? String == "–", "a list inside a quote still gets its marker")
     }
 
     @Test
@@ -92,7 +92,7 @@ struct ListMarkerTests {
         #expect(third.paragraphSpacing == Appearance.paragraphSpacing, "last continuation keeps the gap")
         #expect(plain.headIndent == 0)
         #expect(next.paragraphSpacing == Appearance.paragraphSpacing, "an item followed by another item has no continuation")
-        #expect(storage.attribute(.listMarker, at: 24, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.glyphSubstitute, at: 24, effectiveRange: nil) == nil)
         #expect(textView.string == text)
     }
 
@@ -183,16 +183,34 @@ struct ListMarkerTests {
         #expect(style(28)?.firstLineHeadIndent == Appearance.listIndent, "1b.")
         #expect(style(45)?.firstLineHeadIndent == Appearance.listIndent, "2A)")
         #expect(style(56)?.firstLineHeadIndent == 0, "a bare letter is prose, not a marker")
-        #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) == nil, "ordered markers keep their glyphs")
+        #expect(storage.attribute(.glyphSubstitute, at: 0, effectiveRange: nil) == nil, "ordered markers keep their glyphs")
+    }
+
+    @Test
+    func arrowsDrawAsOneGlyphOffTheActiveParagraph() throws {
+        let text = "a -> b, `x -> y`, c --> d\n"
+        let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let storage = try #require(textView.textStorage)
+        let font = try #require(storage.attribute(.font, at: 3, effectiveRange: nil) as? NSFont)
+        let arrow = try #require(PaperLayoutManager.glyph(for: "→", in: font))
+        #expect(storage.attribute(.concealable, at: 2, effectiveRange: nil) as? Bool == true, "`-` hides")
+        #expect(storage.attribute(.glyphSubstitute, at: 3, effectiveRange: nil) as? String == "→")
+        #expect(glyph(layoutManager, characterAt: 3) == arrow)
+        #expect(storage.attribute(.glyphSubstitute, at: 12, effectiveRange: nil) == nil, "code spans keep `->`")
+        #expect(storage.attribute(.glyphSubstitute, at: 22, effectiveRange: nil) == nil, "`-->` is not an arrow")
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(glyph(layoutManager, characterAt: 3) != arrow, "the active paragraph shows the source")
+        #expect(textView.string == text)
     }
 
     @Test
     func markersNeedContentAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)
-        #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) == nil, "bare dash")
-        #expect(storage.attribute(.listMarker, at: 2, effectiveRange: nil) == nil, "dash with only trailing space")
-        #expect(storage.attribute(.listMarker, at: 7, effectiveRange: nil) == nil, "mid-line dash")
-        #expect(storage.attribute(.listMarker, at: 13, effectiveRange: nil) as? String == "–", "nested item")
+        #expect(storage.attribute(.glyphSubstitute, at: 0, effectiveRange: nil) == nil, "bare dash")
+        #expect(storage.attribute(.glyphSubstitute, at: 2, effectiveRange: nil) == nil, "dash with only trailing space")
+        #expect(storage.attribute(.glyphSubstitute, at: 7, effectiveRange: nil) == nil, "mid-line dash")
+        #expect(storage.attribute(.glyphSubstitute, at: 13, effectiveRange: nil) as? String == "–", "nested item")
     }
 }

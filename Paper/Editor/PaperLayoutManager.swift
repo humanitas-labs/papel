@@ -9,10 +9,11 @@ extension NSAttributedString.Key {
     /// storage and in the saved file.
     static let concealable = NSAttributedString.Key("paper.concealable")
 
-    /// Marks an unordered list marker character. The value is the single
-    /// character to draw in its place off the active paragraph (`–` for `-`,
-    /// `•` for `*` and `+`); the source character is untouched.
-    static let listMarker = NSAttributedString.Key("paper.listMarker")
+    /// Marks a character drawn as another glyph off the active paragraph:
+    /// the value is the single character to draw in its place (`–` for a `-`
+    /// list marker, `•` for `*` and `+`, `→` for the `>` of `->`). The
+    /// source character is untouched.
+    static let glyphSubstitute = NSAttributedString.Key("paper.glyphSubstitute")
     /// The destination of a Markdown link, as its source string, on the
     /// link's text. Opened with ⌘-click; a plain click places the caret.
     static let linkDestination = NSAttributedString.Key("paper.linkDestination")
@@ -80,7 +81,7 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         guard let storage = textStorage else { return false }
         var found = false
         storage.enumerateAttributes(in: range) { attributes, _, stop in
-            if attributes[.concealable] != nil || attributes[.listMarker] != nil {
+            if attributes[.concealable] != nil || attributes[.glyphSubstitute] != nil {
                 found = true
                 stop.pointee = true
             }
@@ -125,7 +126,7 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
                     replacedProperties = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
                 }
                 replacedProperties?[offset] = .null
-            } else if let rendered = run.listMarker, let glyph = Self.glyph(for: rendered, in: font) {
+            } else if let rendered = run.substitute, let glyph = Self.glyph(for: rendered, in: font) {
                 if replacedGlyphs == nil {
                     replacedGlyphs = Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
                 }
@@ -153,8 +154,8 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     /// The rendering marks on the attribute run at `index`.
     private struct Marks {
         var concealable = false
-        var listMarker: Character?
-        var isEmpty: Bool { !concealable && listMarker == nil }
+        var substitute: Character?
+        var isEmpty: Bool { !concealable && substitute == nil }
         func contains(_ key: NSAttributedString.Key) -> Bool { key == .concealable && concealable }
     }
 
@@ -162,7 +163,7 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         let attributes = storage.attributes(at: index, effectiveRange: effectiveRange)
         var marks = Marks()
         marks.concealable = attributes[.concealable] != nil
-        marks.listMarker = (attributes[.listMarker] as? String)?.first
+        marks.substitute = (attributes[.glyphSubstitute] as? String)?.first
         return marks
     }
 
