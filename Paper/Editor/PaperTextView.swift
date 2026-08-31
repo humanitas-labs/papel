@@ -153,9 +153,11 @@ final class PaperTextView: NSTextView {
     // MARK: - List continuation
 
     /// Return inside a list item starts the next item; Return on an empty
-    /// item removes its marker. Everything else is an ordinary newline.
+    /// item removes its marker; shift-Return hard-wraps without a marker.
+    /// Everything else is an ordinary newline.
     override func insertNewline(_ sender: Any?) {
         guard isEditable, !hasMarkedText(),
+              NSApp.currentEvent?.modifierFlags.contains(.shift) != true,
               let edit = ListContinuation.edit(in: string as NSString, selection: selectedRange())
         else {
             super.insertNewline(sender)
