@@ -268,7 +268,19 @@ final class MarkdownSyntaxStyler {
                 }
                 guard fence.length > 0 else { continue }
                 storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: fence)
-                storage.addAttribute(.concealable, value: true, range: fence)
+                // The first fence character draws as an invisible space
+                // instead of concealing: a fragment that starts with `.null`
+                // glyphs attaches them to the previous fragment, whose
+                // paragraph spacing then reads from the fence's spacing-0
+                // style — the line above the block would shift on reveal. A
+                // real glyph keeps the fence row its own fragment.
+                storage.addAttribute(.glyphSubstitute, value: " ", range: NSRange(location: fence.location, length: 1))
+                if fence.length > 1 {
+                    storage.addAttribute(
+                        .concealable, value: true,
+                        range: NSRange(location: fence.location + 1, length: fence.length - 1)
+                    )
+                }
             }
         }
     }

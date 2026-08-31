@@ -27,6 +27,8 @@ Markdown's markers are for writing, not for reading. Paper leaves them in the so
   align, and ordered markers may carry a letter (`1a)`). Return continues
   the list — markers repeat, numbers count up — and Return on an empty
   item ends it.
+- *Code* — fenced blocks set in mono on a quiet band, their content
+  literal and their fences tucked away; inline `code` in mono too.
 - *Links* — underlined text with the syntax concealed. ⌘-click opens the
   destination; relative paths resolve against the document.
 - *Typed substitutions* — `->` becomes → as you type, like smart dashes;

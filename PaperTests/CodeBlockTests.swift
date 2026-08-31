@@ -37,10 +37,13 @@ struct CodeBlockTests {
     func fenceLinesConcealAndDim() throws {
         let textView = styledView("```swift\ncode\n```")
         let storage = try #require(textView.textStorage)
-        #expect(storage.attribute(.concealable, at: 0, effectiveRange: nil) != nil, "opening fence")
+        #expect(storage.attribute(.glyphSubstitute, at: 0, effectiveRange: nil) as? String == " ",
+                "the fence's first character stays a real, invisible glyph")
+        #expect(storage.attribute(.concealable, at: 1, effectiveRange: nil) != nil, "opening fence")
         #expect(storage.attribute(.concealable, at: 7, effectiveRange: nil) != nil, "info string hides with it")
         let closing = (textView.string as NSString).range(of: "```", options: .backwards)
-        #expect(storage.attribute(.concealable, at: closing.location, effectiveRange: nil) != nil, "closing fence")
+        #expect(storage.attribute(.glyphSubstitute, at: closing.location, effectiveRange: nil) as? String == " ")
+        #expect(storage.attribute(.concealable, at: closing.location + 1, effectiveRange: nil) != nil, "closing fence")
     }
 
     @Test
@@ -65,6 +68,36 @@ struct CodeBlockTests {
         let storage = try #require(textView.textStorage)
         let code = (textView.string as NSString).range(of: "code")
         #expect(storage.attribute(.codeBlock, at: code.location, effectiveRange: nil) != nil)
+    }
+
+    @Test
+    func concealingFencesDoesNotChangeTheHeight() throws {
+        let text = "prose before\n\n```ini\nkey = value\nmore = 1\n```\n\nprose after"
+        let textView = styledView(text)
+        let layoutManager = try #require(textView.layoutManager as? PaperLayoutManager)
+        let container = try #require(textView.textContainer)
+
+        textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
+        layoutManager.ensureLayout(for: container)
+        let concealed = layoutManager.usedRect(for: container).height
+        var concealedFragments: [NSRect] = []
+        layoutManager.enumerateLineFragments(
+            forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs)
+        ) { rect, _, _, _, _ in concealedFragments.append(rect) }
+
+        textView.setSelectedRange(NSRange(location: 0, length: text.utf16.count))
+        layoutManager.ensureLayout(for: container)
+        let revealed = layoutManager.usedRect(for: container).height
+        var revealedFragments: [NSRect] = []
+        layoutManager.enumerateLineFragments(
+            forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs)
+        ) { rect, _, _, _, _ in revealedFragments.append(rect) }
+
+        #expect(abs(concealed - revealed) < 0.5, "concealed \(concealed) vs revealed \(revealed)")
+        #expect(concealedFragments.count == revealedFragments.count)
+        for (hidden, shown) in zip(concealedFragments, revealedFragments) {
+            #expect(abs(hidden.minY - shown.minY) < 0.5, "no line shifts on reveal")
+        }
     }
 
     @Test

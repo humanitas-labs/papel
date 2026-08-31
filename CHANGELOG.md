@@ -2,6 +2,12 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Render fenced code blocks: backtick or tilde fences set their lines in
+  the code font on a quiet rounded band (the theme's ink at 5.5 % over the
+  canvas). Content is literal — emphasis, lists, links, and arrows inside
+  a fence stay as typed — and the fence lines conceal off the active
+  paragraph, reading as the band's padding. An unterminated fence stays
+  prose. No syntax highlighting yet.
 - Continue lists on Return: pressing Return in a list item's text starts
   the next item with the same indent, block-quote prefix, and marker gap —
   unordered markers repeat, numbers count up, and a letter suffix advances

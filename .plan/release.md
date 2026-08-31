@@ -11,9 +11,9 @@ Do not announce (Twitter or otherwise) until these three ship:
 2. **Inline images** —
    [#6](https://github.com/humanitas-labs/paper/issues/6). `![alt](src)`
    drawn in the flow, syntax concealed, source untouched.
-3. **Fenced code blocks** —
-   [#5](https://github.com/humanitas-labs/paper/issues/5). Mono font and a
-   quiet background; fences concealed; no highlighting required.
+3. ~~**Fenced code blocks**~~ — shipped `1e6306e`, #5 closed. Mono font on
+   a quiet theme-derived band; fences concealed; content literal; no
+   highlighting yet.
 
 Nice-to-have but not gating: pipe tables
 ([#7](https://github.com/humanitas-labs/paper/issues/7)), formatting-era

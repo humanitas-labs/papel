@@ -214,12 +214,21 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             guard !measured.contains(range) else { return }
             measured.append(range)
             let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            var union = NSRect.null
-            enumerateLineFragments(forGlyphRange: glyphs) { fragment, _, _, _, _ in
-                union = union.union(fragment)
+            var top = CGFloat.greatestFiniteMagnitude
+            var bottom = -CGFloat.greatestFiniteMagnitude
+            enumerateLineFragments(forGlyphRange: glyphs) { fragment, used, _, fragmentGlyphs, _ in
+                // A fragment that merely carries attached zero-width glyphs
+                // from the block starts outside it; counting it would grow
+                // the band over the line above.
+                let first = self.characterIndexForGlyph(at: fragmentGlyphs.location)
+                guard NSLocationInRange(first, range) else { return }
+                top = min(top, fragment.minY)
+                // The used rect's bottom excludes the closing fence's
+                // paragraph spacing, so the band hugs its last row.
+                bottom = max(bottom, used.maxY)
             }
-            guard !union.isNull else { return }
-            rects.append(union)
+            guard bottom > top else { return }
+            rects.append(NSRect(x: 0, y: top, width: 0, height: bottom - top))
         }
         return rects
     }
