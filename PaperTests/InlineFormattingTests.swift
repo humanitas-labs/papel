@@ -88,6 +88,7 @@ struct InlineFormattingTests {
         let storage = try #require(textView.textStorage)
         #expect(storage.attribute(.linkDestination, at: 6, effectiveRange: nil) as? String == "https://example.com/a")
         #expect(storage.attribute(.underlineStyle, at: 6, effectiveRange: nil) as? Int == NSUnderlineStyle.single.rawValue)
+        #expect(storage.attribute(.cursor, at: 6, effectiveRange: nil) as? NSCursor == .pointingHand)
         #expect(storage.attribute(.concealable, at: 4, effectiveRange: nil) as? Bool == true, "[")
         var range = NSRange()
         #expect(storage.attribute(.concealable, at: 13, longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length)) as? Bool == true, "](…)")

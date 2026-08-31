@@ -396,6 +396,7 @@ final class MarkdownSyntaxStyler {
             let destination = (source as NSString).substring(with: match.range(at: 2))
             storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
             storage.addAttribute(.linkDestination, value: destination, range: textRange)
+            storage.addAttribute(.cursor, value: NSCursor.pointingHand, range: textRange)
             // `[` and `](destination)` hide off the active paragraph.
             dimDelimiters(around: textRange, in: match.range, storage: storage)
         }
