@@ -138,6 +138,21 @@ final class ConfigurationStore: ObservableObject {
         return true
     }
 
+    /// Renames a preset's file, keeping it active if it was. A new name that
+    /// is invalid or already taken leaves everything as it is.
+    @discardableResult
+    func renamePreset(named name: String, to newName: String) -> Bool {
+        let trimmed = newName.trimmingCharacters(in: .whitespaces)
+        guard Self.isValidPresetName(trimmed), trimmed != name,
+              !presets.contains(trimmed),
+              (try? FileManager.default.moveItem(
+                at: presetURL(named: name), to: presetURL(named: trimmed)
+              )) != nil else { return false }
+        if activePreset == name { setActivePreset(trimmed) }
+        loadPresets()
+        return true
+    }
+
     func deletePreset(named name: String) {
         try? FileManager.default.removeItem(at: presetURL(named: name))
         if activePreset == name { setActivePreset(nil) }

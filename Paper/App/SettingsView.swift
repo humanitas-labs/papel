@@ -7,6 +7,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject private var store = ConfigurationStore.shared
     @State private var isNamingPreset = false
+    @State private var isRenamingPreset = false
     @State private var presetName = ""
 
     private let families = NSFontManager.shared.availableFontFamilies
@@ -58,6 +59,18 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                HStack {
+                    Button("Reset to Defaults") { store.write(Configuration()) }
+                    Spacer()
+                    Button("Open Config File") { NSWorkspace.shared.open(store.fileURL) }
+                }
+                Text(store.fileURL.path(percentEncoded: false))
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+
             Section("Presets") {
                 Picker("Preset", selection: presetSelection) {
                     Text("None").tag("")
@@ -69,6 +82,11 @@ struct SettingsView: View {
                         isNamingPreset = true
                     }
                     Spacer()
+                    Button("Rename…") {
+                        presetName = store.activePreset ?? ""
+                        isRenamingPreset = true
+                    }
+                    .disabled(store.activePreset == nil)
                     Button("Delete", role: .destructive) {
                         if let name = store.activePreset { store.deletePreset(named: name) }
                     }
@@ -126,17 +144,6 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section {
-                HStack {
-                    Button("Reset to Defaults") { store.write(Configuration()) }
-                    Spacer()
-                    Button("Open Config File") { NSWorkspace.shared.open(store.fileURL) }
-                }
-                Text(store.fileURL.path(percentEncoded: false))
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-            }
         }
         .formStyle(.grouped)
         .frame(width: 460)
@@ -148,6 +155,16 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Saves the current settings under this name and makes it the active preset. An existing name is replaced.")
+        }
+        .alert("Rename Preset", isPresented: $isRenamingPreset) {
+            TextField("Name", text: $presetName)
+            Button("Rename") {
+                if let name = store.activePreset { store.renamePreset(named: name, to: presetName) }
+            }
+            .disabled(!ConfigurationStore.isValidPresetName(presetName))
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Renames the active preset's file. A name already in use is refused.")
         }
     }
 
