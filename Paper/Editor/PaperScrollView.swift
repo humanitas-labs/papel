@@ -7,6 +7,11 @@ import AppKit
 final class PaperScrollView: NSScrollView {
     /// Points per wheel notch (a line-based delta of 1).
     static let notchDistance: CGFloat = 60
+    /// The system accelerates line deltas — a spun wheel reports events of
+    /// 10–20 lines. Multiplying those by the full notch distance launches
+    /// the viewport, so acceleration is compressed and capped per event.
+    static let accelerationExponent: CGFloat = 0.7
+    static let maximumNotchesPerEvent: CGFloat = 4
     /// Duration of one easing run; further input extends the target, not
     /// the clock, so a spun wheel keeps moving without stalling.
     static let duration: TimeInterval = 0.18
@@ -26,9 +31,15 @@ final class PaperScrollView: NSScrollView {
             super.scrollWheel(with: event)
             return
         }
-        // Line-based deltas are in notches; sign already follows the
-        // user's natural-scrolling preference.
-        scroll(by: -event.scrollingDeltaY * Self.notchDistance)
+        // Sign already follows the user's natural-scrolling preference.
+        scroll(by: -Self.distance(forLineDelta: event.scrollingDeltaY))
+    }
+
+    /// One slow notch keeps its full distance; larger, accelerated deltas
+    /// grow sublinearly and never exceed a few notches per event.
+    static func distance(forLineDelta lines: CGFloat) -> CGFloat {
+        let notches = min(pow(abs(lines), accelerationExponent), maximumNotchesPerEvent)
+        return copysign(notches * notchDistance, lines)
     }
 
     /// Animates the viewport by `distance` points, accumulating onto any

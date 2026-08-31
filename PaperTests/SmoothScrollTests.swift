@@ -27,6 +27,20 @@ struct SmoothScrollTests {
     }
 
     @Test
+    func acceleratedDeltasAreCompressedAndCapped() {
+        // A slow notch keeps its full distance.
+        #expect(PaperScrollView.distance(forLineDelta: 1) == PaperScrollView.notchDistance)
+        #expect(PaperScrollView.distance(forLineDelta: -1) == -PaperScrollView.notchDistance)
+        // The system's acceleration grows sublinearly…
+        let four = PaperScrollView.distance(forLineDelta: 4)
+        #expect(four > PaperScrollView.notchDistance && four < 4 * PaperScrollView.notchDistance)
+        // …and a spun wheel's 20-line event cannot launch the viewport.
+        let cap = PaperScrollView.maximumNotchesPerEvent * PaperScrollView.notchDistance
+        #expect(PaperScrollView.distance(forLineDelta: 20) == cap)
+        #expect(PaperScrollView.distance(forLineDelta: -20) == -cap)
+    }
+
+    @Test
     func targetsClampToTheDocument() {
         let scrollView = makeScrollView()
         scrollView.scroll(by: 100_000)
