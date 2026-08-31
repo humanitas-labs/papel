@@ -13,8 +13,9 @@
 - Render unordered list markers as Apple Notes' two list kinds off the
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters
-  are untouched. Items are inset from the margin (1.4 × body size) and
-  wrapped lines hang under the item's text.
+  are untouched. Items are inset from the margin (1.4 × body size), the
+  marker is kerned half a body size clear of the text, and wrapped lines
+  hang under the item's text.
 - Add `letter.spacing` (points of tracking, negative tightens) to the config
   and Settings.
 - Add themes: `theme = paper | sepia | slate | mono | spatial-dark`, each

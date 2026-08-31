@@ -61,7 +61,9 @@ struct ListMarkerTests {
         let expected = ("– " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
 
         #expect(item?.firstLineHeadIndent == Appearance.listIndent)
-        #expect(item?.headIndent == Appearance.listIndent + expected)
+        #expect(item?.headIndent == Appearance.listIndent + Appearance.listMarkerGap + expected)
+        #expect(storage.attribute(.kern, at: 0, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing + Appearance.listMarkerGap)
+        #expect(storage.attribute(.kern, at: 2, effectiveRange: nil) as? CGFloat == Appearance.letterSpacing)
         #expect(plain?.headIndent == 0)
         #expect(quoted?.firstLineHeadIndent == 0)
         #expect(quoted?.headIndent == ("> " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width)

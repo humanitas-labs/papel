@@ -152,6 +152,9 @@ final class MarkdownSyntaxStyler {
             let prefix = (source as NSString).substring(with: match.range)
             let marker = (source as NSString).substring(with: markerRange)
             storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: markerRange)
+            // Kerning on the marker widens the gap to the text without a
+            // source change; the hanging indent accounts for it below.
+            storage.addAttribute(.kern, value: Appearance.letterSpacing + Appearance.listMarkerGap, range: markerRange)
 
             var rendered = Array(prefix)
             if let symbol = Self.renderedListMarker(for: marker) {
@@ -167,7 +170,9 @@ final class MarkdownSyntaxStyler {
             if storage.attribute(.blockQuote, at: match.range.location, effectiveRange: nil) == nil {
                 storage.addAttribute(
                     .paragraphStyle,
-                    value: Appearance.hangingParagraphStyle(under: String(rendered), indent: Appearance.listIndent),
+                    value: Appearance.hangingParagraphStyle(
+                        under: String(rendered), indent: Appearance.listIndent, gap: Appearance.listMarkerGap
+                    ),
                     range: paragraphRange
                 )
             }

@@ -38,6 +38,10 @@ enum Appearance {
     /// body size so the marker sits like an Apple Notes bullet.
     static var listIndent: CGFloat { (bodySize * 1.4).rounded() }
 
+    /// Extra space after a list marker, beyond the source's single space,
+    /// so the text sits clear of the bullet as in Apple Notes.
+    static var listMarkerGap: CGFloat { (bodySize * 0.5).rounded() }
+
     /// Block-quote rule: a bar in the margin, left of the `>` marker.
     static let quoteRuleWidth: CGFloat = 2
     static let quoteRuleOffset: CGFloat = 14
@@ -143,12 +147,12 @@ enum Appearance {
     /// Block quotes and list items start their marker at `indent` and hang
     /// wrapped lines under the text, measured from the prefix's rendered
     /// width in the body font.
-    static func hangingParagraphStyle(under prefix: String, indent: CGFloat = 0) -> NSParagraphStyle {
+    static func hangingParagraphStyle(under prefix: String, indent: CGFloat = 0, gap: CGFloat = 0) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineHeightMultiple = lineHeightMultiple
         style.paragraphSpacing = paragraphSpacing
         style.firstLineHeadIndent = indent
-        style.headIndent = indent + (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
+        style.headIndent = indent + gap + (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
         return style
     }
 
