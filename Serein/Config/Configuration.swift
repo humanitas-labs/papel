@@ -24,6 +24,22 @@ struct Configuration: Equatable, Sendable {
     var paragraphSpacing: Double = 13
     var measure: Double = 640
     var headingWeight: HeadingWeight = .medium
+    var theme: Theme = .paper
+    /// Hex overrides for the theme's colours; nil inherits the theme.
+    var canvas: String?
+    var ink: String?
+    var canvasDark: String?
+    var inkDark: String?
+
+    /// The theme's palette with any overrides applied.
+    var palette: Palette {
+        var palette = theme.palette
+        if let canvas { palette.canvas = canvas }
+        if let ink { palette.ink = ink }
+        if let canvasDark { palette.canvasDark = canvasDark }
+        if let inkDark { palette.inkDark = inkDark }
+        return palette
+    }
 
     static let fontSizeRange: ClosedRange<Double> = 8...40
     static let lineHeightRange: ClosedRange<Double> = 1...2.5
@@ -56,6 +72,15 @@ struct Configuration: Equatable, Sendable {
     # Heading weight: regular, medium, semibold, or bold. The nearest installed
     # face is used.
     heading.weight = medium
+
+    # Theme: paper, sepia, slate, or mono. Each has light and dark colours.
+    theme = paper
+
+    # Colour overrides as #RRGGBB. Leave a value empty to use the theme's.
+    color.canvas =
+    color.ink =
+    color.canvas.dark =
+    color.ink.dark =
 
     """
 
@@ -94,6 +119,16 @@ struct Configuration: Equatable, Sendable {
             measure = Self.number(value, in: Self.measureRange) ?? measure
         case "heading.weight":
             headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
+        case "theme":
+            theme = Theme(rawValue: value.lowercased()) ?? theme
+        case "color.canvas":
+            canvas = HexColor.normalized(value)
+        case "color.ink":
+            ink = HexColor.normalized(value)
+        case "color.canvas.dark":
+            canvasDark = HexColor.normalized(value)
+        case "color.ink.dark":
+            inkDark = HexColor.normalized(value)
         default:
             break
         }
@@ -108,6 +143,11 @@ struct Configuration: Equatable, Sendable {
             ("paragraph.spacing", Self.format(paragraphSpacing)),
             ("measure", Self.format(measure)),
             ("heading.weight", headingWeight.rawValue),
+            ("theme", theme.rawValue),
+            ("color.canvas", canvas ?? ""),
+            ("color.ink", ink ?? ""),
+            ("color.canvas.dark", canvasDark ?? ""),
+            ("color.ink.dark", inkDark ?? ""),
         ]
     }
 
@@ -122,12 +162,12 @@ struct Configuration: Equatable, Sendable {
             guard !line.isEmpty, !line.hasPrefix("#"), let separator = line.firstIndex(of: "=") else { continue }
             let key = line[..<separator].trimmingCharacters(in: .whitespaces).lowercased()
             guard let value = remaining.removeValue(forKey: key) else { continue }
-            lines[index] = "\(key) = \(value)"
+            lines[index] = value.isEmpty ? "\(key) =" : "\(key) = \(value)"
         }
         if !remaining.isEmpty {
             if let last = lines.last, !last.isEmpty { lines.append("") }
             for entry in entries where remaining[entry.key] != nil {
-                lines.append("\(entry.key) = \(entry.value)")
+                lines.append(entry.value.isEmpty ? "\(entry.key) =" : "\(entry.key) = \(entry.value)")
             }
             lines.append("")
         }

@@ -228,7 +228,6 @@ The scaffold excludes:
   delimiters are concealed contextually; see [concealment.md](concealment.md));
 - CommonMark or GFM parser integration;
 - tables, task controls, rendered images, footnotes, equations, or diagrams;
-- colour themes (planned as further keys in the same config file);
 - export to HTML, PDF, or rich text;
 - a library, folder navigator, backlinks, tags, or search across files;
 - iCloud or third-party sync;
@@ -740,7 +739,7 @@ Implemented:
   irregular blurred frame with a wobbled outline) and removed at the user's
   request: neither felt natural. Not planned again.
 
-Follow-on keys: colour theme (`canvas`, `ink` as hex; also stored in presets),
+Follow-on keys: colour theme (done `2026.08.30`: `theme` plus four hex overrides),
 caret style, top margin.
 
 ---

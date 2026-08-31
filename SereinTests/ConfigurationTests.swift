@@ -75,6 +75,51 @@ struct ConfigurationTests {
     }
 }
 
+struct ThemeTests {
+    @Test
+    func hexParsesNormalizesAndRejects() {
+        #expect(HexColor.normalized("#f6f3ec") == "#F6F3EC")
+        #expect(HexColor.normalized(" 1B1916 ") == "#1B1916")
+        #expect(HexColor.normalized("#FFF") == nil)
+        #expect(HexColor.normalized("#GGGGGG") == nil)
+        #expect(HexColor.normalized("") == nil)
+        let c = HexColor.components("#FF8000")!
+        #expect(c.red == 1 && c.green == 128.0 / 255 && c.blue == 0)
+        #expect(HexColor.string(red: 1, green: 128.0 / 255, blue: 0) == "#FF8000")
+    }
+
+    @Test
+    func themeKeysParseAndOverridesApply() {
+        let config = Configuration.parse("""
+        theme = Sepia
+        color.ink = #102030
+        color.canvas =
+        color.ink.dark = nonsense
+        """)
+        #expect(config.theme == .sepia)
+        #expect(config.ink == "#102030")
+        #expect(config.canvas == nil)
+        #expect(config.inkDark == nil, "invalid hex inherits the theme")
+        #expect(config.palette.ink == "#102030")
+        #expect(config.palette.canvas == Theme.sepia.palette.canvas)
+        #expect(config.palette.inkDark == Theme.sepia.palette.inkDark)
+        #expect(Configuration.parse("theme = nope").theme == .paper)
+        #expect(Configuration().palette == Theme.paper.palette)
+    }
+
+    @Test
+    func mergedWritesEmptyOverridesAsBareKeys() {
+        var config = Configuration()
+        config.theme = .slate
+        config.ink = "#123456"
+        let text = config.merged(into: Configuration.template)
+        #expect(text.contains("\ntheme = slate\n"))
+        #expect(text.contains("\ncolor.ink = #123456\n"))
+        #expect(text.contains("\ncolor.canvas =\n"))
+        #expect(Configuration.parse(text) == config)
+    }
+}
+
 @MainActor
 struct ConfigurationStoreTests {
     private func temporaryFile() -> URL {

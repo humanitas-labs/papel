@@ -14,6 +14,11 @@
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters
   are untouched. Wrapped item lines hang under the item's text.
+- Add themes: `theme = paper | sepia | slate | mono`, each with light and
+  dark canvas and ink, plus `color.canvas`, `color.ink`, `color.canvas.dark`,
+  and `color.ink.dark` hex overrides. Settings gets a theme picker and colour
+  wells; presets capture the theme with the type settings. Muted punctuation,
+  selection, the file label, and the quote rule derive from the ink.
 - Add concealment tests (attribute ranges, glyph properties, arrow-key,
   multi-paragraph, undo, typing paths) and a concealment render probe; the
   restyle probe now measures the concealment overhead against the same view

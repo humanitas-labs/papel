@@ -33,6 +33,8 @@ struct SereinApp: App {
 private struct DocumentView: View {
     @Binding var document: MarkdownDocument
     let fileURL: URL?
+    /// Observed so the SwiftUI canvas and label follow theme changes.
+    @ObservedObject private var store = ConfigurationStore.shared
 
     var body: some View {
         MarkdownEditor(text: $document.text)
@@ -49,6 +51,7 @@ private struct DocumentView: View {
 /// never takes clicks, so dragging the window by its background still works.
 private struct FileNameLabel: View {
     let fileURL: URL?
+    @ObservedObject private var store = ConfigurationStore.shared
 
     var body: some View {
         Text(fileURL?.lastPathComponent ?? "Untitled")

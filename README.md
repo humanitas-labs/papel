@@ -22,7 +22,8 @@ Version `0.1.0` proves the native document architecture:
 - settings in a plain-text file, `~/.config/serein/config` (or under
   `$XDG_CONFIG_HOME`), written with commented defaults on first launch and
   applied live to open windows on save: typeface, size, line height, paragraph
-  spacing, measure, and heading weight; Settings (`⌘,`) edits the
+  spacing, measure, heading weight, theme (paper, sepia, slate, mono), and
+  per-colour hex overrides; Settings (`⌘,`) edits the
   same keys with sliders and writes them back into the file, and saves,
   applies, and deletes named presets stored in `~/.config/serein/presets/`;
 - typeface defaults to Test Family at 14 pt when installed and otherwise the
@@ -36,8 +37,8 @@ Version `0.1.0` proves the native document architecture:
   subdued; and
 - exact UTF-8 source preservation.
 
-Inline rendering, concealment of block-quote markers, export, themes beyond typeface and size,
-and a file library are outside the scaffold boundary.
+Inline rendering, concealment of block-quote markers, export, and a file
+library are outside the scaffold boundary.
 
 ## Generate
 

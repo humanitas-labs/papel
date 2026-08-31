@@ -35,6 +35,29 @@ struct SettingsView: View {
         )
     }
 
+    /// A colour well bound to one hex override; nil shows the theme's colour.
+    private func colorRow(_ title: String, _ keyPath: WritableKeyPath<Configuration, String?>, themeValue: KeyPath<Palette, String>) -> some View {
+        let current = store.current[keyPath: keyPath] ?? store.current.theme.palette[keyPath: themeValue]
+        let binding = Binding<Color>(
+            get: { Color(nsColor: Appearance.color(hex: current)) },
+            set: { color in
+                guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return }
+                var configuration = store.current
+                configuration[keyPath: keyPath] = HexColor.string(
+                    red: rgb.redComponent, green: rgb.greenComponent, blue: rgb.blueComponent
+                )
+                store.write(configuration)
+            }
+        )
+        return HStack {
+            ColorPicker(title, selection: binding, supportsOpacity: false)
+            Text(current)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .frame(width: 64, alignment: .trailing)
+        }
+    }
+
     var body: some View {
         Form {
             Section("Presets") {
@@ -52,6 +75,28 @@ struct SettingsView: View {
                         if let name = store.matchingPreset { store.deletePreset(named: name) }
                     }
                     .disabled(store.matchingPreset == nil)
+                }
+            }
+
+            Section("Theme") {
+                Picker("Theme", selection: binding(\.theme)) {
+                    ForEach(Theme.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                colorRow("Canvas", \.canvas, themeValue: \.canvas)
+                colorRow("Ink", \.ink, themeValue: \.ink)
+                colorRow("Canvas (dark)", \.canvasDark, themeValue: \.canvasDark)
+                colorRow("Ink (dark)", \.inkDark, themeValue: \.inkDark)
+                HStack {
+                    Spacer()
+                    Button("Use Theme Colours") {
+                        var configuration = store.current
+                        configuration.canvas = nil
+                        configuration.ink = nil
+                        configuration.canvasDark = nil
+                        configuration.inkDark = nil
+                        store.write(configuration)
+                    }
+                    .disabled([store.current.canvas, store.current.ink, store.current.canvasDark, store.current.inkDark].allSatisfy { $0 == nil })
                 }
             }
 

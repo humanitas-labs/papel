@@ -29,7 +29,10 @@ binding with AppKit and skips restyling while an input method holds marked
 text. `WindowConfigurator` applies window behavior whenever its host view
 attaches to a window. Styling changes attributes in the in-memory text storage
 but never changes the persisted string. `Appearance` is the single source of
-visual tokens; the user-tunable ones read the live `Configuration`.
+visual tokens; the user-tunable ones read the live `Configuration`. Colour
+is four values — canvas and ink for light and dark — from a built-in `Theme`
+with optional hex overrides; every other tone is the ink at an opacity, and
+the resolved `NSColor`s are cached per palette so attribute runs merge.
 
 Concealment is layered on styling without touching storage. The styler
 annotates heading markers and inline delimiters with a `.concealable` attribute; `SereinLayoutManager`

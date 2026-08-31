@@ -155,6 +155,7 @@ final class MarkdownSyntaxStyler {
             var rendered = Array(prefix)
             if let symbol = Self.renderedListMarker(for: marker) {
                 storage.addAttribute(.listMarker, value: symbol, range: markerRange)
+                storage.addAttribute(.font, value: Appearance.markerFont(for: symbol), range: markerRange)
                 // The prefix is ASCII, so UTF-16 and Character offsets agree.
                 rendered[markerRange.location - match.range.location] = Character(symbol)
             }

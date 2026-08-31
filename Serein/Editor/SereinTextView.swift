@@ -169,8 +169,18 @@ final class SereinTextView: NSTextView {
 
     @objc private func settingsDidChange() {
         font = Appearance.bodyFont()
+        applyColors()
         setFrameSize(frame.size)
         syntaxStyler.apply(to: self)
+        needsDisplay = true
+    }
+
+    private func applyColors() {
+        backgroundColor = Appearance.canvas
+        textColor = Appearance.ink
+        insertionPointColor = Appearance.ink
+        selectedTextAttributes = [.backgroundColor: Appearance.selection]
+        enclosingScrollView?.backgroundColor = Appearance.canvas
     }
 
     private func configure() {
@@ -184,7 +194,6 @@ final class SereinTextView: NSTextView {
         // Drawing the canvas here keeps the view opaque, so scrolling can
         // blit the existing pixels instead of redrawing every visible line.
         drawsBackground = true
-        backgroundColor = Appearance.canvas
         isRichText = false
         importsGraphics = false
         allowsUndo = true
@@ -198,9 +207,7 @@ final class SereinTextView: NSTextView {
         isAutomaticSpellingCorrectionEnabled = false
 
         font = Appearance.bodyFont()
-        textColor = Appearance.ink
-        insertionPointColor = Appearance.ink
-        selectedTextAttributes = [.backgroundColor: Appearance.selection]
+        applyColors()
         typingAttributes = MarkdownSyntaxStyler.baseAttributes
     }
 }

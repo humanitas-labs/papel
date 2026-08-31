@@ -27,10 +27,13 @@ struct ListMarkerTests {
         let text = "- dash\n* star\n+ plus\n1. one\n\nbody\n"
         let (textView, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
         let storage = try #require(textView.textStorage)
-        let font = Appearance.bodyFont()
-        let dash = try #require(SereinLayoutManager.glyph(for: "–", in: font))
-        let bullet = try #require(SereinLayoutManager.glyph(for: "•", in: font))
-        let hyphen = try #require(SereinLayoutManager.glyph(for: "-", in: font))
+        // Marker characters carry a font that has the rendered glyph, which
+        // may be a cascade fallback when the body face lacks it.
+        let dashFont = try #require(storage.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
+        let bulletFont = try #require(storage.attribute(.font, at: 7, effectiveRange: nil) as? NSFont)
+        let dash = try #require(SereinLayoutManager.glyph(for: "–", in: dashFont))
+        let bullet = try #require(SereinLayoutManager.glyph(for: "•", in: bulletFont))
+        let hyphen = try #require(SereinLayoutManager.glyph(for: "-", in: dashFont))
 
         #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) as? String == "–")
         #expect(storage.attribute(.listMarker, at: 7, effectiveRange: nil) as? String == "•")
