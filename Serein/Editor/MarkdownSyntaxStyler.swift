@@ -7,6 +7,7 @@ final class MarkdownSyntaxStyler {
             .font: Appearance.bodyFont(),
             .foregroundColor: Appearance.ink,
             .paragraphStyle: Appearance.paragraphStyle(),
+            .kern: Appearance.letterSpacing,
         ]
     }
 

@@ -111,6 +111,7 @@ struct SettingsView: View {
                 numberRow("Line height", binding(\.lineHeight), in: Configuration.lineHeightRange, unit: "×")
                 numberRow("Paragraph spacing", binding(\.paragraphSpacing), in: Configuration.paragraphSpacingRange, unit: "pt")
                 numberRow("Measure", binding(\.measure), in: Configuration.measureRange, unit: "pt")
+                numberRow("Letter spacing", binding(\.letterSpacing), in: Configuration.letterSpacingRange, unit: "pt")
                 Picker("Heading weight", selection: binding(\.headingWeight)) {
                     ForEach(Configuration.HeadingWeight.allCases, id: \.self) {
                         Text($0.rawValue.capitalized).tag($0)

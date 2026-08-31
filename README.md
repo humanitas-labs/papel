@@ -22,7 +22,7 @@ Version `0.1.0` proves the native document architecture:
 - settings in a plain-text file, `~/.config/serein/config` (or under
   `$XDG_CONFIG_HOME`), written with commented defaults on first launch and
   applied live to open windows on save: typeface, size, line height, paragraph
-  spacing, measure, heading weight, theme (paper, sepia, slate, mono), and
+  spacing, measure, letter spacing, heading weight, theme (paper, sepia, slate, mono), and
   per-colour hex overrides; Settings (`⌘,`) edits the
   same keys with sliders and writes them back into the file, and saves,
   applies, and deletes named presets stored in `~/.config/serein/presets/`;

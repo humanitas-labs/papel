@@ -14,6 +14,8 @@
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters
   are untouched. Wrapped item lines hang under the item's text.
+- Add `letter.spacing` (points of tracking, negative tightens) to the config
+  and Settings.
 - Add themes: `theme = paper | sepia | slate | mono`, each with light and
   dark canvas and ink, plus `color.canvas`, `color.ink`, `color.canvas.dark`,
   and `color.ink.dark` hex overrides. Settings gets a theme picker and colour

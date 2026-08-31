@@ -145,7 +145,10 @@ struct ConfigurationDrivenAppearanceTests {
         config.paragraphSpacing = 20
         config.measure = 700
         config.headingWeight = .bold
+        config.letterSpacing = 0.5
         withConfiguration(config) {
+            #expect(Appearance.letterSpacing == 0.5)
+            #expect(MarkdownSyntaxStyler.baseAttributes[.kern] as? CGFloat == 0.5)
             #expect(Appearance.bodySize == 20)
             #expect(Appearance.bodyFont().familyName == "Georgia")
             #expect(Appearance.headingSize(level: 1) == 30)

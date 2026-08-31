@@ -23,6 +23,8 @@ struct Configuration: Equatable, Sendable {
     var lineHeight: Double = 1.38
     var paragraphSpacing: Double = 13
     var measure: Double = 640
+    /// Tracking in points added between characters; negative tightens.
+    var letterSpacing: Double = 0
     var headingWeight: HeadingWeight = .medium
     var theme: Theme = .paper
     /// Hex overrides for the theme's colours; nil inherits the theme.
@@ -45,6 +47,7 @@ struct Configuration: Equatable, Sendable {
     static let lineHeightRange: ClosedRange<Double> = 1...2.5
     static let paragraphSpacingRange: ClosedRange<Double> = 0...60
     static let measureRange: ClosedRange<Double> = 320...1200
+    static let letterSpacingRange: ClosedRange<Double> = -1...3
 
     static let didChangeNotification = Notification.Name("serein.configuration.didChange")
 
@@ -68,6 +71,9 @@ struct Configuration: Equatable, Sendable {
 
     # Maximum text width in points.
     measure = 640
+
+    # Letter spacing in points added between characters (negative tightens).
+    letter.spacing = 0
 
     # Heading weight: regular, medium, semibold, or bold. The nearest installed
     # face is used.
@@ -117,6 +123,8 @@ struct Configuration: Equatable, Sendable {
             paragraphSpacing = Self.number(value, in: Self.paragraphSpacingRange) ?? paragraphSpacing
         case "measure":
             measure = Self.number(value, in: Self.measureRange) ?? measure
+        case "letter.spacing":
+            letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
         case "heading.weight":
             headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
         case "theme":
@@ -142,6 +150,7 @@ struct Configuration: Equatable, Sendable {
             ("line.height", Self.format(lineHeight)),
             ("paragraph.spacing", Self.format(paragraphSpacing)),
             ("measure", Self.format(measure)),
+            ("letter.spacing", Self.format(letterSpacing)),
             ("heading.weight", headingWeight.rawValue),
             ("theme", theme.rawValue),
             ("color.canvas", canvas ?? ""),
