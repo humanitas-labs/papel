@@ -30,7 +30,9 @@ Version `0.1.0` proves the native document architecture:
 - heading, block-quote, and inline markers (`#`, `>`, `**`, `*`, `` ` ``)
   hidden on every paragraph the cursor is not on, with the full source shown
   on the paragraph being edited; `-` items rendered as a dashed list and `*` items as a
-  bulleted list, hanging under their text; and
+  bulleted list, hanging under their text;
+- ⌘B, ⌘I, ⌘U, and ⌘E toggle `**`, `*`, `<u>`, and `` ` `` around the
+  selection or the word under the caret; and
 - exact UTF-8 source preservation.
 
 Inline rendering, export, and a file library are outside the scaffold

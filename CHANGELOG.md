@@ -27,6 +27,11 @@
   text with no spacing between. Leading spaces or tabs on such a line (source
   that indents the wrap under the marker) are concealed off the active
   paragraph, so the continuation starts exactly where the item's text does.
+- Add inline formatting to the Format menu: ⌘B bold (`**`), ⌘I italic (`*`),
+  ⌘U underline (`<u>`), ⌘E code (`` ` ``). Each toggles the delimiters
+  around the selection or the word under the caret and unwraps when they are
+  already there; a caret in whitespace inserts an empty pair to type into.
+  Edits are plain source changes with undo.
 - Treat ordered markers with a letter suffix (`1a)`, `1b.`) as list items, with
   the same indent, gap, and hanging wrap as `1.`.
 - Render unordered list markers as Apple Notes' two list kinds off the

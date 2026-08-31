@@ -150,6 +150,22 @@ final class PaperTextView: NSTextView {
         }
     }
 
+    // MARK: - Inline formatting (Format menu, ⌘B ⌘I ⌘U ⌘E)
+
+    @objc func toggleBold(_ sender: Any?) { toggle(.bold) }
+    @objc func toggleItalic(_ sender: Any?) { toggle(.italic) }
+    @objc func toggleUnderline(_ sender: Any?) { toggle(.underline) }
+    @objc func toggleCode(_ sender: Any?) { toggle(.code) }
+
+    private func toggle(_ format: InlineFormat) {
+        guard isEditable, !hasMarkedText() else { return }
+        let edit = format.toggle(in: string as NSString, selection: selectedRange())
+        guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
+        textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
+        didChangeText()
+        setSelectedRange(edit.selection)
+    }
+
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         insertionPointColor = Appearance.ink

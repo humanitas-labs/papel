@@ -19,6 +19,18 @@ struct PaperApp: App {
             // Replacing the toolbar group empties SwiftUI's View menu, which
             // also drops AppKit's Enter Full Screen item and its ⌃⌘F shortcut.
             // Provide the toggle explicitly so the shortcut keeps working.
+            // Markdown emphasis in the Format menu; AppKit's rich-text
+            // items would set font traits the document cannot keep.
+            CommandGroup(replacing: .textFormatting) {
+                Button("Bold") { NSApp.sendAction(#selector(PaperTextView.toggleBold(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("b", modifiers: .command)
+                Button("Italic") { NSApp.sendAction(#selector(PaperTextView.toggleItalic(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("i", modifiers: .command)
+                Button("Underline") { NSApp.sendAction(#selector(PaperTextView.toggleUnderline(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("u", modifiers: .command)
+                Button("Code") { NSApp.sendAction(#selector(PaperTextView.toggleCode(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("e", modifiers: .command)
+            }
             CommandGroup(replacing: .toolbar) {
                 Button("Toggle Full Screen") {
                     NSApp.keyWindow?.toggleFullScreen(nil)
