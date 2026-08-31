@@ -233,6 +233,37 @@ struct ConfigurationStoreTests {
     }
 
     @Test
+    func activePresetSurvivesEditsAndUpdatesInPlace() throws {
+        let url = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConfigurationStore(fileURL: url)
+        store.start()
+        defer { store.deletePreset(named: "Work") }
+
+        store.savePreset(named: "Work")
+        #expect(store.activePreset == "Work")
+        #expect(!store.activePresetIsEdited)
+
+        var edited = store.current
+        edited.fontSize = 17
+        store.write(edited)
+        #expect(store.activePreset == "Work", "editing keeps the preset active")
+        #expect(store.activePresetIsEdited)
+        #expect(store.matchingPreset == nil)
+
+        store.savePreset(named: "Work")
+        #expect(!store.activePresetIsEdited)
+        #expect(store.preset(named: "Work")?.fontSize == 17)
+
+        let reopened = ConfigurationStore(fileURL: url)
+        reopened.start()
+        #expect(reopened.activePreset == "Work", "persists across launches")
+
+        store.deletePreset(named: "Work")
+        #expect(store.activePreset == nil)
+    }
+
+    @Test
     func applyPostsOnlyOnChange() {
         let store = ConfigurationStore(fileURL: temporaryFile())
         nonisolated(unsafe) var posts = 0

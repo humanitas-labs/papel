@@ -23,6 +23,10 @@ final class ConfigurationStore: ObservableObject {
     /// Names of the saved presets, sorted, refreshed whenever the presets
     /// directory changes.
     @Published private(set) var presets: [String] = []
+    /// The preset last applied or saved. Stays active while its values are
+    /// edited so the edits can be written back into it; cleared when the
+    /// preset is deleted. Persisted per config file across launches.
+    @Published private(set) var activePreset: String?
     let fileURL: URL
 
     /// `presets/` beside the config file; one file per preset in the same
@@ -38,6 +42,20 @@ final class ConfigurationStore: ObservableObject {
 
     init(fileURL: URL) {
         self.fileURL = fileURL
+        activePreset = UserDefaults.standard.string(forKey: activePresetKey)
+    }
+
+    private var activePresetKey: String { "serein.activePreset:\(fileURL.path)" }
+
+    private func setActivePreset(_ name: String?) {
+        activePreset = name
+        UserDefaults.standard.set(name, forKey: activePresetKey)
+    }
+
+    /// Whether the live configuration differs from the active preset's file.
+    var activePresetIsEdited: Bool {
+        guard let activePreset, let saved = preset(named: activePreset) else { return false }
+        return saved != current
     }
 
     /// Creates the config file from the template if absent, loads it, and
@@ -66,6 +84,9 @@ final class ConfigurationStore: ObservableObject {
         presets = names
             .filter { !$0.hasPrefix(".") }
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        if let activePreset, !presets.contains(activePreset) {
+            setActivePreset(nil)
+        }
     }
 
     func preset(named name: String) -> Configuration? {
@@ -88,6 +109,7 @@ final class ConfigurationStore: ObservableObject {
         let text = target.merged(into: Configuration.template)
         guard (try? text.write(to: presetURL(named: name), atomically: true, encoding: .utf8)) != nil else { return false }
         loadPresets()
+        if configuration == nil { setActivePreset(name.trimmingCharacters(in: .whitespaces)) }
         return true
     }
 
@@ -97,11 +119,13 @@ final class ConfigurationStore: ObservableObject {
     func applyPreset(named name: String) -> Bool {
         guard let configuration = preset(named: name) else { return false }
         write(configuration)
+        setActivePreset(name)
         return true
     }
 
     func deletePreset(named name: String) {
         try? FileManager.default.removeItem(at: presetURL(named: name))
+        if activePreset == name { setActivePreset(nil) }
         loadPresets()
     }
 

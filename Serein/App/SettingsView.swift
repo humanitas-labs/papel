@@ -24,11 +24,11 @@ struct SettingsView: View {
         )
     }
 
-    /// The preset whose values match the live configuration, or "None".
-    /// Choosing a preset writes its values through to the config file.
+    /// The active preset, or "None". Choosing a preset writes its values
+    /// through to the config file; it stays selected while edited.
     private var presetSelection: Binding<String> {
         Binding(
-            get: { store.matchingPreset ?? "" },
+            get: { store.activePreset ?? "" },
             set: { name in
                 if !name.isEmpty { store.applyPreset(named: name) }
             }
@@ -59,20 +59,31 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Presets") {
-                Picker("Preset", selection: presetSelection) {
-                    Text("None").tag("")
-                    ForEach(store.presets, id: \.self) { Text($0).tag($0) }
+                HStack {
+                    Picker("Preset", selection: presetSelection) {
+                        Text("None").tag("")
+                        ForEach(store.presets, id: \.self) { Text($0).tag($0) }
+                    }
+                    if store.activePresetIsEdited {
+                        Text("Edited")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 HStack {
-                    Button("Save Current as Preset…") {
-                        presetName = store.matchingPreset ?? ""
+                    if let active = store.activePreset {
+                        Button("Update “\(active)”") { store.savePreset(named: active) }
+                            .disabled(!store.activePresetIsEdited)
+                    }
+                    Button("Save as New Preset…") {
+                        presetName = ""
                         isNamingPreset = true
                     }
                     Spacer()
-                    Button("Delete Preset", role: .destructive) {
-                        if let name = store.matchingPreset { store.deletePreset(named: name) }
+                    Button("Delete", role: .destructive) {
+                        if let name = store.activePreset { store.deletePreset(named: name) }
                     }
-                    .disabled(store.matchingPreset == nil)
+                    .disabled(store.activePreset == nil)
                 }
             }
 
@@ -139,7 +150,7 @@ struct SettingsView: View {
                 .disabled(!ConfigurationStore.isValidPresetName(presetName))
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Saves the current settings under this name. Saving with an existing name replaces that preset.")
+            Text("Saves the current settings under this name and makes it the active preset. An existing name is replaced.")
         }
     }
 
