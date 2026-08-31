@@ -175,6 +175,17 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
 
     // MARK: - Margin decorations
 
+    private func hasVisibleGlyphs(in range: NSRange) -> Bool {
+        guard range.length > 0 else { return false }
+        for index in range.location..<NSMaxRange(range) {
+            switch propertyForGlyph(at: index) {
+            case .null, .controlCharacter: continue
+            default: return true
+            }
+        }
+        return false
+    }
+
     /// Rects (in text-container coordinates) covering each contiguous run of
     /// block-quote lines that intersects `glyphRange`.
     @MainActor
@@ -193,7 +204,11 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             let font = Appearance.italicFont()
             let glyphBox = font.ascender - font.descender
             var union = NSRect.null
-            enumerateLineFragments(forGlyphRange: glyphs) { _, usedRect, _, _, _ in
+            enumerateLineFragments(forGlyphRange: glyphs) { _, usedRect, _, fragmentGlyphs, _ in
+                // Concealed markers are zero-width glyphs that TextKit can
+                // attach to the end of the previous fragment (the blank
+                // line above); a fragment counts only if it shows something.
+                guard self.hasVisibleGlyphs(in: NSIntersectionRange(fragmentGlyphs, glyphs)) else { return }
                 let height = min(usedRect.height, glyphBox)
                 union = union.union(NSRect(x: usedRect.minX, y: usedRect.maxY - height, width: usedRect.width, height: height))
             }

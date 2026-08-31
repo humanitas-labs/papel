@@ -21,6 +21,9 @@
   hard-wrapped quote reads as one block.
 - Conceal inline delimiters (`**`, `*`, `` ` ``) the same way; bold, italic,
   and code faces stay while the punctuation hides off the active paragraph.
+- Align hard-wrapped list items: non-blank lines following an item without
+  a marker of their own are styled as continuations, flush under the item's
+  text with no spacing between.
 - Render unordered list markers as Apple Notes' two list kinds off the
   active paragraph: `-` as a dashed list (`–`), `*` and `+` as a bulleted one
   (`•`), by glyph substitution in the layout manager; the source characters
@@ -28,7 +31,8 @@
   marker is kerned half a body size clear of the text, and wrapped lines
   hang under the item's text.
 - Add `window.width` and `window.height` for the size of new windows
-  (Settings → Window); each window keeps its own size afterwards.
+  (default 1400 × 900, Settings → Window); each window keeps its own size
+  afterwards.
 - Add `letter.spacing` (points of tracking, negative tightens) to the config
   and Settings.
 - Add themes: `theme = paper | sepia | slate | mono | spatial-dark |

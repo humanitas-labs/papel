@@ -151,12 +151,25 @@ enum Appearance {
     /// Block quotes and list items start their marker at `indent` and hang
     /// wrapped lines under the text, measured from the prefix's rendered
     /// width in the body font.
-    static func hangingParagraphStyle(under prefix: String, indent: CGFloat = 0, gap: CGFloat = 0) -> NSParagraphStyle {
+    static func hangingParagraphStyle(
+        under prefix: String, indent: CGFloat = 0, gap: CGFloat = 0, spacing: CGFloat? = nil
+    ) -> NSParagraphStyle {
         let style = NSMutableParagraphStyle()
         style.lineHeightMultiple = lineHeightMultiple
-        style.paragraphSpacing = paragraphSpacing
+        style.paragraphSpacing = spacing ?? paragraphSpacing
         style.firstLineHeadIndent = indent
         style.headIndent = indent + gap + (prefix as NSString).size(withAttributes: [.font: bodyFont()]).width
+        return style
+    }
+
+    /// A paragraph whose every line starts at `indent`: the continuation of
+    /// a hard-wrapped list item, aligned under the item's text.
+    static func flushParagraphStyle(indent: CGFloat, spacing: CGFloat? = nil) -> NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.lineHeightMultiple = lineHeightMultiple
+        style.paragraphSpacing = spacing ?? paragraphSpacing
+        style.firstLineHeadIndent = indent
+        style.headIndent = indent
         return style
     }
 

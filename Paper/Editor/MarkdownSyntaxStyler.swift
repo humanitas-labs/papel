@@ -168,13 +168,24 @@ final class MarkdownSyntaxStyler {
             // already hangs under the quote marker.
             let paragraphRange = (source as NSString).paragraphRange(for: match.range)
             if storage.attribute(.blockQuote, at: match.range.location, effectiveRange: nil) == nil {
-                storage.addAttribute(
-                    .paragraphStyle,
-                    value: Appearance.hangingParagraphStyle(
-                        under: String(rendered), indent: Appearance.listIndent, gap: Appearance.listMarkerGap
-                    ),
-                    range: paragraphRange
+                // Non-blank lines that follow without a marker of their own
+                // are lazy continuations of the item (a hard-wrapped item);
+                // they align under the item's text with no spacing between.
+                let continuations = Self.continuationParagraphs(after: paragraphRange, in: source, limit: range.length)
+                let itemStyle = Appearance.hangingParagraphStyle(
+                    under: String(rendered), indent: Appearance.listIndent, gap: Appearance.listMarkerGap,
+                    spacing: continuations.isEmpty ? nil : 0
                 )
+                storage.addAttribute(.paragraphStyle, value: itemStyle, range: paragraphRange)
+                for (index, continuation) in continuations.enumerated() {
+                    storage.addAttribute(
+                        .paragraphStyle,
+                        value: Appearance.flushParagraphStyle(
+                            indent: itemStyle.headIndent, spacing: index == continuations.count - 1 ? nil : 0
+                        ),
+                        range: continuation
+                    )
+                }
             }
         }
     }
@@ -212,6 +223,30 @@ final class MarkdownSyntaxStyler {
             // Include the trailing newline so consecutive quote lines form one
             // run and draw a single unbroken rule.
             storage.addAttribute(.blockQuote, value: true, range: paragraphRange)
+        }
+    }
+
+    /// Paragraph ranges following `paragraphRange` that continue a list item:
+    /// non-blank and not starting a list item, heading, or block quote.
+    private static func continuationParagraphs(after paragraphRange: NSRange, in source: String, limit: Int) -> [NSRange] {
+        let text = source as NSString
+        var found: [NSRange] = []
+        var cursor = NSMaxRange(paragraphRange)
+        while cursor < limit {
+            let paragraph = text.paragraphRange(for: NSRange(location: cursor, length: 0))
+            let line = text.substring(with: paragraph)
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !startsBlock(line) else { break }
+            found.append(paragraph)
+            cursor = NSMaxRange(paragraph)
+        }
+        return found
+    }
+
+    private static func startsBlock(_ line: String) -> Bool {
+        let range = NSRange(location: 0, length: line.utf16.count)
+        return [listMarkerPattern, headingPattern, blockQuotePattern].contains {
+            $0.firstMatch(in: line, range: range)?.range.location == 0
         }
     }
 

@@ -71,6 +71,32 @@ struct ListMarkerTests {
     }
 
     @Test
+    func hardWrappedItemsContinueUnderTheirText() throws {
+        let text = "- first line of an item\nsecond line\nthird line\n\nplain\n- next\n"
+        let (textView, _) = makeTextView(text, selectedAt: 0)
+        let storage = try #require(textView.textStorage)
+        func style(_ index: Int) -> NSParagraphStyle? {
+            storage.attribute(.paragraphStyle, at: index, effectiveRange: nil) as? NSParagraphStyle
+        }
+        let item = try #require(style(2))
+        let second = try #require(style(26))
+        let third = try #require(style(38))
+        let plain = try #require(style(50))
+        let next = try #require(style(58))
+
+        #expect(item.paragraphSpacing == 0, "no gap before its continuation")
+        #expect(second.firstLineHeadIndent == item.headIndent)
+        #expect(second.headIndent == item.headIndent)
+        #expect(second.paragraphSpacing == 0)
+        #expect(third.firstLineHeadIndent == item.headIndent)
+        #expect(third.paragraphSpacing == Appearance.paragraphSpacing, "last continuation keeps the gap")
+        #expect(plain.headIndent == 0)
+        #expect(next.paragraphSpacing == Appearance.paragraphSpacing, "an item followed by another item has no continuation")
+        #expect(storage.attribute(.listMarker, at: 24, effectiveRange: nil) == nil)
+        #expect(textView.string == text)
+    }
+
+    @Test
     func markersNeedContentAndAreNotMatchedMidLine() throws {
         let (textView, _) = makeTextView("-\n- \na - b\n  - nested\n", selectedAt: 30)
         let storage = try #require(textView.textStorage)

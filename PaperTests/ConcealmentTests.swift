@@ -234,11 +234,16 @@ struct ConcealmentTests {
     }
 
     @Test
-    func quoteRulesIgnoreConcealment() {
-        let (_, layoutManager) = makeTextView("# Title\n\n> quoted\n", selectedAt: 12)
-        let all = layoutManager.glyphRange(forCharacterRange: NSRange(location: 0, length: 18), actualCharacterRange: nil)
+    func quoteRuleSpansOnlyTheVisibleQuoteLines() {
+        let text = "# Title\n\n> quoted\n> more\n"
+        let (_, layoutManager) = makeTextView(text, selectedAt: text.utf16.count)
+        let all = layoutManager.glyphRange(forCharacterRange: NSRange(location: 0, length: text.utf16.count), actualCharacterRange: nil)
         let rects = layoutManager.quoteRuleRects(forGlyphRange: all)
+        let firstLine = layoutManager.lineFragmentUsedRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 11), effectiveRange: nil)
+        let lastLine = layoutManager.lineFragmentUsedRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 20), effectiveRange: nil)
         #expect(rects.count == 1)
-        #expect(rects.first!.minY > 0)
+        #expect(rects.first!.minY >= firstLine.minY, "does not reach into the blank line above")
+        #expect(rects.first!.minY < firstLine.maxY)
+        #expect(rects.first!.maxY == lastLine.maxY)
     }
 }
