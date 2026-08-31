@@ -38,23 +38,21 @@ struct SettingsView: View {
     /// A colour well bound to one hex override; nil shows the theme's colour.
     private func colorRow(_ title: String, _ keyPath: WritableKeyPath<Configuration, String?>, themeValue: KeyPath<Palette, String>) -> some View {
         let current = store.current[keyPath: keyPath] ?? store.current.theme.palette[keyPath: themeValue]
+        func write(_ hex: String) {
+            var configuration = store.current
+            configuration[keyPath: keyPath] = hex
+            store.write(configuration)
+        }
         let binding = Binding<Color>(
             get: { Color(nsColor: Appearance.color(hex: current)) },
             set: { color in
                 guard let rgb = NSColor(color).usingColorSpace(.sRGB) else { return }
-                var configuration = store.current
-                configuration[keyPath: keyPath] = HexColor.string(
-                    red: rgb.redComponent, green: rgb.greenComponent, blue: rgb.blueComponent
-                )
-                store.write(configuration)
+                write(HexColor.string(red: rgb.redComponent, green: rgb.greenComponent, blue: rgb.blueComponent))
             }
         )
         return HStack {
             ColorPicker(title, selection: binding, supportsOpacity: false)
-            Text(current)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .frame(width: 64, alignment: .trailing)
+            HexField(value: current, commit: write)
         }
     }
 
@@ -159,6 +157,35 @@ struct SettingsView: View {
                 .frame(width: 56)
             Text(unit).frame(width: 18, alignment: .leading)
         }
+    }
+}
+
+/// A hex colour field beside a colour well. Edits commit on Return or when
+/// focus leaves; invalid text snaps back to the current value.
+private struct HexField: View {
+    let value: String
+    let commit: (String) -> Void
+    @State private var draft = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("#RRGGBB", text: $draft)
+            .font(.system(.body, design: .monospaced))
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 88)
+            .focused($focused)
+            .onAppear { draft = value }
+            .onChange(of: value) { _, new in if !focused { draft = new } }
+            .onChange(of: focused) { _, isFocused in if !isFocused { submit() } }
+            .onSubmit(submit)
+    }
+
+    private func submit() {
+        if let hex = HexColor.normalized(draft), hex != value {
+            commit(hex)
+        }
+        draft = HexColor.normalized(draft) ?? value
     }
 }
 
