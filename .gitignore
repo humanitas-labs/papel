@@ -23,3 +23,6 @@ dist/
 
 # gh-render projections of GitHub issues
 .issues/
+
+# local planning notes
+.plan/
