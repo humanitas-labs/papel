@@ -72,8 +72,12 @@ final class PaperTextView: NSTextView {
         // fragment AppKit proposes — so anchor to the top and keep the
         // title's full height.
         if string.isEmpty {
+            // The caret stands where the first letter will land — after
+            // the ghost's `# `, which the keystroke inserts — so it does
+            // not hop when typing starts.
+            let markerWidth = ("# " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
             return NSRect(
-                x: proposed.minX,
+                x: proposed.minX + markerWidth,
                 y: proposed.minY + ghostTitleTopInset,
                 width: Appearance.caretWidth,
                 height: height
