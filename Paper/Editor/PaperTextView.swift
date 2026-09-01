@@ -74,7 +74,7 @@ final class PaperTextView: NSTextView {
         if string.isEmpty {
             return NSRect(
                 x: proposed.minX,
-                y: proposed.minY,
+                y: proposed.minY + ghostTitleTopInset,
                 width: Appearance.caretWidth,
                 height: height
             )
@@ -149,9 +149,38 @@ final class PaperTextView: NSTextView {
 
     /// An empty document ghosts a title where the first line will land, so
     /// a fresh page reads as a page and not a blank canvas. The first
-    /// keystroke clears it.
-    static let placeholderTitle = "# Untitled"
+    /// keystroke clears it. The ghost carries the exact attributes a
+    /// revealed `# Untitled` line would — marker in the body font at the
+    /// syntax ink, word in the H1 face — and sits where TextKit would set
+    /// the line (extra line-height leading goes above the glyphs), so the
+    /// real title replaces it without anything moving.
+    static let placeholderTitle = "Untitled"
     private var placeholderVisible = false
+
+    private static var ghostTitle: NSAttributedString {
+        let title = NSMutableAttributedString(
+            string: "# ",
+            attributes: [.font: Appearance.bodyFont(), .foregroundColor: Appearance.mutedInk]
+        )
+        title.append(NSAttributedString(
+            string: placeholderTitle,
+            attributes: [
+                .font: Appearance.headingFont(size: Appearance.headingSize(level: 1)),
+                .foregroundColor: Appearance.mutedInk,
+            ]
+        ))
+        return title
+    }
+
+    /// TextKit places the line-height multiple's extra space above the
+    /// glyphs; the ghost (and the caret standing in it) drops by the same
+    /// amount to land where the typed title will.
+    private var ghostTitleTopInset: CGFloat {
+        let font = Appearance.headingFont(size: Appearance.headingSize(level: 1))
+        let natural = layoutManager?.defaultLineHeight(for: font)
+            ?? (font.ascender - font.descender + font.leading)
+        return max(0, (Appearance.lineHeightMultiple - 1) * natural)
+    }
 
     private func drawPlaceholder() {
         guard string.isEmpty, let container = textContainer else {
@@ -160,12 +189,8 @@ final class PaperTextView: NSTextView {
         }
         placeholderVisible = true
         let origin = textContainerOrigin
-        Self.placeholderTitle.draw(
-            at: NSPoint(x: origin.x + container.lineFragmentPadding, y: origin.y),
-            withAttributes: [
-                .font: Appearance.headingFont(size: Appearance.headingSize(level: 1)),
-                .foregroundColor: Appearance.mutedInk,
-            ]
+        Self.ghostTitle.draw(
+            at: NSPoint(x: origin.x + container.lineFragmentPadding, y: origin.y + ghostTitleTopInset)
         )
     }
 
