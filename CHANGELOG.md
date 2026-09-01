@@ -2,6 +2,7 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Chip a wrapped inline code span per line fragment, each chip clamped to the glyphs it holds: TextKit's background rects are selection-shaped, so a wrapping span used to stretch its first chip to the trailing edge and start the next at the left margin.
 - Repaint the area a shortening edit vacates: every TextKit display invalidation is character-based, so the strip below the new last line held no characters and kept the old one's pixels — deleting a newline could leave the final paragraph apparently duplicated until a selection sweep repainted it.
 - Start the title on the first letter typed into an empty document: it lands as `# ` plus the letter, one undo step, visible in the source. Syntax starters (`#`, `-`, `*`, `>`, a backtick, a digit, whitespace) begin as typed, so lists, quotes, and hand-typed headings are untouched.
 - Ghost a title placeholder on an empty document — `# Untitled` in the H1 face at the muted syntax ink, marker shown as it would be on the caret's paragraph — so a fresh page reads as a page instead of a blank canvas. The caret stands in the ghost at the title's full height, and the first keystroke clears it.

@@ -242,6 +242,36 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         return glyph
     }
 
+    /// The origin `drawBackground(forGlyphRange:at:)` was last given, so the
+    /// chip drawing below can place container-coordinate rects itself; the
+    /// rects TextKit passes to `fillBackgroundRectArray` are already offset.
+    private var backgroundDrawOrigin = NSPoint.zero
+
+    override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
+        backgroundDrawOrigin = origin
+        super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
+    }
+
+    /// Chip rects (in text-container coordinates) for an inline code span:
+    /// one per line fragment the span touches, clamped to the glyphs it holds
+    /// there. TextKit's own background rects are selection-shaped — a wrapped
+    /// run extends the first line to the fragment's trailing edge and starts
+    /// the next at its leading edge — which warps a chip meant to hug text.
+    func codeChipRects(forCharacterRange charRange: NSRange) -> [NSRect] {
+        let glyphs = glyphRange(forCharacterRange: charRange, actualCharacterRange: nil)
+        var rects: [NSRect] = []
+        enumerateLineFragments(forGlyphRange: glyphs) { _, _, container, fragmentGlyphs, _ in
+            let intersection = NSIntersectionRange(fragmentGlyphs, glyphs)
+            guard intersection.length > 0 else { return }
+            let rect = self.boundingRect(forGlyphRange: intersection, in: container)
+            // A fragment holding only concealed (zero-advance) span glyphs
+            // has nothing to chip.
+            guard rect.width > 0.5 else { return }
+            rects.append(rect)
+        }
+        return rects
+    }
+
     /// Inline `code` spans carry the band colour as a background attribute;
     /// those fills are drawn as rounded chips hugging the glyph box instead
     /// of full-height rectangles. Every other background (selection included)
@@ -264,15 +294,16 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             return
         }
         let height = chip.height
+        let origin = backgroundDrawOrigin
         color.setFill()
-        for index in 0..<rectCount {
-            let rect = rectArray[index]
+        for rect in codeChipRects(forCharacterRange: charRange) {
+            let placed = rect.offsetBy(dx: origin.x, dy: origin.y)
             NSBezierPath(
                 roundedRect: NSRect(
-                    x: rect.minX - 2,
-                    y: rect.maxY - min(height, rect.height),
-                    width: rect.width + 4,
-                    height: min(height, rect.height)
+                    x: placed.minX - 2,
+                    y: placed.maxY - min(height, placed.height),
+                    width: placed.width + 4,
+                    height: min(height, placed.height)
                 ),
                 xRadius: chip.radius,
                 yRadius: chip.radius

@@ -55,4 +55,56 @@ struct RedrawTests {
         }
         #expect(vacated, "the strip between the new and old bottoms is redrawn")
     }
+
+    /// An inline code span that wraps gets one chip rect per line fragment,
+    /// clamped to its glyphs — never TextKit's selection-shaped background
+    /// rects, whose first line runs to the trailing edge (issue #19).
+    @Test
+    func aWrappedCodeSpanChipsPerFragmentClampedToItsGlyphs() {
+        let (_, layoutManager, container, textView) = makeStack(width: 220)
+        textView.string = "start `alpha beta gamma deltadelta` end"
+        styler.apply(to: textView)
+        layoutManager.ensureLayout(for: container)
+
+        var span = NSRange(location: NSNotFound, length: 0)
+        textView.textStorage?.enumerateAttribute(
+            .backgroundColor, in: NSRange(location: 0, length: textView.textStorage!.length)
+        ) { value, range, stop in
+            guard value != nil else { return }
+            span = range
+            stop.pointee = true
+        }
+        #expect(span.location != NSNotFound, "the span carries the chip background")
+
+        let rects = layoutManager.codeChipRects(forCharacterRange: span)
+        #expect(rects.count >= 2, "the span wraps, so it chips per fragment")
+        let trailingEdge = container.size.width - container.lineFragmentPadding
+        #expect(
+            rects.allSatisfy { $0.maxX < trailingEdge - 10 },
+            "every chip stops at its last glyph, short of the trailing edge"
+        )
+        for pair in zip(rects, rects.dropFirst()) {
+            #expect(pair.0.maxY <= pair.1.minY + 1, "fragments stack; no chip spans two lines")
+        }
+    }
+
+    /// An unwrapped span keeps a single chip over its glyphs.
+    @Test
+    func anUnwrappedCodeSpanKeepsASingleChip() {
+        let (_, layoutManager, container, textView) = makeStack(width: 400)
+        textView.string = "start `code` end"
+        styler.apply(to: textView)
+        layoutManager.ensureLayout(for: container)
+
+        var span = NSRange(location: NSNotFound, length: 0)
+        textView.textStorage?.enumerateAttribute(
+            .backgroundColor, in: NSRange(location: 0, length: textView.textStorage!.length)
+        ) { value, range, stop in
+            guard value != nil else { return }
+            span = range
+            stop.pointee = true
+        }
+        let rects = layoutManager.codeChipRects(forCharacterRange: span)
+        #expect(rects.count == 1)
+    }
 }
