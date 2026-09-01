@@ -1,6 +1,6 @@
 # ADR-001 :: Native document editor
 
-Last updated: `2026.08.30`
+Date: `2026.08.30`
 
 > Paper uses the native macOS document lifecycle with an AppKit editing
 > surface because trustworthy file and text behavior matter more than
@@ -43,4 +43,3 @@ than it would with a mature web editor engine.
 Reconsider the editing engine if contextual Markdown concealment cannot remain
 cursor-correct, if tables or embedded block editing become core requirements,
 or if Paper must support non-Apple platforms.
-

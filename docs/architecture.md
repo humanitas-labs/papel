@@ -4,9 +4,7 @@ Last updated: `2026.08.30`
 
 ## 1. Objective
 
-Paper is a native macOS document editor. Ordinary Markdown text is the only
-persistent state. The application owns presentation and editing behavior, not a
-document library or storage system.
+Paper is a native macOS document editor. Ordinary Markdown text is the only persistent state. The application owns presentation and editing behavior, not a document library or storage system.
 
 ## 2. Runtime
 
@@ -87,4 +85,4 @@ tracks platform rendering and accessibility behavior.
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-001](decisions/001-native-editor.md) | Native document lifecycle and AppKit editing surface | Accepted |
-
+| [ADR-002](decisions/002-contextual-syntax-concealment.md) | Contextual syntax concealment without source mutation | Accepted |

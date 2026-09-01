@@ -8,6 +8,6 @@ To wire it up, ask your agent to add a note to its instruction file (`~/.claude/
 
 The pieces, individually:
 
-- **Opening documents** — `paper file.md` once the [CLI](../README.md#command-line) is installed, or `open -a Paper file.md` without it.
-- **Live reload** — Paper watches the open file and reloads it when it changes on disk, as long as the document has no unsaved edits in the window. An agent editing the file is enough; no re-open needed.
-- **No hard-wrapped prose** — Paper renders Markdown, so a source line break inside a paragraph shows as a break. Agents that wrap prose at 80 columns ruin the reading flow; tell yours to keep each paragraph on one line.
+- *Opening documents* — `paper file.md` once the [CLI](../README.md#command-line) is installed, or `open -a Paper file.md` without it.
+- *Live reload* — Paper watches the open file and reloads it when it changes on disk, as long as the document has no unsaved edits in the window. An agent editing the file is enough; no re-open needed.
+- *No hard-wrapped prose* — Paper renders Markdown, so a source line break inside a paragraph shows as a break. Agents that wrap prose at 80 columns ruin the reading flow; tell yours to keep each paragraph on one line.

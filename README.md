@@ -67,6 +67,10 @@ ln -s /Applications/Paper.app/Contents/Resources/paper /usr/local/bin/paper
 
 Then `paper notes.md` opens a document, creating it first when it doesn't exist yet, and `paper` alone opens the app.
 
+## Default app for Markdown
+
+To make double-clicking a `.md` file open Paper: select any Markdown file in Finder, press ⌘I (Get Info), choose Paper under **Open with**, and click **Change All…** — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
+
 ## More
 
 - [Build and test](docs/build.md)

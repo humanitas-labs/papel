@@ -1,0 +1,17 @@
+# Paper — Documentation
+
+| Doc | What it covers |
+| --- | --- |
+| [build.md](build.md) | Building and testing from source (XcodeGen, xcodebuild) |
+| [architecture.md](architecture.md) | How the editor is put together — document lifecycle, TextKit pipeline, styling |
+| [claude.md](claude.md) | Using Paper as the reading surface for Claude or another agent |
+| [decisions/](decisions/) | Architecture decision records |
+
+## Decisions
+
+| ADR | Decision |
+| --- | --- |
+| [001](decisions/001-native-editor.md) | Native macOS document lifecycle with an AppKit editing core |
+| [002](decisions/002-contextual-syntax-concealment.md) | Conceal Markdown syntax during layout, preserving the source exactly |
+
+`assets/` holds the README screenshot; `references/` holds visual references the design steers by.
