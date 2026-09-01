@@ -180,6 +180,42 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         return .zeroAdvancement
     }
 
+    /// The used rect's bottom after the previous complete layout, for the
+    /// vacated-area invalidation below.
+    private var lastUsedBottom: CGFloat = 0
+
+    /// Every display invalidation in TextKit is character-based, so when an
+    /// edit shortens the layout, the strip the text vacated below the new
+    /// bottom holds no characters and is never repainted — the old last line
+    /// survives there as stale pixels (a deleted newline appeared to leave
+    /// its paragraph duplicated). When a completed layout ends higher than
+    /// the previous one, redraw the strip between the two bottoms.
+    func layoutManager(
+        _ layoutManager: NSLayoutManager,
+        didCompleteLayoutFor textContainer: NSTextContainer?,
+        atEnd layoutFinishedFlag: Bool
+    ) {
+        guard layoutFinishedFlag else { return }
+        // Layout always completes on the main thread; the unsafe capture is
+        // the region checker's price for hopping into the actor to reach the
+        // text view.
+        nonisolated(unsafe) let manager = self
+        MainActor.assumeIsolated {
+            guard let container = manager.textContainers.first else { return }
+            let bottom = manager.usedRect(for: container).maxY
+            let stale = manager.lastUsedBottom
+            manager.lastUsedBottom = bottom
+            guard bottom < stale, let textView = container.textView else { return }
+            let origin = textView.textContainerOrigin
+            textView.setNeedsDisplay(NSRect(
+                x: 0,
+                y: origin.y + bottom,
+                width: textView.bounds.width,
+                height: stale - bottom
+            ))
+        }
+    }
+
     /// The rendering marks on the attribute run at `index`.
     private struct Marks {
         var concealable = false
