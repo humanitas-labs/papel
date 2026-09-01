@@ -2,6 +2,7 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Ship a command-line launcher at `Paper.app/Contents/Resources/paper`: `paper file.md` opens documents from the terminal (creating any that do not exist yet), `paper` alone opens the app. Installed by symlinking it onto the PATH; it resolves the app bundle from its own location. `docs/claude.md` covers pointing Claude or another agent at it.
 - License Paper under the MIT License, move build and test instructions into `docs/build.md`, and remove the private Spatial reference image from the repository.
 - Reload documents edited by other programs: each window watches its file
   (vnode events, atomic-save rename handled) and a clean buffer adopts the

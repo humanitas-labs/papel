@@ -38,7 +38,6 @@ Paper is an experiment in absolute simplicity.
 | click / ⌘-click | open a link |
 | ⌘, | settings |
 
-
 ## Configuration
 
 Everything lives in `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
@@ -58,7 +57,18 @@ Themes:
 
 `paper`, `slate`, `mono`, `spatial`, `apple`, each with light and dark palettes, plus per-colour hex overrides. The Settings window (⌘,) edits the same keys with controls and writes them back into the file, comments preserved. Named presets are files too, in `~/.config/paper/presets/`; edits write through to the active preset.
 
+## Command line
+
+The app bundles a small launcher. Put it on your PATH once:
+
+```sh
+ln -s /Applications/Paper.app/Contents/Resources/paper /usr/local/bin/paper
+```
+
+Then `paper notes.md` opens a document, creating it first when it doesn't exist yet, and `paper` alone opens the app.
+
 ## More
 
 - [Build and test](docs/build.md)
 - [Architecture](docs/architecture.md)
+- [Using Paper with Claude](docs/claude.md)

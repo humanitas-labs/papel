@@ -1,0 +1,28 @@
+#!/bin/sh
+# paper — open files in Paper from the terminal.
+#
+# Install (symlink so the script travels with the app):
+#   ln -s /Applications/Paper.app/Contents/Resources/paper /usr/local/bin/paper
+#
+# Usage:
+#   paper                open Paper
+#   paper file.md …      open files, creating any that do not exist yet
+
+self="$0"
+resolved="$(readlink -f "$self" 2>/dev/null)" && self="$resolved"
+app="$(cd "$(dirname "$self")/../.." >/dev/null 2>&1 && pwd)"
+case "$app" in
+  *.app) ;;
+  *) app="/Applications/Paper.app" ;;
+esac
+
+if [ "$#" -eq 0 ]; then
+  exec open -a "$app"
+fi
+
+for f in "$@"; do
+  if [ ! -e "$f" ]; then
+    touch "$f" || exit 1
+  fi
+done
+exec open -a "$app" "$@"

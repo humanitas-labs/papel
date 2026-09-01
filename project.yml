@@ -22,6 +22,10 @@ targets:
     platform: macOS
     sources:
       - path: Paper
+        excludes:
+          - Resources/paper
+      - path: Paper/Resources/paper
+        buildPhase: resources
     info:
       path: Paper/Resources/Info.plist
       properties:
