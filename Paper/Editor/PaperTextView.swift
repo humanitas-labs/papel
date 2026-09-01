@@ -66,15 +66,25 @@ final class PaperTextView: NSTextView {
     /// shrinks to the font's ascent plus descent.
     private func caretRect(for proposed: NSRect) -> NSRect {
         let font = caretFont()
-        let height = min(
-            proposed.height,
-            font.ascender - font.descender + Appearance.caretOvershoot * 2
-        )
+        let height = font.ascender - font.descender + Appearance.caretOvershoot * 2
+        // The empty document's caret stands in the ghost title, which is
+        // drawn from the fragment's top and is taller than the body-sized
+        // fragment AppKit proposes — so anchor to the top and keep the
+        // title's full height.
+        if string.isEmpty {
+            return NSRect(
+                x: proposed.minX,
+                y: proposed.minY,
+                width: Appearance.caretWidth,
+                height: height
+            )
+        }
+        let clamped = min(proposed.height, height)
         return NSRect(
             x: proposed.minX,
-            y: proposed.maxY - height,
+            y: proposed.maxY - clamped,
             width: Appearance.caretWidth,
-            height: height
+            height: clamped
         )
     }
 
@@ -84,7 +94,11 @@ final class PaperTextView: NSTextView {
     /// the line's text.
     private func caretFont() -> NSFont {
         let body = Appearance.bodyFont()
-        guard let storage = textStorage, storage.length > 0 else { return body }
+        // An empty document shows the ghost title, and the first letter
+        // typed starts one, so the caret takes the H1 face.
+        guard let storage = textStorage, storage.length > 0 else {
+            return Appearance.headingFont(size: Appearance.headingSize(level: 1))
+        }
         let location = min(selectedRange().location, storage.length)
         let paragraph = (storage.string as NSString).paragraphRange(for: NSRange(location: location, length: 0))
         guard paragraph.length > 0 else { return body }
@@ -136,7 +150,7 @@ final class PaperTextView: NSTextView {
     /// An empty document ghosts a title where the first line will land, so
     /// a fresh page reads as a page and not a blank canvas. The first
     /// keystroke clears it.
-    static let placeholderTitle = "Untitled"
+    static let placeholderTitle = "# Untitled"
     private var placeholderVisible = false
 
     private func drawPlaceholder() {

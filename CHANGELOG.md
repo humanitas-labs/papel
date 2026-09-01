@@ -3,7 +3,7 @@
 ## 0.2.0 — 2026.08.30
 
 - Start the title on the first letter typed into an empty document: it lands as `# ` plus the letter, one undo step, visible in the source. Syntax starters (`#`, `-`, `*`, `>`, a backtick, a digit, whitespace) begin as typed, so lists, quotes, and hand-typed headings are untouched.
-- Ghost a title placeholder on an empty document — the H1 face in the muted syntax ink where the first line will land — so a fresh page reads as a page instead of a blank canvas. The first keystroke clears it.
+- Ghost a title placeholder on an empty document — `# Untitled` in the H1 face at the muted syntax ink, marker shown as it would be on the caret's paragraph — so a fresh page reads as a page instead of a blank canvas. The caret stands in the ghost at the title's full height, and the first keystroke clears it.
 - Ship a command-line launcher at `Paper.app/Contents/Resources/paper`: `paper file.md` opens documents from the terminal (creating any that do not exist yet), `paper` alone opens the app. Installed by symlinking it onto the PATH; it resolves the app bundle from its own location. `docs/claude.md` covers pointing Claude or another agent at it.
 - License Paper under the MIT License, move build and test instructions into `docs/build.md`, and remove the private Spatial reference image from the repository.
 - Reload documents edited by other programs: each window watches its file
