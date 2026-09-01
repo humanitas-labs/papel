@@ -551,6 +551,51 @@ final class PaperTextView: NSTextView {
         enclosingScrollView?.backgroundColor = Appearance.canvas
     }
 
+    /// Code is not prose. Every annotation continuous checking wants to
+    /// make — spelling and grammar underlines, quote and text replacements
+    /// — arrives here first, so results touching a fenced block or an inline
+    /// span are dropped and the rest of the document keeps its checking.
+    override func handleTextCheckingResults(
+        _ results: [NSTextCheckingResult],
+        forRange range: NSRange,
+        types checkingTypes: NSTextCheckingTypes,
+        options: [NSSpellChecker.OptionKey: Any] = [:],
+        orthography: NSOrthography,
+        wordCount: Int
+    ) {
+        super.handleTextCheckingResults(
+            proseResults(results),
+            forRange: range,
+            types: checkingTypes,
+            options: options,
+            orthography: orthography,
+            wordCount: wordCount
+        )
+    }
+
+    /// The results that touch no code.
+    func proseResults(_ results: [NSTextCheckingResult]) -> [NSTextCheckingResult] {
+        results.filter { !touchesCode($0.range) }
+    }
+
+    /// Whether any character in `range` is code: inside a fenced block (the
+    /// `.codeBlock` mark) or an inline span (the chip background, the same
+    /// mark the layout manager rounds).
+    func touchesCode(_ range: NSRange) -> Bool {
+        guard let storage = textStorage else { return false }
+        let clipped = NSIntersectionRange(range, NSRange(location: 0, length: storage.length))
+        guard clipped.length > 0 else { return false }
+        var found = false
+        storage.enumerateAttributes(in: clipped) { attributes, _, stop in
+            if attributes[.codeBlock] != nil
+                || (attributes[.backgroundColor] as? NSColor) == Appearance.codeBlockBackground {
+                found = true
+                stop.pointee = true
+            }
+        }
+        return found
+    }
+
     private func configure() {
         minSize = .zero
         maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)

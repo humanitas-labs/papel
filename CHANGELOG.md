@@ -2,6 +2,7 @@
 
 ## 0.2.0 — 2026.08.30
 
+- Leave code out of text checking: spelling and grammar underlines, smart quotes, and text replacements no longer touch fenced blocks or inline `code` spans, while the rest of the document keeps them. The check results are filtered as they arrive rather than toggling checking off.
 - Chip a wrapped inline code span per line fragment, each chip clamped to the glyphs it holds: TextKit's background rects are selection-shaped, so a wrapping span used to stretch its first chip to the trailing edge and start the next at the left margin.
 - Repaint the area a shortening edit vacates: every TextKit display invalidation is character-based, so the strip below the new last line held no characters and kept the old one's pixels — deleting a newline could leave the final paragraph apparently duplicated until a selection sweep repainted it.
 - Start the title on the first letter typed into an empty document: it lands as `# ` plus the letter, one undo step, visible in the source. Syntax starters (`#`, `-`, `*`, `>`, a backtick, a digit, whitespace) begin as typed, so lists, quotes, and hand-typed headings are untouched.
