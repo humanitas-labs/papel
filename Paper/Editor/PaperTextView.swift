@@ -206,10 +206,17 @@ final class PaperTextView: NSTextView {
             guard let entry = ImageStore.shared.entry(for: band.url) else { continue }
             let placed = band.rect.offsetBy(dx: origin.x, dy: origin.y)
             guard placed.intersects(dirtyRect) else { continue }
+            NSGraphicsContext.saveGraphicsState()
+            NSBezierPath(
+                roundedRect: placed,
+                xRadius: Appearance.imageCornerRadius,
+                yRadius: Appearance.imageCornerRadius
+            ).addClip()
             entry.image.draw(
                 in: placed, from: .zero, operation: .sourceOver, fraction: 1,
                 respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high]
             )
+            NSGraphicsContext.restoreGraphicsState()
         }
     }
 

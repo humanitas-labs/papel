@@ -58,6 +58,8 @@ enum Appearance {
     static var codeBlockInset: CGFloat { (bodySize * 0.75).rounded() }
     static let codeBlockCornerRadius: CGFloat = 12
     static let codeChipCornerRadius: CGFloat = 4
+    /// Block images are clipped to this radius, like the code band.
+    static let imageCornerRadius: CGFloat = 8
     /// One cached instance per palette: the chip drawing in the layout
     /// manager recognises spans by this exact colour.
     static var codeBlockBackground: NSColor { colors.codeBackground }
