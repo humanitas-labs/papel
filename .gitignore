@@ -20,3 +20,6 @@ dist/
 
 # kdb-rendered task files
 .tasks/
+
+# gh-render projections of GitHub issues
+.issues/
