@@ -130,6 +130,34 @@ final class PaperTextView: NSTextView {
         drawCodeBlockBands(in: rect)
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
+        drawPlaceholder()
+    }
+
+    /// An empty document ghosts a title where the first line will land, so
+    /// a fresh page reads as a page and not a blank canvas. The first
+    /// keystroke clears it.
+    static let placeholderTitle = "Untitled"
+    private var placeholderVisible = false
+
+    private func drawPlaceholder() {
+        guard string.isEmpty, let container = textContainer else {
+            placeholderVisible = false
+            return
+        }
+        placeholderVisible = true
+        let origin = textContainerOrigin
+        Self.placeholderTitle.draw(
+            at: NSPoint(x: origin.x + container.lineFragmentPadding, y: origin.y),
+            withAttributes: [
+                .font: Appearance.headingFont(size: Appearance.headingSize(level: 1)),
+                .foregroundColor: Appearance.mutedInk,
+            ]
+        )
+    }
+
+    override func didChangeText() {
+        super.didChangeText()
+        if placeholderVisible != string.isEmpty { needsDisplay = true }
     }
 
     /// A concealed `---`/`***`/`___` line draws as a hairline across the
