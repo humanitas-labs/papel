@@ -103,7 +103,7 @@ final class MarkdownSyntaxStyler {
         applyUnderline(to: storage, source: source, range: fullRange)
         applyLinks(to: storage, source: source, range: fullRange)
         applyArrows(to: storage, source: source, range: fullRange)
-        applyBlockImages(
+        let imageURLs = applyBlockImages(
             to: storage, source: source, range: fullRange,
             documentURL: (textView as? PaperTextView)?.documentURL,
             width: Self.measure(of: textView)
@@ -121,6 +121,7 @@ final class MarkdownSyntaxStyler {
 
         textView.typingAttributes = Self.baseAttributes
         textView.setSelectedRange(selection)
+        (textView as? PaperTextView)?.watchImages(imageURLs)
     }
 
     /// `---`, `***`, or `___` alone on a line is a thematic break: the
@@ -489,15 +490,17 @@ final class MarkdownSyntaxStyler {
     /// bitmap in the band. The band is reserved whether the line is
     /// concealed or revealed, so the caret entering it moves nothing. A
     /// missing or remote file shows its alt text muted and italic with the
-    /// punctuation concealed, the way a link shows its text.
+    /// punctuation concealed, the way a link shows its text. Returns every
+    /// local file an image referred to, present or not, for the view to watch.
     private func applyBlockImages(
         to storage: NSTextStorage,
         source: String,
         range: NSRange,
         documentURL: URL?,
         width: CGFloat
-    ) {
+    ) -> Set<URL> {
         let text = source as NSString
+        var urls: Set<URL> = []
         Self.blockImagePattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             let altRange = match.range(at: 1)
@@ -506,9 +509,9 @@ final class MarkdownSyntaxStyler {
             let opener = NSRange(location: syntax.location, length: altRange.location - syntax.location)
             let closer = NSRange(location: NSMaxRange(altRange), length: NSMaxRange(match.range) - NSMaxRange(altRange))
 
-            guard let url = MarkdownResource.localURL(for: destination, relativeTo: documentURL),
-                  let entry = ImageStore.shared.entry(for: url)
-            else {
+            let url = MarkdownResource.localURL(for: destination, relativeTo: documentURL)
+            if let url { urls.insert(url) }
+            guard let url, let entry = ImageStore.shared.entry(for: url) else {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: altRange)
                 storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: altRange)
                 for range in [opener, closer] {
@@ -535,6 +538,7 @@ final class MarkdownSyntaxStyler {
                 range: NSRange(location: opener.location + 1, length: NSMaxRange(closer) - opener.location - 1)
             )
         }
+        return urls
     }
 
     /// `->` renders as `→`: the `-` is concealed and the `>` is drawn with

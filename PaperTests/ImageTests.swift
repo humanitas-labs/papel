@@ -204,4 +204,22 @@ struct ImageTests {
         textView.syntaxStyler.apply(to: textView)
         #expect(spacing(at: 0, in: textView) == 300 + Appearance.paragraphSpacing)
     }
+
+    /// The view watches the image files it shows: a file replaced by another
+    /// program reloads and resizes its band with no restyle asked for, the way
+    /// the document reloads when it changes on disk.
+    @Test
+    func aReplacedImageReloadsOnItsOwn() async throws {
+        writePNG("watched.png", width: 200, height: 100)
+        let textView = styledView("![alt](watched.png)", documentURL: documentURL)
+        #expect(spacing(at: 0, in: textView) == 100 + Appearance.paragraphSpacing)
+
+        // An atomic replacement, as an image editor saves: a new inode at the path.
+        let staging = writePNG("staging.png", width: 200, height: 300)
+        _ = try FileManager.default.replaceItemAt(folder.appendingPathComponent("watched.png"), withItemAt: staging)
+        for _ in 0..<100 where spacing(at: 0, in: textView) != 300 + Appearance.paragraphSpacing {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(spacing(at: 0, in: textView) == 300 + Appearance.paragraphSpacing)
+    }
 }

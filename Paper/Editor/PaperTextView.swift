@@ -92,6 +92,46 @@ final class PaperTextView: NSTextView {
         return found
     }
 
+    // MARK: - Image files
+
+    /// One watcher per image file the document shows. A file rewritten in
+    /// place or replaced by another program is decoded again and its band
+    /// resized, the way the document itself reloads when it changes on disk.
+    /// Only files that exist are watched: a missing one would keep the
+    /// watcher re-arming, and it is picked up on the next restyle instead.
+    private var imageWatchers: [URL: FileWatcher] = [:]
+
+    func watchImages(_ urls: Set<URL>) {
+        let wanted = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        for (url, watcher) in imageWatchers where !wanted.contains(url) {
+            watcher.cancel()
+            imageWatchers[url] = nil
+        }
+        for url in wanted where imageWatchers[url] == nil {
+            imageWatchers[url] = FileWatcher(url: url) { [weak self] in
+                self?.imageDidChange(at: url)
+            }
+        }
+    }
+
+    private func imageDidChange(at url: URL) {
+        ImageStore.shared.forget(url)
+        syntaxStyler.apply(to: self)
+        needsDisplay = true
+    }
+
+    /// Watchers hold file descriptors and must be cancelled by hand; the
+    /// view leaving its window is the document closing.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil {
+            for watcher in imageWatchers.values { watcher.cancel() }
+            imageWatchers = [:]
+        } else if hasBlockImages {
+            syntaxStyler.apply(to: self)
+        }
+    }
+
     /// The rect AppKit proposes spans the whole line fragment, including the
     /// leading added by the line-height multiple. TextKit 1 places that extra
     /// space above the glyphs, so the caret keeps the fragment's bottom edge and
