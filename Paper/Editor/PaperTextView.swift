@@ -719,6 +719,9 @@ final class PaperTextView: NSTextView {
         isAutomaticDashSubstitutionEnabled = false
         isAutomaticTextReplacementEnabled = true
         isAutomaticSpellingCorrectionEnabled = false
+        // No Writing Tools: the selection affordance and panel are exactly
+        // the kind of chrome Paper exists to remove.
+        writingToolsBehavior = .none
 
         font = Appearance.bodyFont()
         applyColors()
