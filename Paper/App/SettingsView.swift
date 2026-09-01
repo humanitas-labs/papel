@@ -9,6 +9,8 @@ struct SettingsView: View {
     @State private var isNamingPreset = false
     @State private var isRenamingPreset = false
     @State private var presetName = ""
+    @State private var isNamingTheme = false
+    @State private var themeName = ""
 
     private let families = NSFontManager.shared.availableFontFamilies
         .filter { !$0.hasPrefix(".") }
@@ -36,9 +38,22 @@ struct SettingsView: View {
         )
     }
 
+    /// The configured theme name. A name no theme has (its file was
+    /// removed) is listed so the picker still shows what the config says.
+    private var themeSelection: Binding<String> {
+        Binding(
+            get: { store.current.theme },
+            set: { name in
+                var configuration = store.current
+                configuration.theme = name
+                store.write(configuration)
+            }
+        )
+    }
+
     /// A colour well bound to one hex override; nil shows the theme's colour.
     private func colorRow(_ title: String, _ keyPath: WritableKeyPath<Configuration, String?>, themeValue: KeyPath<Palette, String>) -> some View {
-        let current = store.current[keyPath: keyPath] ?? store.current.theme.palette[keyPath: themeValue]
+        let current = store.current[keyPath: keyPath] ?? store.resolvedTheme.palette[keyPath: themeValue]
         func write(_ hex: String) {
             var configuration = store.current
             configuration[keyPath: keyPath] = hex
@@ -95,25 +110,41 @@ struct SettingsView: View {
             }
 
             Section("Theme") {
-                Picker("Theme", selection: binding(\.theme)) {
-                    ForEach(Theme.allCases, id: \.self) { Text($0.title).tag($0) }
+                Picker("Theme", selection: themeSelection) {
+                    let builtIn = store.themes.filter(\.isBuiltIn)
+                    let custom = store.themes.filter { !$0.isBuiltIn }
+                    if store.theme(named: store.current.theme) == nil {
+                        Text("\(store.current.theme) (missing)").tag(store.current.theme)
+                    }
+                    if custom.isEmpty {
+                        ForEach(builtIn) { Text($0.title).tag($0.name) }
+                    } else {
+                        Section("Built-in") { ForEach(builtIn) { Text($0.title).tag($0.name) } }
+                        Section("Custom") { ForEach(custom) { Text($0.title).tag($0.name) } }
+                    }
                 }
                 colorRow("Canvas", \.canvas, themeValue: \.canvas)
                 colorRow("Ink", \.ink, themeValue: \.ink)
                 colorRow("Canvas (dark)", \.canvasDark, themeValue: \.canvasDark)
                 colorRow("Ink (dark)", \.inkDark, themeValue: \.inkDark)
                 HStack {
+                    Button("Save as Theme…") {
+                        themeName = ""
+                        isNamingTheme = true
+                    }
                     Spacer()
+                    Button("Delete Theme", role: .destructive) { store.deleteTheme(named: store.current.theme) }
+                        .disabled(store.resolvedTheme.isBuiltIn)
                     Button("Use Theme Colours") {
                         var configuration = store.current
-                        configuration.canvas = nil
-                        configuration.ink = nil
-                        configuration.canvasDark = nil
-                        configuration.inkDark = nil
+                        configuration.colorOverrides = Palette.Overrides()
                         store.write(configuration)
                     }
-                    .disabled([store.current.canvas, store.current.ink, store.current.canvasDark, store.current.inkDark].allSatisfy { $0 == nil })
+                    .disabled(store.current.colorOverrides.isEmpty)
                 }
+                Text("Themes are files in \(store.themesDirectoryURL.path(percentEncoded: false)); a file named like a built-in replaces it.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Type") {
@@ -159,6 +190,14 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Saves the current settings under this name and makes it the active preset. An existing name is replaced.")
+        }
+        .alert("Save Theme", isPresented: $isNamingTheme) {
+            TextField("Name", text: $themeName)
+            Button("Save") { store.saveTheme(named: themeName) }
+                .disabled(!ConfigurationStore.isValidPresetName(themeName))
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Saves the colours in use as a theme file under this name and selects it. An existing theme of that name is replaced.")
         }
         .alert("Rename Preset", isPresented: $isRenamingPreset) {
             TextField("Name", text: $presetName)

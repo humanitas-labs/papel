@@ -88,7 +88,7 @@ enum Appearance {
     /// system accent blue, so it sits inside the canvas palette.
     static var selection: NSColor { colors.selection }
 
-    static var palette: Palette { configuration.palette }
+    static var palette: Palette { ConfigurationStore.shared.palette }
 
     private struct Colors {
         let palette: Palette

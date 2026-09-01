@@ -96,11 +96,12 @@ struct ThemeTests {
         color.canvas =
         color.ink.dark = nonsense
         """)
-        #expect(config.theme == .slate)
+        #expect(config.theme == "slate")
         #expect(config.ink == "#102030")
         #expect(config.canvas == nil)
         #expect(config.inkDark == nil, "invalid hex inherits the theme")
-        #expect(config.palette.ink == "#102030")
+        let slate = Theme.builtIn(named: "slate")!
+        #expect(config.palette(over: slate.palette).ink == "#102030")
         #expect(Configuration.parse("letter.spacing = -0.4").letterSpacing == -0.4)
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowWidth == 1200)
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowHeight == 520, "clamped")
@@ -108,24 +109,41 @@ struct ThemeTests {
         #expect(Configuration.parse("image.corner.radius = 0").imageCornerRadius == 0, "square")
         #expect(Configuration.parse("image.corner.radius = 99").imageCornerRadius == 40, "clamped")
         #expect(Configuration.parse("image.corner.radius = round").imageCornerRadius == 12, "default matches the code band")
-        #expect(config.palette.canvas == Theme.slate.palette.canvas)
-        #expect(config.palette.inkDark == Theme.slate.palette.inkDark)
-        #expect(Configuration.parse("theme = nope").theme == .paper)
-        #expect(Configuration.parse("theme = spatial").theme == .spatial)
-        #expect(Configuration.parse("theme = Apple").theme == .apple)
+        #expect(config.palette(over: slate.palette).canvas == slate.palette.canvas)
+        #expect(config.palette(over: slate.palette).inkDark == slate.palette.inkDark)
+        #expect(Configuration.parse("theme = nope").theme == "nope", "an unknown name is kept for a theme file added later")
+        #expect(Configuration.parse("theme =").theme == "paper", "a blank name keeps the default")
+        #expect(Configuration.parse("theme = spatial").theme == "spatial")
+        #expect(Configuration.parse("theme = Apple").theme == "apple")
         // Pre-0.2 configs spell the dark pair with a suffix; they resolve
         // to the renamed themes.
-        #expect(Configuration.parse("theme = Spatial-Dark").theme == .spatial)
-        #expect(Configuration.parse("theme = apple-dark").theme == .apple)
-        #expect(Theme.spatial.palette.canvas != Theme.spatial.palette.canvasDark,
-                "spatial now has a light appearance")
-        #expect(Configuration().palette == Theme.paper.palette)
+        #expect(Configuration.parse("theme = Spatial-Dark").theme == "spatial")
+        #expect(Configuration.parse("theme = apple-dark").theme == "apple")
+        let spatial = Theme.builtIn(named: "spatial")!
+        #expect(spatial.palette.canvas != spatial.palette.canvasDark, "spatial now has a light appearance")
+        #expect(Configuration().palette(over: Theme.paper.palette) == Theme.paper.palette)
+    }
+
+    @Test
+    func userThemeFallsBackPerKeyAndWritesOutItsColours() {
+        let sepia = Theme.user(named: "Sepia", text: "color.canvas = #F4ECD8\ncolor.ink = #5B4636\n")
+        #expect(sepia.name == "sepia" && sepia.title == "Sepia" && !sepia.isBuiltIn)
+        #expect(sepia.palette.canvas == "#F4ECD8")
+        #expect(sepia.palette.canvasDark == Theme.paper.palette.canvasDark, "missing keys fall back to Paper")
+        #expect(sepia.palette.overrides.fileText == """
+        color.canvas = #F4ECD8
+        color.ink = #5B4636
+        color.canvas.dark = #1B1916
+        color.ink.dark = #E8E3D6
+
+        """)
+        #expect(Theme.user(named: "x", text: "").palette == Theme.paper.palette)
     }
 
     @Test
     func mergedWritesEmptyOverridesAsBareKeys() {
         var config = Configuration()
-        config.theme = .slate
+        config.theme = "slate"
         config.ink = "#123456"
         let text = config.merged(into: Configuration.template)
         #expect(text.contains("\ntheme = slate\n"))
@@ -268,6 +286,93 @@ struct ConfigurationStoreTests {
         #expect(!store.applyPreset(named: "Missing"))
         store.deletePreset(named: "Reading")
         #expect(store.presets == ["Defaults"])
+    }
+
+    @Test
+    func themeFilesAreListedResolvedAndShadowBuiltIns() throws {
+        let url = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
+        store.start()
+        #expect(store.themes == Theme.builtIn)
+        #expect(FileManager.default.fileExists(atPath: store.themesDirectoryURL.path))
+
+        var config = Configuration()
+        config.theme = "sepia"
+        store.write(config)
+        #expect(store.resolvedTheme == Theme.paper, "an unknown name resolves to Paper")
+        #expect(store.current.theme == "sepia", "and is kept in the config")
+
+        try "color.canvas = #F4ECD8\ncolor.ink = #5B4636\n".write(to: store.themeURL(named: "Sepia"), atomically: true, encoding: .utf8)
+        store.loadThemes()
+        #expect(store.themes.map(\.name) == ["paper", "slate", "mono", "spatial", "apple", "sepia"])
+        #expect(store.resolvedTheme.title == "Sepia")
+        #expect(store.palette.canvas == "#F4ECD8")
+        #expect(store.palette.inkDark == Theme.paper.palette.inkDark)
+
+        config.ink = "#000000"
+        store.write(config)
+        #expect(store.palette.ink == "#000000", "config overrides layer on a file theme")
+        #expect(store.palette.canvas == "#F4ECD8")
+
+        try "color.ink = #FF0000\n".write(to: store.themeURL(named: "paper"), atomically: true, encoding: .utf8)
+        store.loadThemes()
+        #expect(store.themes.filter { $0.name == "paper" }.count == 1)
+        #expect(store.theme(named: "paper")?.isBuiltIn == false, "a file named like a built-in shadows it")
+        #expect(store.theme(named: "Paper")?.palette.ink == "#FF0000")
+        store.deleteTheme(named: "paper")
+        #expect(store.theme(named: "paper")?.isBuiltIn == true, "deleting the file restores the built-in")
+        store.deleteTheme(named: "slate")
+        #expect(store.theme(named: "slate") != nil, "built-ins cannot be deleted")
+    }
+
+    @Test
+    func savingAThemeWritesTheColoursInUseAndClearsOverrides() throws {
+        let url = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
+        store.start()
+        var config = Configuration()
+        config.theme = "slate"
+        config.ink = "#102030"
+        store.write(config)
+        let expected = store.palette
+
+        #expect(!store.saveTheme(named: "a/b"))
+        #expect(store.saveTheme(named: "Night Ink"))
+        #expect(store.current.theme == "night ink")
+        #expect(store.current.colorOverrides.isEmpty)
+        #expect(store.resolvedTheme.title == "Night Ink")
+        #expect(store.palette == expected, "the colours in use do not change")
+        #expect(try String(contentsOf: store.themeURL(named: "Night Ink"), encoding: .utf8) == expected.overrides.fileText)
+        #expect(Configuration.parse(try String(contentsOf: url, encoding: .utf8)).theme == "night ink")
+    }
+
+    @Test
+    func themeFileChangesRecolourOpenWindows() async throws {
+        let url = temporaryFile()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConfigurationStore(fileURL: url)
+        defer { ConfigurationStore.forgetActivePreset(for: url) }
+        store.start()
+        var config = Configuration()
+        config.theme = "sepia"
+        store.write(config)
+        nonisolated(unsafe) var posts = 0
+        let token = NotificationCenter.default.addObserver(
+            forName: Configuration.didChangeNotification, object: store, queue: nil
+        ) { _ in posts += 1 }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        try "color.canvas = #F4ECD8\n".write(to: store.themeURL(named: "sepia"), atomically: true, encoding: .utf8)
+        let deadline = ContinuousClock.now + .seconds(3)
+        while store.palette.canvas != "#F4ECD8", ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(store.palette.canvas == "#F4ECD8")
+        #expect(posts == 1, "a theme change is posted like a config change")
     }
 
     @Test

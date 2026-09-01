@@ -40,6 +40,10 @@ final class ConfigurationStore: ObservableObject {
     /// cleared when the preset is deleted. Persisted per config file across
     /// launches.
     @Published private(set) var activePreset: String?
+    /// The built-in themes followed by the user's theme files, refreshed
+    /// whenever the themes directory changes. A user theme shadows a
+    /// built-in of the same name.
+    @Published private(set) var themes: [Theme] = Theme.builtIn
     let fileURL: URL
 
     /// `presets/` beside the config file; one file per preset in the same
@@ -48,9 +52,16 @@ final class ConfigurationStore: ObservableObject {
         fileURL.deletingLastPathComponent().appendingPathComponent("presets", isDirectory: true)
     }
 
+    /// `themes/` beside the config file; one file per theme holding
+    /// `color.*` keys, named after the theme.
+    var themesDirectoryURL: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("themes", isDirectory: true)
+    }
+
     private var fileSource: DispatchSourceFileSystemObject?
     private var directorySource: DispatchSourceFileSystemObject?
     private var presetsSource: DispatchSourceFileSystemObject?
+    private var themesSource: DispatchSourceFileSystemObject?
     private var reloadTask: Task<Void, Never>?
 
     init(fileURL: URL) {
@@ -78,7 +89,70 @@ final class ConfigurationStore: ObservableObject {
         ensureFileExists()
         reload()
         loadPresets()
+        loadThemes()
         watch()
+    }
+
+    // MARK: - Themes
+
+    func themeURL(named name: String) -> URL {
+        themesDirectoryURL.appendingPathComponent(name.trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Reads every theme file and rebuilds `themes`; a colour change is
+    /// posted like a config change so open windows recolour.
+    func loadThemes() {
+        let before = palette
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: themesDirectoryURL.path)) ?? []
+        let user: [Theme] = names
+            .filter { !$0.hasPrefix(".") }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            .compactMap { name in
+                guard let text = try? String(contentsOf: themeURL(named: name), encoding: .utf8) else { return nil }
+                return Theme.user(named: name, text: text)
+            }
+        let shadowed = Set(user.map(\.name))
+        themes = Theme.builtIn.filter { !shadowed.contains($0.name) } + user
+        if palette != before {
+            NotificationCenter.default.post(name: Configuration.didChangeNotification, object: self)
+        }
+    }
+
+    func theme(named name: String) -> Theme? {
+        themes.first { $0.name == Theme.canonicalName(name) }
+    }
+
+    /// The configured theme, or Paper when nothing has that name.
+    var resolvedTheme: Theme {
+        theme(named: current.theme) ?? .paper
+    }
+
+    /// The colours in use: the resolved theme under the config's overrides.
+    var palette: Palette {
+        current.palette(over: resolvedTheme.palette)
+    }
+
+    /// Writes the colours in use to `themes/<name>` as a theme file, then
+    /// selects it and clears the overrides that were folded into it.
+    @discardableResult
+    func saveTheme(named name: String) -> Bool {
+        guard Self.isValidPresetName(name) else { return false }
+        try? FileManager.default.createDirectory(at: themesDirectoryURL, withIntermediateDirectories: true)
+        guard (try? palette.overrides.fileText.write(to: themeURL(named: name), atomically: true, encoding: .utf8)) != nil else {
+            return false
+        }
+        loadThemes()
+        var configuration = current
+        configuration.theme = Theme.canonicalName(name)
+        configuration.colorOverrides = Palette.Overrides()
+        write(configuration)
+        return true
+    }
+
+    func deleteTheme(named name: String) {
+        guard let theme = theme(named: name), !theme.isBuiltIn else { return }
+        try? FileManager.default.removeItem(at: themeURL(named: theme.title))
+        loadThemes()
     }
 
     // MARK: - Presets
@@ -188,6 +262,7 @@ final class ConfigurationStore: ObservableObject {
 
     func ensureFileExists() {
         try? FileManager.default.createDirectory(at: presetsDirectoryURL, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: themesDirectoryURL, withIntermediateDirectories: true)
         guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try? Configuration.template.write(to: fileURL, atomically: true, encoding: .utf8)
     }
@@ -208,6 +283,24 @@ final class ConfigurationStore: ObservableObject {
         presetsSource?.cancel()
         presetsSource = makeSource(for: presetsDirectoryURL, events: .write) { [weak self] in
             self?.loadPresets()
+        }
+
+        themesSource?.cancel()
+        themesSource = makeSource(for: themesDirectoryURL, events: .write) { [weak self] in
+            self?.scheduleThemeReload()
+        }
+    }
+
+    private var themeReloadTask: Task<Void, Never>?
+
+    /// A theme file saved by an editor produces a burst of directory events
+    /// and may be mid-write on the first; coalesce them as the config is.
+    private func scheduleThemeReload() {
+        themeReloadTask?.cancel()
+        themeReloadTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard !Task.isCancelled, let self else { return }
+            self.loadThemes()
         }
     }
 

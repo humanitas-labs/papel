@@ -55,7 +55,7 @@ window.height = 877
 
 Themes:
 
-`paper`, `slate`, `mono`, `spatial`, `apple`, each with light and dark palettes, plus per-colour hex overrides. The Settings window (⌘,) edits the same keys with controls and writes them back into the file, comments preserved. Named presets are files too, in `~/.config/paper/presets/`; edits write through to the active preset.
+`paper`, `slate`, `mono`, `spatial`, `apple`, each with light and dark palettes, plus per-colour hex overrides (`color.canvas`, `color.ink`, `color.canvas.dark`, `color.ink.dark`). Your own themes are files in `~/.config/paper/themes/` holding those same keys, one theme per file, named after it: `theme = sepia` picks `themes/sepia`, and a file named like a built-in replaces it. Keys a theme leaves out take Paper's values. The Settings window (⌘,) lists them with the built-ins, saves the colours in use as a new theme, and edits every key with controls, writing back into the file, comments preserved. Named presets are files too, in `~/.config/paper/presets/`; edits write through to the active preset.
 
 ## Command line
 

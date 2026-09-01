@@ -8,40 +8,103 @@ struct Palette: Equatable, Sendable {
     var ink: String
     var canvasDark: String
     var inkDark: String
+
+    /// The colour keys of a theme file or of the config's overrides: each
+    /// value is a `#RRGGBB` string or nil to inherit.
+    struct Overrides: Equatable, Sendable {
+        var canvas: String?
+        var ink: String?
+        var canvasDark: String?
+        var inkDark: String?
+
+        var isEmpty: Bool { self == Overrides() }
+    }
+
+    /// `overrides` layered over this palette; nil values keep the base.
+    func applying(_ overrides: Overrides) -> Palette {
+        Palette(
+            canvas: overrides.canvas ?? canvas,
+            ink: overrides.ink ?? ink,
+            canvasDark: overrides.canvasDark ?? canvasDark,
+            inkDark: overrides.inkDark ?? inkDark
+        )
+    }
+
+    /// Every value as an override, for writing a palette out as a theme file.
+    var overrides: Overrides {
+        Overrides(canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark)
+    }
 }
 
-/// Built-in themes, chosen by the `theme` configuration key.
-enum Theme: String, CaseIterable, Sendable {
-    case paper, slate, mono, spatial, apple
+extension Palette.Overrides {
+    /// The overrides as `color.*` lines: the content of a theme file.
+    var fileText: String {
+        Configuration.colorEntries(self)
+            .filter { !$0.value.isEmpty }
+            .map { "\($0.key) = \($0.value)" }
+            .joined(separator: "\n") + "\n"
+    }
+}
 
-    /// The stored name, accepting the pre-0.2 `spatial-dark` and
-    /// `apple-dark` spellings from older config files.
-    init?(configName: String) {
-        switch configName {
-        case "spatial-dark": self = .spatial
-        case "apple-dark": self = .apple
-        default: self.init(rawValue: configName)
+/// A named palette, chosen by the `theme` configuration key. The built-ins
+/// ship with the app; user themes are files in `themes/` beside the config,
+/// holding the same `color.*` keys, and shadow a built-in of the same name.
+struct Theme: Equatable, Sendable, Identifiable {
+    /// The stored name: lowercase, the file name for a user theme.
+    let name: String
+    let title: String
+    let palette: Palette
+    let isBuiltIn: Bool
+
+    var id: String { name }
+
+    static let paper = Theme(
+        name: "paper", title: "Paper",
+        palette: Palette(canvas: "#F6F3EC", ink: "#1B1916", canvasDark: "#1B1916", inkDark: "#E8E3D6"),
+        isBuiltIn: true
+    )
+
+    static let builtIn: [Theme] = [
+        paper,
+        Theme(name: "slate", title: "Slate",
+              palette: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5"),
+              isBuiltIn: true),
+        Theme(name: "mono", title: "Mono",
+              palette: Palette(canvas: "#FFFFFF", ink: "#000000", canvasDark: "#000000", inkDark: "#EDEDED"),
+              isBuiltIn: true),
+        Theme(name: "spatial", title: "Spatial",
+              palette: Palette(canvas: "#FFFFFF", ink: "#161819", canvasDark: "#191B1D", inkDark: "#F4F9FA"),
+              isBuiltIn: true),
+        Theme(name: "apple", title: "Apple",
+              palette: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD"),
+              isBuiltIn: true),
+    ]
+
+    static func builtIn(named name: String) -> Theme? {
+        builtIn.first { $0.name == name }
+    }
+
+    /// The name as stored: trimmed, lowercased, and with the pre-0.2
+    /// `spatial-dark` and `apple-dark` spellings mapped to the renamed
+    /// themes. Empty for a blank value.
+    static func canonicalName(_ text: String) -> String {
+        let name = text.trimmingCharacters(in: .whitespaces).lowercased()
+        switch name {
+        case "spatial-dark": return "spatial"
+        case "apple-dark": return "apple"
+        default: return name
         }
     }
 
-    var palette: Palette {
-        switch self {
-        case .paper: Palette(canvas: "#F6F3EC", ink: "#1B1916", canvasDark: "#1B1916", inkDark: "#E8E3D6")
-        case .slate: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5")
-        case .mono: Palette(canvas: "#FFFFFF", ink: "#000000", canvasDark: "#000000", inkDark: "#EDEDED")
-        case .spatial: Palette(canvas: "#FFFFFF", ink: "#161819", canvasDark: "#191B1D", inkDark: "#F4F9FA")
-        case .apple: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD")
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .paper: "Paper"
-        case .slate: "Slate"
-        case .mono: "Mono"
-        case .spatial: "Spatial"
-        case .apple: "Apple"
-        }
+    /// A user theme parsed from a theme file. Keys the file leaves out fall
+    /// back to Paper's values, so a light-only theme still has a dark pair.
+    static func user(named name: String, text: String) -> Theme {
+        Theme(
+            name: canonicalName(name),
+            title: name,
+            palette: paper.palette.applying(Configuration.parse(text).colorOverrides),
+            isBuiltIn: false
+        )
     }
 }
 

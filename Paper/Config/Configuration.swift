@@ -30,7 +30,10 @@ struct Configuration: Equatable, Sendable {
     var headingWeight: HeadingWeight = .medium
     /// Corner radius in points a block image is clipped to; 0 is square.
     var imageCornerRadius: Double = 12
-    var theme: Theme = .paper
+    /// The theme's canonical name: a built-in or a file in `themes/`. Kept
+    /// as written even when nothing resolves to it, so a theme file added
+    /// later is picked up; `ConfigurationStore` resolves it to a `Theme`.
+    var theme: String = Theme.paper.name
     /// Size of a newly opened window in points; macOS restores each window's
     /// last size after that.
     var windowWidth: Double = 1400
@@ -41,14 +44,20 @@ struct Configuration: Equatable, Sendable {
     var canvasDark: String?
     var inkDark: String?
 
-    /// The theme's palette with any overrides applied.
-    var palette: Palette {
-        var palette = theme.palette
-        if let canvas { palette.canvas = canvas }
-        if let ink { palette.ink = ink }
-        if let canvasDark { palette.canvasDark = canvasDark }
-        if let inkDark { palette.inkDark = inkDark }
-        return palette
+    /// The four colour overrides as one value.
+    var colorOverrides: Palette.Overrides {
+        get { Palette.Overrides(canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark) }
+        set {
+            canvas = newValue.canvas
+            ink = newValue.ink
+            canvasDark = newValue.canvasDark
+            inkDark = newValue.inkDark
+        }
+    }
+
+    /// The overrides applied over a resolved theme's palette.
+    func palette(over base: Palette) -> Palette {
+        base.applying(colorOverrides)
     }
 
     static let fontSizeRange: ClosedRange<Double> = 8...40
@@ -95,8 +104,10 @@ struct Configuration: Equatable, Sendable {
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
 
-    # Theme: paper, slate, mono, spatial, or apple. Each has light
-    # and dark colours; the colour overrides below tune any of them.
+    # Theme: paper, slate, mono, spatial, or apple, or the name of a file in
+    # the themes/ directory beside this one holding color.* keys like those
+    # below. Each has light and dark colours; the colour overrides below
+    # tune any of them. Settings can save the current colours as a theme.
     theme = paper
 
     # Size of new windows in points. Each window remembers its own size
@@ -156,7 +167,8 @@ struct Configuration: Equatable, Sendable {
         case "window.height":
             windowHeight = Self.number(value, in: Self.windowHeightRange) ?? windowHeight
         case "theme":
-            theme = Theme(configName: value.lowercased()) ?? theme
+            let name = Theme.canonicalName(value)
+            if !name.isEmpty { theme = name }
         case "color.canvas":
             canvas = HexColor.normalized(value)
         case "color.ink":
@@ -181,13 +193,20 @@ struct Configuration: Equatable, Sendable {
             ("letter.spacing", Self.format(letterSpacing)),
             ("heading.weight", headingWeight.rawValue),
             ("image.corner.radius", Self.format(imageCornerRadius)),
-            ("theme", theme.rawValue),
+            ("theme", theme),
             ("window.width", Self.format(windowWidth)),
             ("window.height", Self.format(windowHeight)),
-            ("color.canvas", canvas ?? ""),
-            ("color.ink", ink ?? ""),
-            ("color.canvas.dark", canvasDark ?? ""),
-            ("color.ink.dark", inkDark ?? ""),
+        ] + Self.colorEntries(colorOverrides)
+    }
+
+    /// The `color.*` keys with their values, empty for nil, in template
+    /// order. Shared by the config file and theme files.
+    static func colorEntries(_ overrides: Palette.Overrides) -> [(key: String, value: String)] {
+        [
+            ("color.canvas", overrides.canvas ?? ""),
+            ("color.ink", overrides.ink ?? ""),
+            ("color.canvas.dark", overrides.canvasDark ?? ""),
+            ("color.ink.dark", overrides.inkDark ?? ""),
         ]
     }
 
