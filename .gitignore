@@ -17,3 +17,6 @@ Package.resolved
 # Personal work log
 .journal/
 dist/
+
+# kdb-rendered task files
+.tasks/
