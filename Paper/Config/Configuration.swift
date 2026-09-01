@@ -28,6 +28,8 @@ struct Configuration: Equatable, Sendable {
     /// Tracking in points added between characters; negative tightens.
     var letterSpacing: Double = 0
     var headingWeight: HeadingWeight = .medium
+    /// Corner radius in points a block image is clipped to; 0 is square.
+    var imageCornerRadius: Double = 12
     var theme: Theme = .paper
     /// Size of a newly opened window in points; macOS restores each window's
     /// last size after that.
@@ -54,6 +56,7 @@ struct Configuration: Equatable, Sendable {
     static let paragraphSpacingRange: ClosedRange<Double> = 0...60
     static let measureRange: ClosedRange<Double> = 320...1200
     static let letterSpacingRange: ClosedRange<Double> = -1...3
+    static let imageCornerRadiusRange: ClosedRange<Double> = 0...40
     static let windowWidthRange: ClosedRange<Double> = 640...4000
     static let windowHeightRange: ClosedRange<Double> = 520...3000
 
@@ -88,6 +91,9 @@ struct Configuration: Equatable, Sendable {
     # Heading weight: regular, medium, semibold, or bold. The nearest installed
     # face is used.
     heading.weight = medium
+
+    # Corner radius in points that a block image is clipped to; 0 is square.
+    image.corner.radius = 12
 
     # Theme: paper, slate, mono, spatial, or apple. Each has light
     # and dark colours; the colour overrides below tune any of them.
@@ -143,6 +149,8 @@ struct Configuration: Equatable, Sendable {
             letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
         case "heading.weight":
             headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
+        case "image.corner.radius":
+            imageCornerRadius = Self.number(value, in: Self.imageCornerRadiusRange) ?? imageCornerRadius
         case "window.width":
             windowWidth = Self.number(value, in: Self.windowWidthRange) ?? windowWidth
         case "window.height":
@@ -172,6 +180,7 @@ struct Configuration: Equatable, Sendable {
             ("measure", Self.format(measure)),
             ("letter.spacing", Self.format(letterSpacing)),
             ("heading.weight", headingWeight.rawValue),
+            ("image.corner.radius", Self.format(imageCornerRadius)),
             ("theme", theme.rawValue),
             ("window.width", Self.format(windowWidth)),
             ("window.height", Self.format(windowHeight)),

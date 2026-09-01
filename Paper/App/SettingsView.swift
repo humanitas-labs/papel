@@ -135,6 +135,10 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Images") {
+                numberRow("Corner radius", binding(\.imageCornerRadius), in: Configuration.imageCornerRadiusRange, unit: "pt")
+            }
+
 
             Section("Window") {
                 numberRow("Width", binding(\.windowWidth), in: Configuration.windowWidthRange, unit: "pt")
