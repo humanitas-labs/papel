@@ -22,6 +22,10 @@ extension NSAttributedString.Key {
     /// The destination of a Markdown link, as its source string, on the
     /// link's text. Opened with ⌘-click; a plain click places the caret.
     static let linkDestination = NSAttributedString.Key("paper.linkDestination")
+    /// Marks a paragraph that is a block image (`![alt](file)` alone on its
+    /// line) whose file loaded; the value is the resolved file `URL`. The
+    /// paragraph's spacing reserves the band the text view draws it in.
+    static let imageSource = NSAttributedString.Key("paper.imageSource")
 }
 
 /// TextKit 1 layout manager that computes margin decorations and conceals
@@ -361,6 +365,43 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             rects.append(NSRect(x: 0, y: top, width: 0, height: bottom - top))
         }
         return rects
+    }
+
+    /// The band (in text-container coordinates) under each block-image
+    /// paragraph intersecting `glyphRange`, with the image file it shows.
+    /// The band is the paragraph's spacing: it starts under the line's used
+    /// rect and is as tall as the image fits into `width`, so the source
+    /// line above stays put whether it is concealed or revealed.
+    @MainActor
+    func imageBands(forGlyphRange glyphRange: NSRange, width: CGFloat) -> [(rect: NSRect, url: URL)] {
+        guard let storage = textStorage else { return [] }
+        let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+        var bands: [(rect: NSRect, url: URL)] = []
+        var measured: [NSRange] = []
+        storage.enumerateAttribute(.imageSource, in: characterRange) { value, partial, _ in
+            guard let url = value as? URL else { return }
+            var range = NSRange()
+            _ = storage.attribute(
+                .imageSource, at: partial.location,
+                longestEffectiveRange: &range, in: NSRange(location: 0, length: storage.length)
+            )
+            guard !measured.contains(range) else { return }
+            measured.append(range)
+            guard let entry = ImageStore.shared.entry(for: url) else { return }
+            let size = ImageStore.fit(entry.naturalSize, width: width)
+            let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            var bottom = -CGFloat.greatestFiniteMagnitude
+            var leading = CGFloat.greatestFiniteMagnitude
+            enumerateLineFragments(forGlyphRange: glyphs) { _, used, _, fragmentGlyphs, _ in
+                let first = self.characterIndexForGlyph(at: fragmentGlyphs.location)
+                guard NSLocationInRange(first, range) else { return }
+                bottom = max(bottom, used.maxY)
+                leading = min(leading, used.minX)
+            }
+            guard bottom > -CGFloat.greatestFiniteMagnitude else { return }
+            bands.append((NSRect(x: leading, y: bottom, width: size.width, height: size.height), url))
+        }
+        return bands
     }
 
     /// Line-fragment rects (in text-container coordinates) of each concealed

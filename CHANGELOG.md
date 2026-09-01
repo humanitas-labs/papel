@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Render block images: `![alt](file)` alone on a line draws the file under it, scaled to fit the measure and never up past its natural size, with the source concealed off the active paragraph and shown above the image on it. The band is the paragraph's spacing, so the source stays untouched (save, undo, find, copy see `![…](…)`) and the caret entering the line moves nothing. Relative paths resolve against the document's file, which the editor now receives explicitly and follows across Save As; links open against it too, so an untitled document no longer resolves them against the home folder. A missing file shows its alt text muted and italic. Remote images are not fetched — no request leaves the machine when a document opens — and stand as their alt text; an image rewritten on disk is decoded again on the next restyle.
+
 ## 0.2.0 — 2026.08.30
 
 - Leave code out of text checking: spelling and grammar underlines, smart quotes, and text replacements no longer touch fenced blocks or inline `code` spans, while the rest of the document keeps them. The check results are filtered as they arrive rather than toggling checking off.

@@ -56,7 +56,7 @@ private struct DocumentView: View {
     @State private var watcher: FileWatcher?
 
     var body: some View {
-        MarkdownEditor(text: $document.text)
+        MarkdownEditor(text: $document.text, fileURL: fileURL)
             .background(Color(nsColor: Appearance.canvas))
             .background(WindowConfigurator())
             .frame(minWidth: 640, minHeight: 520)

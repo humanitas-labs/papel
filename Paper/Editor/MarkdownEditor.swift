@@ -3,6 +3,9 @@ import SwiftUI
 
 struct MarkdownEditor: NSViewRepresentable {
     @Binding var text: String
+    /// The document's file, so relative links and images resolve; nil
+    /// until the first save.
+    var fileURL: URL? = nil
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -13,6 +16,7 @@ struct MarkdownEditor: NSViewRepresentable {
         let textView = PaperTextView()
 
         textView.delegate = context.coordinator
+        textView.documentURL = fileURL
         textView.string = text
         textView.syntaxStyler.apply(to: textView)
 
@@ -31,6 +35,7 @@ struct MarkdownEditor: NSViewRepresentable {
         guard let textView = scrollView.documentView as? PaperTextView else { return }
 
         context.coordinator.text = $text
+        textView.documentURL = fileURL
 
         guard textView.string != text else { return }
         let selection = textView.selectedRange()

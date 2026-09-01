@@ -3,6 +3,16 @@ import AppKit
 final class PaperTextView: NSTextView {
     let syntaxStyler = MarkdownSyntaxStyler()
 
+    /// The file this view edits, set by the editor and kept current across
+    /// Save As; relative paths in links and images resolve against its
+    /// folder. Nil for a document not yet saved.
+    var documentURL: URL? {
+        didSet {
+            guard documentURL != oldValue else { return }
+            syntaxStyler.apply(to: self)
+        }
+    }
+
     init() {
         let storage = NSTextStorage()
         let layoutManager = PaperLayoutManager()
@@ -58,6 +68,28 @@ final class PaperTextView: NSTextView {
             (newSize.width - Appearance.maximumMeasure) / 2
         )
         textContainerInset = NSSize(width: margin, height: Appearance.topMargin)
+
+        // A block image is fitted to the measure when styled; a window
+        // narrower than the measure plus its margins shrinks the container,
+        // so the bands are sized again.
+        let measure = MarkdownSyntaxStyler.measure(of: self)
+        if measure != styledMeasure, hasBlockImages {
+            syntaxStyler.apply(to: self)
+        }
+        styledMeasure = measure
+    }
+
+    private var styledMeasure: CGFloat = 0
+
+    private var hasBlockImages: Bool {
+        guard let storage = textStorage, storage.length > 0 else { return false }
+        var found = false
+        storage.enumerateAttribute(.imageSource, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+            guard value != nil else { return }
+            found = true
+            stop.pointee = true
+        }
+        return found
     }
 
     /// The rect AppKit proposes spans the whole line fragment, including the
@@ -157,7 +189,28 @@ final class PaperTextView: NSTextView {
         drawCodeBlockBands(in: rect)
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
+        drawImages(in: rect)
         drawPlaceholder()
+    }
+
+    /// Block images draw in the band their paragraph spacing reserves,
+    /// under the source line, fitted to the measure.
+    private func drawImages(in dirtyRect: NSRect) {
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
+              let container = textContainer else { return }
+        let origin = textContainerOrigin
+        let containerRect = dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
+        let bands = layoutManager.imageBands(forGlyphRange: glyphRange, width: MarkdownSyntaxStyler.measure(of: self))
+        for band in bands {
+            guard let entry = ImageStore.shared.entry(for: band.url) else { continue }
+            let placed = band.rect.offsetBy(dx: origin.x, dy: origin.y)
+            guard placed.intersects(dirtyRect) else { continue }
+            entry.image.draw(
+                in: placed, from: .zero, operation: .sourceOver, fraction: 1,
+                respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high]
+            )
+        }
     }
 
     /// An empty document ghosts a title where the first line will land, so
@@ -502,7 +555,7 @@ final class PaperTextView: NSTextView {
             NSWorkspace.shared.open(url)
             return
         }
-        let base = window?.representedURL?.deletingLastPathComponent() ?? URL(fileURLWithPath: NSHomeDirectory())
+        let base = (documentURL ?? window?.representedURL)?.deletingLastPathComponent() ?? URL(fileURLWithPath: NSHomeDirectory())
         let path = (destination.removingPercentEncoding ?? destination)
         let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : base.appendingPathComponent(path)
         NSWorkspace.shared.open(url)

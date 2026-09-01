@@ -38,6 +38,11 @@ final class MarkdownSyntaxStyler {
     private static let underlinePattern = try! NSRegularExpression(
         pattern: #"<u>([^<\n]+)</u>"#
     )
+    /// A block image: `![alt](destination)` alone on its line. An image
+    /// inside a sentence is left as typed.
+    private static let blockImagePattern = try! NSRegularExpression(
+        pattern: #"(?m)^[\t ]*!\[([^\]\n]*)\]\(([^)\s]+)\)[\t ]*$"#
+    )
     nonisolated static let listMarkerPattern = try! NSRegularExpression(
         // `\S` or end of line: an item freshly continued by Return is just
         // `- ` and must already sit like a list item, not inherit the
@@ -98,6 +103,11 @@ final class MarkdownSyntaxStyler {
         applyUnderline(to: storage, source: source, range: fullRange)
         applyLinks(to: storage, source: source, range: fullRange)
         applyArrows(to: storage, source: source, range: fullRange)
+        applyBlockImages(
+            to: storage, source: source, range: fullRange,
+            documentURL: (textView as? PaperTextView)?.documentURL,
+            width: Self.measure(of: textView)
+        )
         applyListMarkers(to: storage, source: source, range: fullRange)
         applyCodeBlocks(to: storage, source: source, range: fullRange)
         // Concealed characters stay in the layout as zero-advance control
@@ -461,6 +471,69 @@ final class MarkdownSyntaxStyler {
             storage.addAttribute(.cursor, value: NSCursor.pointingHand, range: textRange)
             // `[` and `](destination)` hide off the active paragraph.
             dimDelimiters(around: textRange, in: match.range, storage: storage)
+        }
+    }
+
+    /// The width a block image may take: the text container's, less its
+    /// padding. A view not yet sized (no window) takes the configured
+    /// measure, which is what the container becomes once it has one.
+    static func measure(of textView: NSTextView) -> CGFloat {
+        guard let container = textView.textContainer else { return Appearance.maximumMeasure }
+        let width = container.size.width - 2 * container.lineFragmentPadding
+        return width > 0 ? width : Appearance.maximumMeasure
+    }
+
+    /// A block image whose file loads reserves a band under its line — the
+    /// paragraph spacing grows by the image's fitted height — and conceals
+    /// its whole source off the active paragraph; the text view draws the
+    /// bitmap in the band. The band is reserved whether the line is
+    /// concealed or revealed, so the caret entering it moves nothing. A
+    /// missing or remote file shows its alt text muted and italic with the
+    /// punctuation concealed, the way a link shows its text.
+    private func applyBlockImages(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange,
+        documentURL: URL?,
+        width: CGFloat
+    ) {
+        let text = source as NSString
+        Self.blockImagePattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
+            let altRange = match.range(at: 1)
+            let destination = text.substring(with: match.range(at: 2))
+            let syntax = NSRange(location: text.range(of: "![", options: [], range: match.range).location, length: 0)
+            let opener = NSRange(location: syntax.location, length: altRange.location - syntax.location)
+            let closer = NSRange(location: NSMaxRange(altRange), length: NSMaxRange(match.range) - NSMaxRange(altRange))
+
+            guard let url = ImageStore.resolve(destination, relativeTo: documentURL),
+                  let entry = ImageStore.shared.entry(for: url)
+            else {
+                storage.addAttribute(.font, value: Appearance.italicFont(), range: altRange)
+                storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: altRange)
+                for range in [opener, closer] {
+                    storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: range)
+                    storage.addAttribute(.concealable, value: true, range: range)
+                }
+                return
+            }
+
+            let paragraph = text.paragraphRange(for: match.range)
+            let size = ImageStore.fit(entry.naturalSize, width: width)
+            storage.addAttribute(
+                .paragraphStyle,
+                value: Appearance.paragraphStyle(spacing: size.height + Appearance.paragraphSpacing),
+                range: paragraph
+            )
+            storage.addAttribute(.imageSource, value: url, range: paragraph)
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: match.range)
+            // As with a fence, the first character draws as an invisible
+            // space so the line keeps its own fragment; the rest conceals.
+            storage.addAttribute(.glyphSubstitute, value: " ", range: NSRange(location: opener.location, length: 1))
+            storage.addAttribute(
+                .concealable, value: true,
+                range: NSRange(location: opener.location + 1, length: NSMaxRange(closer) - opener.location - 1)
+            )
         }
     }
 
