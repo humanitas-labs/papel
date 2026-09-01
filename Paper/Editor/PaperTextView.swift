@@ -327,17 +327,30 @@ final class PaperTextView: NSTextView {
     /// the system's are disabled because they eat `---`). ⌘Z restores the
     /// typed pair. `-->`, `<->`, `---`, and code spans are left as typed.
     override func insertText(_ string: Any, replacementRange: NSRange) {
-        var string = string
         // The first letter typed into an empty document starts the title
         // the placeholder promises: it lands as `# ` plus the letter, one
         // undo step, visible in the source. Syntax starters (`#`, `-`,
         // `>`, a backtick, a digit…) are left alone so lists, quotes, and
-        // hand-typed headings begin as typed.
+        // hand-typed headings begin as typed. The insertion carries its
+        // styled attributes up front — a paint can land before the styler's
+        // pass, and an unstyled `# N` would flash dark and small.
         if self.string.isEmpty, !hasMarkedText(),
            let typed = string as? String ?? (string as? NSAttributedString)?.string,
            typed.count == 1, let scalar = typed.unicodeScalars.first,
            CharacterSet.letters.contains(scalar) {
-            string = "# " + typed
+            let title = NSMutableAttributedString(
+                string: "# ",
+                attributes: [.font: Appearance.bodyFont(), .foregroundColor: Appearance.mutedInk]
+            )
+            title.append(NSAttributedString(
+                string: typed,
+                attributes: [
+                    .font: Appearance.headingFont(size: Appearance.headingSize(level: 1)),
+                    .foregroundColor: Appearance.ink,
+                ]
+            ))
+            super.insertText(title, replacementRange: replacementRange)
+            return
         }
         super.insertText(string, replacementRange: replacementRange)
         guard let typed = string as? String ?? (string as? NSAttributedString)?.string,
