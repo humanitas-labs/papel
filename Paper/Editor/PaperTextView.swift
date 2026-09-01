@@ -133,9 +133,18 @@ final class PaperTextView: NSTextView {
     /// different pixels, leaving thin streaks at fragment edges. Padding by a
     /// pixel each way and snapping to whole pixels covers both.
     override func setNeedsDisplay(_ rect: NSRect, avoidAdditionalLayout flag: Bool) {
-        let padded = rect
-            .insetBy(dx: -Appearance.caretWidth, dy: -Appearance.invalidationPadding)
-            .integral
+        // The empty document's caret is drawn shifted into the ghost title
+        // — right of the marker, lower, and taller than the body-sized rect
+        // AppKit invalidates — so the invalidation grows to reach it, or
+        // the blink is clipped away and the caret never appears.
+        let font = caretFont()
+        let dx = string.isEmpty
+            ? -(("# " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width + Appearance.caretWidth)
+            : -Appearance.caretWidth
+        let dy = string.isEmpty
+            ? -(ghostTitleTopInset + font.ascender - font.descender + Appearance.invalidationPadding)
+            : -Appearance.invalidationPadding
+        let padded = rect.insetBy(dx: dx, dy: dy).integral
         super.setNeedsDisplay(padded, avoidAdditionalLayout: flag)
     }
 
