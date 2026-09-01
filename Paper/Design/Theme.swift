@@ -1,13 +1,24 @@
 import Foundation
 
-/// Four colours define a theme: canvas and ink for light and dark
-/// appearances. Every other tone (muted punctuation, selection, the file
-/// label, the quote rule) is derived from the ink by opacity.
+/// A theme's colours. Canvas and ink, light and dark, are required; every
+/// other tone (muted punctuation, quoted text, selection, the code band,
+/// the thematic-break rule) is optional and derives from the ink by
+/// opacity when a theme leaves it out.
 struct Palette: Equatable, Sendable {
     var canvas: String
     var ink: String
     var canvasDark: String
     var inkDark: String
+    var inkMuted: String?
+    var inkQuote: String?
+    var selection: String?
+    var codeBackground: String?
+    var rule: String?
+    var inkMutedDark: String?
+    var inkQuoteDark: String?
+    var selectionDark: String?
+    var codeBackgroundDark: String?
+    var ruleDark: String?
 
     /// The colour keys of a theme file or of the config's overrides: each
     /// value is a `#RRGGBB` string or nil to inherit.
@@ -16,23 +27,49 @@ struct Palette: Equatable, Sendable {
         var ink: String?
         var canvasDark: String?
         var inkDark: String?
+        var inkMuted: String?
+        var inkQuote: String?
+        var selection: String?
+        var codeBackground: String?
+        var rule: String?
+        var inkMutedDark: String?
+        var inkQuoteDark: String?
+        var selectionDark: String?
+        var codeBackgroundDark: String?
+        var ruleDark: String?
 
         var isEmpty: Bool { self == Overrides() }
     }
 
     /// `overrides` layered over this palette; nil values keep the base.
-    func applying(_ overrides: Overrides) -> Palette {
+    func applying(_ o: Overrides) -> Palette {
         Palette(
-            canvas: overrides.canvas ?? canvas,
-            ink: overrides.ink ?? ink,
-            canvasDark: overrides.canvasDark ?? canvasDark,
-            inkDark: overrides.inkDark ?? inkDark
+            canvas: o.canvas ?? canvas,
+            ink: o.ink ?? ink,
+            canvasDark: o.canvasDark ?? canvasDark,
+            inkDark: o.inkDark ?? inkDark,
+            inkMuted: o.inkMuted ?? inkMuted,
+            inkQuote: o.inkQuote ?? inkQuote,
+            selection: o.selection ?? selection,
+            codeBackground: o.codeBackground ?? codeBackground,
+            rule: o.rule ?? rule,
+            inkMutedDark: o.inkMutedDark ?? inkMutedDark,
+            inkQuoteDark: o.inkQuoteDark ?? inkQuoteDark,
+            selectionDark: o.selectionDark ?? selectionDark,
+            codeBackgroundDark: o.codeBackgroundDark ?? codeBackgroundDark,
+            ruleDark: o.ruleDark ?? ruleDark
         )
     }
 
     /// Every value as an override, for writing a palette out as a theme file.
     var overrides: Overrides {
-        Overrides(canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark)
+        Overrides(
+            canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark,
+            inkMuted: inkMuted, inkQuote: inkQuote, selection: selection,
+            codeBackground: codeBackground, rule: rule,
+            inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, selectionDark: selectionDark,
+            codeBackgroundDark: codeBackgroundDark, ruleDark: ruleDark
+        )
     }
 }
 

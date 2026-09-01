@@ -39,21 +39,54 @@ struct Configuration: Equatable, Sendable {
     var windowWidth: Double = 1400
     var windowHeight: Double = 876
     /// Hex overrides for the theme's colours; nil inherits the theme.
-    var canvas: String?
-    var ink: String?
-    var canvasDark: String?
-    var inkDark: String?
+    var colorOverrides = Palette.Overrides()
 
-    /// The four colour overrides as one value.
-    var colorOverrides: Palette.Overrides {
-        get { Palette.Overrides(canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark) }
-        set {
-            canvas = newValue.canvas
-            ink = newValue.ink
-            canvasDark = newValue.canvasDark
-            inkDark = newValue.inkDark
+    /// The four required colours, as Settings binds them.
+    var canvas: String? {
+        get { colorOverrides.canvas }
+        set { colorOverrides.canvas = newValue }
+    }
+    var ink: String? {
+        get { colorOverrides.ink }
+        set { colorOverrides.ink = newValue }
+    }
+    var canvasDark: String? {
+        get { colorOverrides.canvasDark }
+        set { colorOverrides.canvasDark = newValue }
+    }
+    var inkDark: String? {
+        get { colorOverrides.inkDark }
+        set { colorOverrides.inkDark = newValue }
+    }
+
+    /// A `color.*` key and the override it sets.
+    struct ColorKey: Sendable {
+        let key: String
+        let path: WritableKeyPath<Palette.Overrides, String?> & Sendable
+
+        init(_ key: String, _ path: WritableKeyPath<Palette.Overrides, String?> & Sendable) {
+            self.key = key
+            self.path = path
         }
     }
+
+    /// Every colour key in template order.
+    static let colorKeys: [ColorKey] = [
+        ColorKey("color.canvas", \.canvas),
+        ColorKey("color.ink", \.ink),
+        ColorKey("color.canvas.dark", \.canvasDark),
+        ColorKey("color.ink.dark", \.inkDark),
+        ColorKey("color.ink.muted", \.inkMuted),
+        ColorKey("color.ink.quote", \.inkQuote),
+        ColorKey("color.selection", \.selection),
+        ColorKey("color.code.background", \.codeBackground),
+        ColorKey("color.rule", \.rule),
+        ColorKey("color.ink.muted.dark", \.inkMutedDark),
+        ColorKey("color.ink.quote.dark", \.inkQuoteDark),
+        ColorKey("color.selection.dark", \.selectionDark),
+        ColorKey("color.code.background.dark", \.codeBackgroundDark),
+        ColorKey("color.rule.dark", \.ruleDark),
+    ]
 
     /// The overrides applied over a resolved theme's palette.
     func palette(over base: Palette) -> Palette {
@@ -121,6 +154,21 @@ struct Configuration: Equatable, Sendable {
     color.canvas.dark =
     color.ink.dark =
 
+    # The remaining tones are the ink at an opacity unless set here (or in a
+    # theme file): muted syntax markers, bullets, and the file label; quoted
+    # text; the selection highlight; the code band and chip; the thematic
+    # break rule. Each has a .dark form for the dark appearance.
+    color.ink.muted =
+    color.ink.quote =
+    color.selection =
+    color.code.background =
+    color.rule =
+    color.ink.muted.dark =
+    color.ink.quote.dark =
+    color.selection.dark =
+    color.code.background.dark =
+    color.rule.dark =
+
     """
 
     /// Parses `key = value` lines. Whitespace around keys and values is
@@ -169,16 +217,10 @@ struct Configuration: Equatable, Sendable {
         case "theme":
             let name = Theme.canonicalName(value)
             if !name.isEmpty { theme = name }
-        case "color.canvas":
-            canvas = HexColor.normalized(value)
-        case "color.ink":
-            ink = HexColor.normalized(value)
-        case "color.canvas.dark":
-            canvasDark = HexColor.normalized(value)
-        case "color.ink.dark":
-            inkDark = HexColor.normalized(value)
         default:
-            break
+            if let color = Self.colorKeys.first(where: { $0.key == key }) {
+                colorOverrides[keyPath: color.path] = HexColor.normalized(value)
+            }
         }
     }
 
@@ -202,12 +244,7 @@ struct Configuration: Equatable, Sendable {
     /// The `color.*` keys with their values, empty for nil, in template
     /// order. Shared by the config file and theme files.
     static func colorEntries(_ overrides: Palette.Overrides) -> [(key: String, value: String)] {
-        [
-            ("color.canvas", overrides.canvas ?? ""),
-            ("color.ink", overrides.ink ?? ""),
-            ("color.canvas.dark", overrides.canvasDark ?? ""),
-            ("color.ink.dark", overrides.inkDark ?? ""),
-        ]
+        colorKeys.map { ($0.key, overrides[keyPath: $0.path] ?? "") }
     }
 
     /// Writes this configuration into existing file text, keeping comments,

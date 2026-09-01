@@ -141,6 +141,32 @@ struct ThemeTests {
     }
 
     @Test
+    func elementTokensParseEmitAndLayerOverAThemeFile() {
+        let config = Configuration.parse("""
+        color.ink.muted = #b00020
+        color.selection.dark = #334455
+        color.rule = bad
+        """)
+        #expect(config.colorOverrides.inkMuted == "#B00020")
+        #expect(config.colorOverrides.selectionDark == "#334455")
+        #expect(config.colorOverrides.rule == nil)
+        #expect(config.canvas == nil)
+        let text = config.merged(into: Configuration.template)
+        #expect(text.contains("\ncolor.ink.muted = #B00020\n"))
+        #expect(text.contains("\ncolor.rule =\n"))
+        #expect(Configuration.parse(text) == config)
+
+        let theme = Theme.user(named: "loud", text: "color.ink.muted = #FF0000\ncolor.code.background = #EEEEEE\n")
+        #expect(theme.palette.inkMuted == "#FF0000")
+        #expect(theme.palette.inkMutedDark == nil, "the dark form derives when a theme leaves it out")
+        let inUse = config.palette(over: theme.palette)
+        #expect(inUse.inkMuted == "#B00020", "the config's override wins")
+        #expect(inUse.codeBackground == "#EEEEEE", "the theme's token stays")
+        #expect(theme.palette.overrides.fileText.contains("color.code.background = #EEEEEE"))
+        #expect(!theme.palette.overrides.fileText.contains("color.rule"), "unset tokens are not written")
+    }
+
+    @Test
     func mergedWritesEmptyOverridesAsBareKeys() {
         var config = Configuration()
         config.theme = "slate"

@@ -106,16 +106,24 @@ enum Appearance {
     private static var colors: Colors {
         let palette = self.palette
         if let cachedColors, cachedColors.palette == palette { return cachedColors }
-        let ink = dynamic(light: palette.ink, dark: palette.inkDark)
+        let lightInk = color(hex: palette.ink)
+        let darkInk = color(hex: palette.inkDark)
+        /// A tone from the theme when it names one, else the ink at `alpha`.
+        func tone(_ light: String?, _ dark: String?, alpha: CGFloat) -> NSColor {
+            dynamic(
+                light: light.map(color(hex:)) ?? lightInk.withAlphaComponent(alpha),
+                dark: dark.map(color(hex:)) ?? darkInk.withAlphaComponent(alpha)
+            )
+        }
         let colors = Colors(
             palette: palette,
-            canvas: dynamic(light: palette.canvas, dark: palette.canvasDark),
-            ink: ink,
-            mutedInk: ink.withAlphaComponent(0.28),
-            quoteInk: ink.withAlphaComponent(0.62),
-            selection: ink.withAlphaComponent(0.13),
-            codeBackground: ink.withAlphaComponent(0.055),
-            hairline: ink.withAlphaComponent(0.10)
+            canvas: dynamic(light: color(hex: palette.canvas), dark: color(hex: palette.canvasDark)),
+            ink: dynamic(light: lightInk, dark: darkInk),
+            mutedInk: tone(palette.inkMuted, palette.inkMutedDark, alpha: 0.28),
+            quoteInk: tone(palette.inkQuote, palette.inkQuoteDark, alpha: 0.62),
+            selection: tone(palette.selection, palette.selectionDark, alpha: 0.13),
+            codeBackground: tone(palette.codeBackground, palette.codeBackgroundDark, alpha: 0.055),
+            hairline: tone(palette.rule, palette.ruleDark, alpha: 0.10)
         )
         cachedColors = colors
         return colors
@@ -126,10 +134,8 @@ enum Appearance {
         return NSColor(srgbRed: c.red, green: c.green, blue: c.blue, alpha: 1)
     }
 
-    private static func dynamic(light: String, dark: String) -> NSColor {
-        let lightColor = color(hex: light)
-        let darkColor = color(hex: dark)
-        return NSColor(name: nil) { appearance in
+    private static func dynamic(light lightColor: NSColor, dark darkColor: NSColor) -> NSColor {
+        NSColor(name: nil) { appearance in
             appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? darkColor : lightColor
         }
     }

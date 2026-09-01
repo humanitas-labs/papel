@@ -171,4 +171,30 @@ struct ConfigurationDrivenAppearanceTests {
         }
     }
 
+    /// `color` resolved under an appearance, in sRGB.
+    private func resolve(_ color: NSColor, appearance: NSAppearance.Name) -> NSColor {
+        var resolved = color
+        NSAppearance(named: appearance)!.performAsCurrentDrawingAppearance {
+            resolved = color.usingColorSpace(.sRGB) ?? color
+        }
+        return resolved
+    }
+
+    @Test
+    func explicitTonesReplaceTheInkDerivationPerAppearance() {
+        var config = Configuration()
+        config.colorOverrides.inkMuted = "#FF0000"
+        withConfiguration(config) {
+            let light = resolve(Appearance.mutedInk, appearance: .aqua)
+            #expect(light.redComponent == 1 && light.greenComponent == 0 && light.alphaComponent == 1)
+            let dark = resolve(Appearance.mutedInk, appearance: .darkAqua)
+            #expect(dark.alphaComponent < 0.5, "the dark form still derives from the ink")
+            let quote = resolve(Appearance.quoteInk, appearance: .aqua)
+            #expect(quote.alphaComponent < 1, "other tones still derive")
+        }
+        withConfiguration(Configuration()) {
+            #expect(resolve(Appearance.mutedInk, appearance: .aqua).alphaComponent < 1)
+        }
+    }
+
 }
