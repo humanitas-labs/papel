@@ -30,6 +30,8 @@ targets:
       path: Paper/Resources/Info.plist
       properties:
         CFBundleDisplayName: Paper
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleName: Paper
         CFBundleDocumentTypes:
           - CFBundleTypeName: Markdown document
