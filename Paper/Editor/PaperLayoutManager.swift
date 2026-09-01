@@ -391,15 +391,17 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             let size = ImageStore.fit(entry.naturalSize, width: width)
             let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
             var bottom = -CGFloat.greatestFiniteMagnitude
-            var leading = CGFloat.greatestFiniteMagnitude
-            enumerateLineFragments(forGlyphRange: glyphs) { _, used, _, fragmentGlyphs, _ in
+            var padding: CGFloat = 0
+            enumerateLineFragments(forGlyphRange: glyphs) { _, used, container, fragmentGlyphs, _ in
                 let first = self.characterIndexForGlyph(at: fragmentGlyphs.location)
                 guard NSLocationInRange(first, range) else { return }
                 bottom = max(bottom, used.maxY)
-                leading = min(leading, used.minX)
+                // The concealed line's used rect starts at 0, not at the
+                // padding the text stands on; the band takes the text's edge.
+                padding = container.lineFragmentPadding
             }
             guard bottom > -CGFloat.greatestFiniteMagnitude else { return }
-            bands.append((NSRect(x: leading, y: bottom, width: size.width, height: size.height), url))
+            bands.append((NSRect(x: padding, y: bottom, width: size.width, height: size.height), url))
         }
         return bands
     }

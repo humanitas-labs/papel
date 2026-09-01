@@ -76,14 +76,4 @@ final class ImageStore {
         let scale = width / natural.width
         return NSSize(width: width, height: (natural.height * scale).rounded())
     }
-
-    /// The image file a Markdown destination names, relative to the
-    /// document's folder; nil for a remote destination.
-    static func resolve(_ destination: String, relativeTo documentURL: URL?) -> URL? {
-        if PaperTextView.looksLikeURL(destination) { return nil }
-        let path = destination.removingPercentEncoding ?? destination
-        if path.hasPrefix("/") { return URL(fileURLWithPath: path) }
-        guard let base = documentURL?.deletingLastPathComponent() else { return nil }
-        return base.appendingPathComponent(path).standardizedFileURL
-    }
 }

@@ -506,7 +506,7 @@ final class MarkdownSyntaxStyler {
             let opener = NSRange(location: syntax.location, length: altRange.location - syntax.location)
             let closer = NSRange(location: NSMaxRange(altRange), length: NSMaxRange(match.range) - NSMaxRange(altRange))
 
-            guard let url = ImageStore.resolve(destination, relativeTo: documentURL),
+            guard let url = MarkdownResource.localURL(for: destination, relativeTo: documentURL),
                   let entry = ImageStore.shared.entry(for: url)
             else {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: altRange)

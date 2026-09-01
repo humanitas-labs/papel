@@ -72,6 +72,7 @@ struct ImageTests {
         let band = try #require(bands.first)
         #expect(bands.count == 1)
         #expect(band.rect.size == fitted)
+        #expect(band.rect.minX == container.lineFragmentPadding, "the band's edges are the text's")
         let lineGlyphs = layoutManager.glyphRange(forCharacterRange: line, actualCharacterRange: nil)
         let used = layoutManager.lineFragmentUsedRect(forGlyphAt: lineGlyphs.location, effectiveRange: nil)
         #expect(band.rect.minY == used.maxY, "the band starts under the source line")
@@ -141,7 +142,7 @@ struct ImageTests {
     /// stands as its alt text.
     @Test
     func aRemoteImageIsNotFetched() throws {
-        #expect(ImageStore.resolve("https://example.com/a.png", relativeTo: documentURL) == nil)
+        #expect(MarkdownResource.localURL(for: "https://example.com/a.png", relativeTo: documentURL) == nil)
         let textView = styledView("![Remote](https://example.com/a.png)", documentURL: documentURL)
         let storage = try #require(textView.textStorage)
         #expect(storage.attribute(.imageSource, at: 0, effectiveRange: nil) == nil)
@@ -152,18 +153,23 @@ struct ImageTests {
     @Test
     func anUnsavedDocumentResolvesNoRelativeImage() throws {
         writePNG("wide.png", width: 1600, height: 400)
-        #expect(ImageStore.resolve("wide.png", relativeTo: nil) == nil)
+        #expect(MarkdownResource.localURL(for: "wide.png", relativeTo: nil) == nil)
         let textView = styledView("![alt](wide.png)", documentURL: nil)
         #expect(textView.textStorage?.attribute(.imageSource, at: 0, effectiveRange: nil) == nil)
+        #expect(textView.linkURL(for: "wide.png") == nil, "links share the resolver: nothing to open until the document is saved")
+        #expect(textView.linkURL(for: "https://example.com")?.absoluteString == "https://example.com")
+        textView.documentURL = documentURL
+        #expect(textView.textStorage?.attribute(.imageSource, at: 0, effectiveRange: nil) != nil, "a Save As restyles against the new base")
+        #expect(textView.linkURL(for: "wide.png") == folder.appendingPathComponent("wide.png").standardizedFileURL)
     }
 
     @Test
     func pathsResolveAgainstTheDocumentFolder() {
         let doc = URL(fileURLWithPath: "/Users/me/notes/sub/doc.md")
-        #expect(ImageStore.resolve("a.png", relativeTo: doc)?.path == "/Users/me/notes/sub/a.png")
-        #expect(ImageStore.resolve("../img/a%20b.png", relativeTo: doc)?.path == "/Users/me/notes/img/a b.png")
-        #expect(ImageStore.resolve("/tmp/a.png", relativeTo: doc)?.path == "/tmp/a.png")
-        #expect(ImageStore.resolve("mailto:x@y.z", relativeTo: doc) == nil)
+        #expect(MarkdownResource.localURL(for: "a.png", relativeTo: doc)?.path == "/Users/me/notes/sub/a.png")
+        #expect(MarkdownResource.localURL(for: "../img/a%20b.png", relativeTo: doc)?.path == "/Users/me/notes/img/a b.png")
+        #expect(MarkdownResource.localURL(for: "/tmp/a.png", relativeTo: doc)?.path == "/tmp/a.png")
+        #expect(MarkdownResource.localURL(for: "mailto:x@y.z", relativeTo: doc) == nil)
     }
 
     @Test

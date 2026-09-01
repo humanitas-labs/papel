@@ -523,8 +523,7 @@ final class PaperTextView: NSTextView {
     }
 
     static func looksLikeURL(_ string: String) -> Bool {
-        guard !string.isEmpty, !string.contains(" "), let url = URL(string: string) else { return false }
-        return url.scheme != nil && url.host != nil || string.hasPrefix("mailto:")
+        MarkdownResource.isRemote(string)
     }
 
     /// A clean click on link text opens its destination — the caret goes in
@@ -556,16 +555,15 @@ final class PaperTextView: NSTextView {
     }
 
     /// Absolute URLs open as they are; anything else is a path relative to
-    /// the document.
+    /// the document, and stays closed while the document is unsaved.
     private func open(_ destination: String) {
-        if Self.looksLikeURL(destination) || destination.hasPrefix("mailto:"), let url = URL(string: destination) {
-            NSWorkspace.shared.open(url)
-            return
-        }
-        let base = (documentURL ?? window?.representedURL)?.deletingLastPathComponent() ?? URL(fileURLWithPath: NSHomeDirectory())
-        let path = (destination.removingPercentEncoding ?? destination)
-        let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : base.appendingPathComponent(path)
+        guard let url = linkURL(for: destination) else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    func linkURL(for destination: String) -> URL? {
+        if MarkdownResource.isRemote(destination) { return URL(string: destination) }
+        return MarkdownResource.localURL(for: destination, relativeTo: documentURL)
     }
 
     private func toggle(_ format: InlineFormat) {
