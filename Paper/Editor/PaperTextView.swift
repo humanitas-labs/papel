@@ -275,6 +275,18 @@ final class PaperTextView: NSTextView {
     /// the system's are disabled because they eat `---`). ⌘Z restores the
     /// typed pair. `-->`, `<->`, `---`, and code spans are left as typed.
     override func insertText(_ string: Any, replacementRange: NSRange) {
+        var string = string
+        // The first letter typed into an empty document starts the title
+        // the placeholder promises: it lands as `# ` plus the letter, one
+        // undo step, visible in the source. Syntax starters (`#`, `-`,
+        // `>`, a backtick, a digit…) are left alone so lists, quotes, and
+        // hand-typed headings begin as typed.
+        if self.string.isEmpty, !hasMarkedText(),
+           let typed = string as? String ?? (string as? NSAttributedString)?.string,
+           typed.count == 1, let scalar = typed.unicodeScalars.first,
+           CharacterSet.letters.contains(scalar) {
+            string = "# " + typed
+        }
         super.insertText(string, replacementRange: replacementRange)
         guard let typed = string as? String ?? (string as? NSAttributedString)?.string,
               typed.utf16.count == 1, !hasMarkedText() else { return }

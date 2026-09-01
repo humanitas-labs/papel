@@ -37,4 +37,25 @@ struct PlaceholderTests {
         }
         #expect(differing > 0, "the empty page shows the placeholder")
     }
+
+    /// The first letter typed into an empty document starts the title the
+    /// placeholder promises; syntax starters and later typing do not.
+    @Test
+    func theFirstTypedLetterStartsTheTitle() {
+        let textView = PaperTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 200)
+
+        textView.insertText("N", replacementRange: NSRange(location: 0, length: 0))
+        #expect(textView.string == "# N")
+        #expect(textView.selectedRange() == NSRange(location: 3, length: 0))
+
+        textView.insertText("o", replacementRange: NSRange(location: 3, length: 0))
+        #expect(textView.string == "# No", "only the first keystroke converts")
+
+        for starter in ["#", "-", "*", ">", "`", "1", " "] {
+            textView.string = ""
+            textView.insertText(starter, replacementRange: NSRange(location: 0, length: 0))
+            #expect(textView.string == starter, "\(starter.debugDescription) begins as typed")
+        }
+    }
 }
