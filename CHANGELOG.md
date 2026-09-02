@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).
+
 ## 0.3.0 — 2026.09.02
 
 - Decode images lazily, off the main thread: styling reserves each band from the file header alone, the bitmap decodes on a serial background queue the first time its band is drawn (so images that never scroll into view never decode), and the band shows a quiet panel of the final size until it lands. A document naming forty large images opens without a freeze (#30).

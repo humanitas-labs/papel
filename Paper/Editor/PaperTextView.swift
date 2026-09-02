@@ -615,6 +615,7 @@ final class PaperTextView: NSTextView {
 
     /// A clean click on link text opens its destination — the caret goes in
     /// by clicking beside the link or dragging across it. ⌘-click opens too.
+    /// A click on a block image is the image's alone (see `clickImage`).
     /// `super.mouseDown` runs the whole tracking loop, so afterwards a drag
     /// shows up as a non-empty selection and the click is left alone.
     override func mouseDown(with event: NSEvent) {
@@ -623,8 +624,9 @@ final class PaperTextView: NSTextView {
             open(destination)
             return
         }
-        let plainClick = event.clickCount == 1
-            && event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
+        let unmodified = event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
+        if unmodified, clickImage(with: event) { return }
+        let plainClick = event.clickCount == 1 && unmodified
         super.mouseDown(with: event)
         if plainClick, let destination, selectedRange().length == 0,
            let up = NSApp.currentEvent, up.type == .leftMouseUp,

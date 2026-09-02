@@ -26,6 +26,8 @@ targets:
           - Resources/paper
       - path: Paper/Resources/paper
         buildPhase: resources
+    dependencies:
+      - sdk: Quartz.framework
     info:
       path: Paper/Resources/Info.plist
       properties:
