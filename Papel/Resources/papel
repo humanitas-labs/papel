@@ -1,0 +1,28 @@
+#!/bin/sh
+# papel — open files in Papel from the terminal.
+#
+# Install (symlink so the script travels with the app):
+#   ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
+#
+# Usage:
+#   papel                open Papel
+#   papel file.md …      open files, creating any that do not exist yet
+
+self="$0"
+resolved="$(readlink -f "$self" 2>/dev/null)" && self="$resolved"
+app="$(cd "$(dirname "$self")/../.." >/dev/null 2>&1 && pwd)"
+case "$app" in
+  *.app) ;;
+  *) app="/Applications/Papel.app" ;;
+esac
+
+if [ "$#" -eq 0 ]; then
+  exec open -a "$app"
+fi
+
+for f in "$@"; do
+  if [ ! -e "$f" ]; then
+    touch "$f" || exit 1
+  fi
+done
+exec open -a "$app" "$@"

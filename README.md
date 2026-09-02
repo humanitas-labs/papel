@@ -1,10 +1,10 @@
-# Paper
+# Papel
 
 > A quiet, native markdown editor for macOS.
 
-![Paper showing a Markdown document: a heading, an italic quote behind a rule, an embedded screenshot, and a dashed list](docs/assets/paper.png)
+![Papel showing a Markdown document: a heading, an italic quote behind a rule, an embedded screenshot, and a dashed list](docs/assets/papel.png)
 
-Paper is the simplest markdown editor imaginable, by design.
+Papel is the simplest markdown editor imaginable, by design.
 
 It is an exercise in absolute simplicity and focus. It rejects anything that isn’t conducive to clear thinking.
 
@@ -30,7 +30,7 @@ Lastly, it is free and open. We will continue our campaign to make delightful so
 
 ## Configuration
 
-Everything lives in `~/.config/paper/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
+Everything lives in `~/.config/papel/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
 
 ```ini
 font.family = Test Tiempos Text
@@ -48,17 +48,17 @@ window.height = 877
 The app bundles a small launcher. Put it on your PATH once:
 
 ```sh
-ln -s /Applications/Paper.app/Contents/Resources/paper /usr/local/bin/paper
+ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
 ```
 
-Then `paper notes.md` opens a document, creating it first when it doesn't exist yet, and `paper` alone opens the app.
+Then `papel notes.md` opens a document, creating it first when it doesn't exist yet, and `papel` alone opens the app.
 
 ## Default app for Markdown
 
-To make double-clicking a `.md` file open Paper: select any Markdown file in Finder, press ⌘I (Get Info), choose Paper under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
+To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
 
 ## More
 
 - [Build and test](docs/build.md)
 - [Architecture](docs/architecture.md)
-- [Using Paper with Claude](docs/claude.md)
+- [Using Papel with Claude](docs/claude.md)

@@ -1,10 +1,10 @@
-# Paper — Documentation
+# Papel — Documentation
 
 | Doc | What it covers |
 | --- | --- |
 | [build.md](build.md) | Building and testing from source (XcodeGen, xcodebuild) |
 | [architecture.md](architecture.md) | How the editor is put together — document lifecycle, TextKit pipeline, styling |
-| [claude.md](claude.md) | Using Paper as the reading surface for Claude or another agent |
+| [claude.md](claude.md) | Using Papel as the reading surface for Claude or another agent |
 | [decisions/](decisions/) | Architecture decision records |
 
 ## Decisions

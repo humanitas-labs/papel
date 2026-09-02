@@ -1,4 +1,4 @@
-name: Paper
+name: Papel
 
 options:
   bundleIdPrefix: org.humanitas
@@ -17,24 +17,24 @@ settings:
     SWIFT_VERSION: 6.0
 
 targets:
-  Paper:
+  Papel:
     type: application
     platform: macOS
     sources:
-      - path: Paper
+      - path: Papel
         excludes:
-          - Resources/paper
-      - path: Paper/Resources/paper
+          - Resources/papel
+      - path: Papel/Resources/papel
         buildPhase: resources
     dependencies:
       - sdk: Quartz.framework
     info:
-      path: Paper/Resources/Info.plist
+      path: Papel/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Paper
+        CFBundleDisplayName: Papel
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        CFBundleName: Paper
+        CFBundleName: Papel
         CFBundleDocumentTypes:
           - CFBundleTypeName: Markdown document
             CFBundleTypeRole: Editor
@@ -62,29 +62,29 @@ targets:
         CODE_SIGN_STYLE: Automatic
         COMBINE_HIDPI_IMAGES: true
         GENERATE_INFOPLIST_FILE: false
-        INFOPLIST_FILE: Paper/Resources/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.paper
-        PRODUCT_NAME: Paper
+        INFOPLIST_FILE: Papel/Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.papel
+        PRODUCT_NAME: Papel
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
-  PaperTests:
+  PapelTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: PaperTests
+      - path: PapelTests
     dependencies:
-      - target: Paper
+      - target: Papel
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
-        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.paper.tests
+        PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.papel.tests
 
 schemes:
-  Paper:
+  Papel:
     build:
       targets:
-        Paper: all
-        PaperTests:
+        Papel: all
+        PapelTests:
           - test
     run:
       config: Debug
@@ -92,5 +92,5 @@ schemes:
       config: Debug
       gatherCoverageData: true
       targets:
-        - PaperTests
+        - PapelTests
 

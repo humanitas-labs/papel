@@ -1,19 +1,19 @@
-# Paper — Architecture
+# Papel — Architecture
 
 Last updated: `2026.08.31`
 
-> Paper is a native macOS editor for ordinary UTF-8 Markdown files. The file is the only persistent document state. Rendering, configuration, and window state remain outside it.
+> Papel is a native macOS editor for ordinary UTF-8 Markdown files. The file is the only persistent document state. Rendering, configuration, and window state remain outside it.
 
 ## 1. System boundaries
 
 | Component | Responsibility |
 |---|---|
 | `MarkdownDocument` | Decode and encode the source without transforming it |
-| `PaperApp` | Own scenes, commands, and the native document lifecycle |
+| `PapelApp` | Own scenes, commands, and the native document lifecycle |
 | `MarkdownEditor` | Bridge the SwiftUI document binding into AppKit |
-| `PaperTextView` | Provide editing behavior and draw page decorations |
+| `PapelTextView` | Provide editing behavior and draw page decorations |
 | `MarkdownSyntaxStyler` | Add temporary presentation attributes to the source |
-| `PaperLayoutManager` | Conceal or substitute glyphs without changing storage |
+| `PapelLayoutManager` | Conceal or substitute glyphs without changing storage |
 | `ConfigurationStore` | Load, write, and watch user settings and presets |
 | `Appearance` | Resolve configuration into fonts, spacing, and colours |
 
@@ -28,12 +28,12 @@ MarkdownDocument
     ↕ SwiftUI binding
 MarkdownEditor
     ↕
-PaperTextView + MarkdownSyntaxStyler + PaperLayoutManager
+PapelTextView + MarkdownSyntaxStyler + PapelLayoutManager
 ```
 
 The styler replaces presentation attributes across the in-memory text storage, then annotates recognized Markdown constructs. It does not replace source characters. Restyling waits while an input method holds marked text.
 
-`PaperLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs. Glyph substitution renders list markers and arrows without editing their source characters. `PaperTextView` draws block quotes, code blocks, thematic breaks, inline-code chips, placeholders, and images around the laid-out text.
+`PapelLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs. Glyph substitution renders list markers and arrows without editing their source characters. `PapelTextView` draws block quotes, code blocks, thematic breaks, inline-code chips, placeholders, and images around the laid-out text.
 
 Block images use paragraph spacing to reserve a stable drawing band below the source line. The source remains present for selection, undo, copy, find, and saving. Local images are decoded through `ImageStore`, downsampled for display, cached for the session, and watched for changes on disk.
 
@@ -46,7 +46,7 @@ Block images use paragraph spacing to reserve a stable drawing band below the so
 - Opening a document must not fetch remote media automatically.
 - The configuration file is the source of truth for user-tunable appearance values.
 
-`ConfigurationStore` reads `key = value` settings from `$XDG_CONFIG_HOME/paper/config` or `~/.config/paper/config`. It preserves comments and unknown keys when writing, watches in-place and atomic saves, and posts a notification when effective values change. Presets use the same format in the adjacent `presets/` directory.
+`ConfigurationStore` reads `key = value` settings from `$XDG_CONFIG_HOME/papel/config` or `~/.config/papel/config`. It preserves comments and unknown keys when writing, watches in-place and atomic saves, and posts a notification when effective values change. Presets use the same format in the adjacent `presets/` directory.
 
 ## 4. Decisions
 

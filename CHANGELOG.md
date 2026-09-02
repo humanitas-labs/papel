@@ -2,6 +2,7 @@
 
 ## 0.3.1 — 2026.09.02
 
+- Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.
 - Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).
 - A single click marks an image with a wash of the ink that eases in over a third of a second, as Messages does, and eases out on the next click or keystroke.
 - Text checking leaves the `(destination)` of a link or image alone: a path or URL is not prose, so it no longer collects spelling underlines. Link text and alt text are still checked.
@@ -18,7 +19,7 @@
 - Bound image resources: decoded bitmaps live in a least-recently-used cache with a byte budget and entry limit, and a document watches at most 64 image files at once (#23).
 - Leave image-looking lines inside fenced code alone: they render literal as before, and now also neither resolve, decode, nor watch the file they name (#24).
 
-- User-defined themes: a file in `~/.config/paper/themes/<name>` holding `color.*` keys is a theme, selected by `theme = <name>`, listed in Settings under the built-ins, and reloaded live when edited. A file named like a built-in replaces it; keys a file leaves out take Paper's values; the config's `color.*` overrides still layer on top. Settings gains Save as Theme…, which writes the colours in use to a file and selects it, and Delete Theme for custom ones. A `theme` name nothing resolves to falls back to Paper without being rewritten, so a file added later is picked up.
+- User-defined themes: a file in `~/.config/papel/themes/<name>` holding `color.*` keys is a theme, selected by `theme = <name>`, listed in Settings under the built-ins, and reloaded live when edited. A file named like a built-in replaces it; keys a file leaves out take Papel's values; the config's `color.*` overrides still layer on top. Settings gains Save as Theme…, which writes the colours in use to a file and selects it, and Delete Theme for custom ones. A `theme` name nothing resolves to falls back to Papel without being rewritten, so a file added later is picked up.
 - Theme tones beyond canvas and ink: `color.ink.muted`, `color.ink.quote`, `color.selection`, `color.code.background`, and `color.rule`, each with a `.dark` form, name the tones that were only ever the ink at an opacity. A theme file or the config may set any of them; the rest keep deriving, so every existing theme is unchanged.
 - Render block images: `![alt](file)` alone on a line draws the file under it, scaled to fit the measure and never up past its natural size, with the source concealed off the active paragraph and shown above the image on it. The band is the paragraph's spacing, so the source stays untouched (save, undo, find, copy see `![…](…)`) and the caret entering the line moves nothing. Relative paths resolve against the document's file, which the editor now receives explicitly and follows across Save As; links open against it too, so an untitled document no longer resolves them against the home folder. A missing file shows its alt text muted and italic. Remote images are not fetched — no request leaves the machine when a document opens — and stand as their alt text; an image rewritten on disk is decoded again on the next restyle.
 
@@ -29,8 +30,8 @@
 - Repaint the area a shortening edit vacates: every TextKit display invalidation is character-based, so the strip below the new last line held no characters and kept the old one's pixels — deleting a newline could leave the final paragraph apparently duplicated until a selection sweep repainted it.
 - Start the title on the first letter typed into an empty document: it lands as `# ` plus the letter, one undo step, visible in the source. Syntax starters (`#`, `-`, `*`, `>`, a backtick, a digit, whitespace) begin as typed, so lists, quotes, and hand-typed headings are untouched.
 - Ghost a title placeholder on an empty document — `# Untitled` in the H1 face at the muted syntax ink, marker shown as it would be on the caret's paragraph — so a fresh page reads as a page instead of a blank canvas. The caret stands in the ghost at the title's full height, and the first keystroke clears it.
-- Ship a command-line launcher at `Paper.app/Contents/Resources/paper`: `paper file.md` opens documents from the terminal (creating any that do not exist yet), `paper` alone opens the app. Installed by symlinking it onto the PATH; it resolves the app bundle from its own location. `docs/claude.md` covers pointing Claude or another agent at it.
-- License Paper under the MIT License, move build and test instructions into `docs/build.md`, and remove the private Spatial reference image from the repository.
+- Ship a command-line launcher at `Papel.app/Contents/Resources/papel`: `papel file.md` opens documents from the terminal (creating any that do not exist yet), `papel` alone opens the app. Installed by symlinking it onto the PATH; it resolves the app bundle from its own location. `docs/claude.md` covers pointing Claude or another agent at it.
+- License Papel under the MIT License, move build and test instructions into `docs/build.md`, and remove the private Spatial reference image from the repository.
 - Reload documents edited by other programs: each window watches its file
   (vnode events, atomic-save rename handled) and a clean buffer adopts the
   disk content in place, selection preserved, without marking the document
@@ -53,10 +54,6 @@
   (`1a)` → `1b)`). Return on an empty item removes its marker instead,
   ending the list. Splitting an item mid-line hands the tail to the new
   item. The continuation is one undo step.
-- Rename the app from Serein to Paper: target, bundle identifier
-  (`org.humanitas.paper`), types, attribute and notification keys, and the
-  configuration directory. An existing `~/.config/serein/` (config and
-  presets) is moved to `~/.config/paper/` on first launch.
 - Conceal heading markers (`#`…`######` and the following whitespace) on
   every paragraph the selection does not touch, so heading text sits on the
   margin; the paragraph under the cursor shows its full source. Concealment
@@ -138,7 +135,7 @@
   since a partial invalidation double-counted paragraph spacing and shifted
   everything below.
 - Add presets: named copies of the settings saved as files in
-  `~/.config/paper/presets/`, with a picker in Settings to apply one, Save
+  `~/.config/papel/presets/`, with a picker in Settings to apply one, Save
   as New Preset, and Delete. Applying writes the preset's values into the
   config file; the preset stays active across launches, and edits made while
   it is active are written into it, so there is no separate update step.
@@ -159,7 +156,7 @@
 - Set body type at 14 pt on a 640 pt measure after live review; prefer the
   installed Test Family with the system serif as fallback.
 - Draw the insertion point as a 2 pt rounded bar sized to the glyph box.
-- Read settings from `~/.config/paper/config` (`key = value`, commented
+- Read settings from `~/.config/papel/config` (`key = value`, commented
   template written on first launch, `$XDG_CONFIG_HOME` honoured) and apply
   them live to open windows on save: `font.family`, `font.size`,
   `line.height`, `paragraph.spacing`, `measure`, `heading.weight`. Settings (`⌘,`) edits the same keys with
