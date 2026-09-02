@@ -2,6 +2,8 @@
 
 ## 0.3.1 — 2026.09.02
 
+- Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).
+- A single click marks an image with a wash of the ink that eases in over a third of a second, as Messages does, and eases out on the next click or keystroke.
 - Decode only the images the viewport asks for: the text view tells the image store which bands its real viewport shows and which lie within one viewport of it, and the store decodes those, visible first, one at a time. Drawing looks only in the cache — AppKit paints well past the viewport for responsive scrolling, and the previous draw-driven decode pulled in every image it prepared, so a forty-image document decoded most of its images on open and cycled through the cache budget. Visible images are pinned against eviction, a file no longer demanded leaves the queue, a decode that finishes after losing demand is discarded, and a file rewritten mid-decode has its stale result dropped and decodes again. Opening the forty-image fixture now decodes three files (one visible, two prefetched) and idles at 0% CPU.
 - Count decoded bitmaps by their actual bytes: the store had sized entries from the image rep's pixel count, which reports the display scale, so the 256 MB budget held under three Retina-sized bitmaps instead of sixteen and evicted constantly.
 

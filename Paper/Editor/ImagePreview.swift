@@ -39,16 +39,69 @@ extension PaperTextView: @preconcurrency QLPreviewPanelDataSource, @preconcurren
 
     /// A click that lands on an image is the image's: the caret stays where
     /// it was, so the source line is not revealed and the band does not
-    /// jump under the pointer. A double-click released on the same image
-    /// opens it, as in Messages; a single click or a drag does nothing.
+    /// jump under the pointer. A single click marks the image, as in
+    /// Messages, and a double-click released on it opens it; a drag does
+    /// nothing.
     func clickImage(with event: NSEvent) -> Bool {
         guard let image = imageURL(at: event), let window else { return false }
         while let next = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged]) {
             guard next.type == .leftMouseUp else { continue }
-            if event.clickCount == 2, imageURL(at: next) == image { preview(image) }
+            guard imageURL(at: next) == image else { break }
+            selectedImage = image
+            if event.clickCount == 2 { preview(image) }
             break
         }
         return true
+    }
+
+    /// The mark: the ink at a quarter over the image, inside its corners.
+    func drawImageSelection(in dirtyRect: NSRect) {
+        guard let imageWash, imageWash.alpha > 0,
+              let band = imageBands.first(where: { $0.url == imageWash.url }),
+              band.rect.intersects(dirtyRect) else { return }
+        Appearance.ink.withAlphaComponent(0.25 * imageWash.alpha).setFill()
+        NSBezierPath(roundedRect: band.rect, xRadius: Appearance.imageCornerRadius, yRadius: Appearance.imageCornerRadius).fill()
+    }
+
+    /// The wash eases in when an image is marked and out when it is not,
+    /// over a third of a second, on a display-rate timer since
+    /// the band is drawn, not a layer.
+    func animateImageWash() {
+        imageWashTimer?.invalidate()
+        if let selectedImage {
+            imageWash = (selectedImage, imageWash?.url == selectedImage ? imageWash?.alpha ?? 0 : 0)
+        }
+        guard let start = imageWash else { return }
+        let target: CGFloat = selectedImage == nil ? 0 : 1
+        let from = start.alpha
+        let began = CACurrentMediaTime()
+        let duration = 0.35
+        let timer = Timer(timeInterval: 1 / 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let t = min(1, (CACurrentMediaTime() - began) / duration)
+                let eased = t * (2 - t)
+                let alpha = from + (target - from) * eased
+                self.imageWash = (start.url, alpha)
+                if let band = self.imageBands.first(where: { $0.url == start.url }) {
+                    self.setNeedsDisplay(band.rect.insetBy(dx: -1, dy: -1))
+                }
+                if t >= 1 {
+                    self.imageWashTimer?.invalidate()
+                    self.imageWashTimer = nil
+                    if target == 0 { self.imageWash = nil }
+                }
+            }
+        }
+        // Common modes, so the fade runs through mouse tracking and scrolling.
+        RunLoop.main.add(timer, forMode: .common)
+        imageWashTimer = timer
+    }
+
+    /// Typing moves on from the image.
+    override func keyDown(with event: NSEvent) {
+        selectedImage = nil
+        super.keyDown(with: event)
     }
 
     /// The image file drawn under `event`'s point, if any.

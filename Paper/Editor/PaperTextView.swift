@@ -15,6 +15,15 @@ final class PaperTextView: NSTextView {
     var imageWash: (url: URL, alpha: CGFloat)?
     var imageWashTimer: Timer?
 
+    /// The image a single click marked, drawn under a wash until the next
+    /// click or keystroke; see `ImagePreview.swift`. The wash fades, so
+    /// the band it covers and its current strength are kept apart.
+    var selectedImage: URL? {
+        didSet { if selectedImage != oldValue { animateImageWash() } }
+    }
+    var imageWash: (url: URL, alpha: CGFloat)?
+    var imageWashTimer: Timer?
+
     var documentURL: URL? {
         didSet {
             guard documentURL != oldValue else { return }
@@ -333,6 +342,7 @@ final class PaperTextView: NSTextView {
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
         drawImages(in: rect)
+        drawImageSelection(in: rect)
         drawImageSelection(in: rect)
         drawPlaceholder()
     }
@@ -720,6 +730,7 @@ final class PaperTextView: NSTextView {
         }
         let unmodified = event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
         if unmodified, clickImage(with: event) { return }
+        selectedImage = nil
         selectedImage = nil
         let plainClick = event.clickCount == 1 && unmodified
         super.mouseDown(with: event)
