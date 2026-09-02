@@ -4,7 +4,7 @@
 
 ![Papel showing a Markdown document: a heading, an italic quote behind a rule, and an embedded screenshot of the app itself](docs/assets/papel.png)
 
-Papel is the simplest markdown editor imaginable, by design.
+Papel is the simplest markdown editor imaginable.
 
 It is an exercise in absolute simplicity and focus. It rejects anything that isn’t conducive to clear thinking.
 
