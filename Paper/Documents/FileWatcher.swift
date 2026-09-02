@@ -8,12 +8,15 @@ import Foundation
 final class FileWatcher {
     static let debounce: TimeInterval = 0.1
     static let rearmDelay: TimeInterval = 0.05
+    /// A path that stays missing re-arms slower each try, up to this.
+    static let rearmCeiling: TimeInterval = 2.0
 
     private let url: URL
     private let onChange: @MainActor () -> Void
     private var source: DispatchSourceFileSystemObject?
     private var pendingChange: Task<Void, Never>?
     private var cancelled = false
+    private var missedOpens = 0
 
     init(url: URL, onChange: @escaping @MainActor () -> Void) {
         self.url = url
@@ -36,12 +39,18 @@ final class FileWatcher {
         let descriptor = open(url.path, O_EVTONLY)
         guard descriptor >= 0 else {
             // Mid-replace the path can briefly not exist; try again shortly.
+            // A file that stays gone (deleted, unmounted) must not spin the
+            // main queue every 50 ms forever, so each miss doubles the wait
+            // up to the ceiling; the next successful open resets it.
+            let delay = min(Self.rearmDelay * pow(2, Double(missedOpens)), Self.rearmCeiling)
+            missedOpens += 1
             Task { [weak self] in
-                try? await Task.sleep(for: .seconds(Self.rearmDelay))
+                try? await Task.sleep(for: .seconds(delay))
                 self?.watch()
             }
             return
         }
+        missedOpens = 0
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
             eventMask: [.write, .extend, .delete, .rename],
