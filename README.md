@@ -12,7 +12,7 @@ In most editors, every button is a standing invitation to do something other tha
 
 So I’ve done away with them. There is nothing other than the text.
 
-It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/paper/fork) if that philosophy doesn’t suit you.
+It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/papel/fork) if that philosophy doesn’t suit you.
 
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
