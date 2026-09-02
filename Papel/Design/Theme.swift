@@ -95,14 +95,18 @@ struct Theme: Equatable, Sendable, Identifiable {
 
     var id: String { name }
 
-    static let papel = Theme(
-        name: "papel", title: "Papel",
-        palette: Palette(canvas: "#F6F3EC", ink: "#1B1916", canvasDark: "#1B1916", inkDark: "#E8E3D6"),
+    /// The shipped default: the system's own canvas and ink.
+    static let apple = Theme(
+        name: "apple", title: "Apple",
+        palette: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD"),
         isBuiltIn: true
     )
 
     static let builtIn: [Theme] = [
-        papel,
+        apple,
+        Theme(name: "papel", title: "Papel",
+              palette: Palette(canvas: "#F6F3EC", ink: "#1B1916", canvasDark: "#1B1916", inkDark: "#E8E3D6"),
+              isBuiltIn: true),
         Theme(name: "enso", title: "Enso",
               palette: Palette(canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3"),
               isBuiltIn: true),
@@ -114,9 +118,6 @@ struct Theme: Equatable, Sendable, Identifiable {
               isBuiltIn: true),
         Theme(name: "spatial", title: "Spatial",
               palette: Palette(canvas: "#FFFFFF", ink: "#161819", canvasDark: "#191B1D", inkDark: "#F4F9FA"),
-              isBuiltIn: true),
-        Theme(name: "apple", title: "Apple",
-              palette: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD"),
               isBuiltIn: true),
     ]
 
@@ -137,12 +138,12 @@ struct Theme: Equatable, Sendable, Identifiable {
     }
 
     /// A user theme parsed from a theme file. Keys the file leaves out fall
-    /// back to Papel's values, so a light-only theme still has a dark pair.
+    /// back to Apple's values, so a light-only theme still has a dark pair.
     static func user(named name: String, text: String) -> Theme {
         Theme(
             name: canonicalName(name),
             title: name,
-            palette: papel.palette.applying(Configuration.parse(text).colorOverrides),
+            palette: apple.palette.applying(Configuration.parse(text).colorOverrides),
             isBuiltIn: false
         )
     }

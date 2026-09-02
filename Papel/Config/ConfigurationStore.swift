@@ -110,9 +110,9 @@ final class ConfigurationStore: ObservableObject {
         themes.first { $0.name == Theme.canonicalName(name) }
     }
 
-    /// The configured theme, or Papel when nothing has that name.
+    /// The configured theme, or Apple when nothing has that name.
     var resolvedTheme: Theme {
-        theme(named: current.theme) ?? .papel
+        theme(named: current.theme) ?? .apple
     }
 
     /// The colours in use: the resolved theme under the config's overrides.

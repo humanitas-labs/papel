@@ -33,7 +33,7 @@ struct Configuration: Equatable, Sendable {
     /// The theme's canonical name: a built-in or a file in `themes/`. Kept
     /// as written even when nothing resolves to it, so a theme file added
     /// later is picked up; `ConfigurationStore` resolves it to a `Theme`.
-    var theme: String = Theme.papel.name
+    var theme: String = Theme.apple.name
     /// Size of a newly opened window in points; macOS restores each window's
     /// last size after that.
     var windowWidth: Double = 1400
@@ -137,11 +137,11 @@ struct Configuration: Equatable, Sendable {
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
 
-    # Theme: papel, enso, slate, mono, spatial, or apple, or the name of a file in
+    # Theme: apple, papel, enso, slate, mono, or spatial, or the name of a file in
     # the themes/ directory beside this one holding color.* keys like those
     # below. Each has light and dark colours; the colour overrides below
     # tune any of them. Settings can save the current colours as a theme.
-    theme = papel
+    theme = apple
 
     # Size of new windows in points. Each window remembers its own size
     # after that.

@@ -112,7 +112,7 @@ struct ThemeTests {
         #expect(config.palette(over: slate.palette).canvas == slate.palette.canvas)
         #expect(config.palette(over: slate.palette).inkDark == slate.palette.inkDark)
         #expect(Configuration.parse("theme = nope").theme == "nope", "an unknown name is kept for a theme file added later")
-        #expect(Configuration.parse("theme =").theme == "papel", "a blank name keeps the default")
+        #expect(Configuration.parse("theme =").theme == "apple", "a blank name keeps the default")
         #expect(Configuration.parse("theme = spatial").theme == "spatial")
         #expect(Configuration.parse("theme = Apple").theme == "apple")
         // Pre-0.2 configs spell the dark pair with a suffix; they resolve
@@ -121,7 +121,7 @@ struct ThemeTests {
         #expect(Configuration.parse("theme = apple-dark").theme == "apple")
         let spatial = Theme.builtIn(named: "spatial")!
         #expect(spatial.palette.canvas != spatial.palette.canvasDark, "spatial now has a light appearance")
-        #expect(Configuration().palette(over: Theme.papel.palette) == Theme.papel.palette)
+        #expect(Configuration().palette(over: Theme.apple.palette) == Theme.apple.palette)
     }
 
     @Test
@@ -129,7 +129,7 @@ struct ThemeTests {
         let sepia = Theme.user(named: "Sepia", text: "color.canvas = #F4ECD8\ncolor.ink = #5B4636\n")
         #expect(sepia.name == "sepia" && sepia.title == "Sepia" && !sepia.isBuiltIn)
         #expect(sepia.palette.canvas == "#F4ECD8")
-        #expect(sepia.palette.canvasDark == Theme.papel.palette.canvasDark, "missing keys fall back to Papel")
+        #expect(sepia.palette.canvasDark == Theme.apple.palette.canvasDark, "missing keys fall back to Apple")
         #expect(sepia.palette.overrides.fileText == """
         color.canvas = #F4ECD8
         color.ink = #5B4636
@@ -137,7 +137,7 @@ struct ThemeTests {
         color.ink.dark = #E8E3D6
 
         """)
-        #expect(Theme.user(named: "x", text: "").palette == Theme.papel.palette)
+        #expect(Theme.user(named: "x", text: "").palette == Theme.apple.palette)
     }
 
     @Test
@@ -327,15 +327,15 @@ struct ConfigurationStoreTests {
         var config = Configuration()
         config.theme = "sepia"
         store.write(config)
-        #expect(store.resolvedTheme == Theme.papel, "an unknown name resolves to Papel")
+        #expect(store.resolvedTheme == Theme.apple, "an unknown name resolves to Apple")
         #expect(store.current.theme == "sepia", "and is kept in the config")
 
         try "color.canvas = #F4ECD8\ncolor.ink = #5B4636\n".write(to: store.themeURL(named: "Sepia"), atomically: true, encoding: .utf8)
         store.loadThemes()
-        #expect(store.themes.map(\.name) == ["papel", "enso", "slate", "mono", "spatial", "apple", "sepia"])
+        #expect(store.themes.map(\.name) == ["apple", "papel", "enso", "slate", "mono", "spatial", "sepia"])
         #expect(store.resolvedTheme.title == "Sepia")
         #expect(store.palette.canvas == "#F4ECD8")
-        #expect(store.palette.inkDark == Theme.papel.palette.inkDark)
+        #expect(store.palette.inkDark == Theme.apple.palette.inkDark)
 
         config.ink = "#000000"
         store.write(config)
