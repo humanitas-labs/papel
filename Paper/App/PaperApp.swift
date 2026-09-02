@@ -87,6 +87,11 @@ private struct DocumentView: View {
         // disk, so clear the change count and adopt the file's modification
         // date, keeping the next save quiet about the external edit.
         DispatchQueue.main.async {
+            // A keystroke landing between the adoption above and this
+            // deferred reset is a real edit; clearing then would mark it
+            // clean and close without the unsaved-change protection. Only
+            // a buffer still matching what was adopted is clean.
+            guard document.text == fresh.text else { return }
             nsDocument?.updateChangeCount(.changeCleared)
             if let date = try? url.resourceValues(forKeys: [.contentModificationDateKey])
                 .contentModificationDate {
