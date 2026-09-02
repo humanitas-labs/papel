@@ -1,31 +1,24 @@
 # Paper
 
-> A quiet, native macOS editor for ordinary Markdown.
+> A quiet, native markdown editor for macOS.
 
-![A Markdown image](docs/assets/paper.png)
+![Paper showing a Markdown document: a heading, an italic quote behind a rule, an embedded screenshot, and a dashed list](docs/assets/paper.png)
 
-## Goals
+*“I am not allowing myself to do anything other than write*.”
 
-- *Minimalism* — there is too much noise in the existing editors that I’ve used. I find they have too many controls, and as a result are not conducive to thought.
-- *Focus* — [ Deliberately rendering only a single document at a time ].
-- *Customizable* — Everyone loves a good theme, and I often want to change the vibe depending on what I’m writing.
-- *Conducive to thought* — It is easy to dismiss the medium, but I believe our tools unconsciously shape our expression.
+That is the whole idea of Paper, in a nutshell. 
 
-## Stylistic choices
+It is an exercise in absolute simplicity and focus.
 
-- *Typography* — a centered measure with real margins; headings stepped
-  from the body size; block quotes inset and italic behind a hairline rule.
-- *Lists* — Apple Notes' two kinds: `-` draws as a dashed list (–), `*`
-  as a bulleted one (•). Items hang under their text, hard-wrapped lines
-  align, and ordered markers may carry a letter (`1a)`). Return continues
-  the list — markers repeat, numbers count up — and Return on an empty
-  item ends it.
-- *Code* — fenced blocks set in mono on a quiet band, their content
-  literal and their fences tucked away; inline `code` in mono too.
-- *Links* — underlined text with the syntax concealed. Click opens the
-  destination; relative paths resolve against the document.
-- *Typed substitutions* — `->` becomes → as you type, like smart dashes;
-  ⌘Z gives the pair back.
+Every control an editor gives you is a standing invitation to do something other than write (or read).
+
+So Paper does away with those controls. There is nothing other than the text.
+
+It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to fork if that philosophy doesn’t suit you.
+
+It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
+
+Lastly, it is free and open. We will continue our campaign to make delightful software abundant again.
 
 ## Shortcuts
 
@@ -50,10 +43,6 @@ theme = slate
 window.width = 1374
 window.height = 877
 ```
-
-Themes:
-
-`paper`, `slate`, `mono`, `spatial`, `apple`, each with light and dark palettes, plus per-colour hex overrides (`color.canvas`, `color.ink`, `color.canvas.dark`, `color.ink.dark`). Your own themes are files in `~/.config/paper/themes/` holding those same keys, one theme per file, named after it: `theme = sepia` picks `themes/sepia`, and a file named like a built-in replaces it. Keys a theme leaves out take Paper's values. Five more tones are the ink at an opacity unless a theme or the config names them: `color.ink.muted` (syntax markers, bullets, the file label), `color.ink.quote`, `color.selection`, `color.code.background`, and `color.rule`, each with a `.dark` form. The Settings window (⌘,) lists them with the built-ins, saves the colours in use as a new theme, and edits every key with controls, writing back into the file, comments preserved. Named presets are files too, in `~/.config/paper/presets/`; edits write through to the active preset.
 
 ## Command line
 
