@@ -332,7 +332,7 @@ struct ConfigurationStoreTests {
 
         try "color.canvas = #F4ECD8\ncolor.ink = #5B4636\n".write(to: store.themeURL(named: "Sepia"), atomically: true, encoding: .utf8)
         store.loadThemes()
-        #expect(store.themes.map(\.name) == ["papel", "slate", "mono", "spatial", "apple", "sepia"])
+        #expect(store.themes.map(\.name) == ["papel", "enso", "slate", "mono", "spatial", "apple", "sepia"])
         #expect(store.resolvedTheme.title == "Sepia")
         #expect(store.palette.canvas == "#F4ECD8")
         #expect(store.palette.inkDark == Theme.papel.palette.inkDark)

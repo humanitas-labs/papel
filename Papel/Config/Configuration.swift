@@ -137,7 +137,7 @@ struct Configuration: Equatable, Sendable {
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
 
-    # Theme: papel, slate, mono, spatial, or apple, or the name of a file in
+    # Theme: papel, enso, slate, mono, spatial, or apple, or the name of a file in
     # the themes/ directory beside this one holding color.* keys like those
     # below. Each has light and dark colours; the colour overrides below
     # tune any of them. Settings can save the current colours as a theme.

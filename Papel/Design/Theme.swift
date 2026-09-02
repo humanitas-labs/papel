@@ -103,6 +103,9 @@ struct Theme: Equatable, Sendable, Identifiable {
 
     static let builtIn: [Theme] = [
         papel,
+        Theme(name: "enso", title: "Enso",
+              palette: Palette(canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3"),
+              isBuiltIn: true),
         Theme(name: "slate", title: "Slate",
               palette: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5"),
               isBuiltIn: true),
