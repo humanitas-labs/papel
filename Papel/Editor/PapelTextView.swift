@@ -844,13 +844,29 @@ final class PapelTextView: NSTextView {
         guard clipped.length > 0 else { return false }
         var found = false
         storage.enumerateAttributes(in: clipped) { attributes, _, stop in
-            if attributes[.codeBlock] != nil || attributes[.address] != nil
-                || (attributes[.backgroundColor] as? NSColor) == Appearance.codeBlockBackground {
+            if Self.isCode(attributes) {
                 found = true
                 stop.pointee = true
             }
         }
         return found
+    }
+
+    static func isCode(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+        attributes[.codeBlock] != nil || attributes[.address] != nil
+            || (attributes[.backgroundColor] as? NSColor) == Appearance.codeBlockBackground
+    }
+
+    /// The checker can run on text before it is styled — on a freshly
+    /// opened document, or on a span typed before its closing backtick —
+    /// and its marks are temporary attributes that a restyle leaves
+    /// alone. So every restyle takes them off whatever is code now.
+    func clearCheckingMarksInCode() {
+        guard let storage = textStorage, let layoutManager, storage.length > 0 else { return }
+        storage.enumerateAttributes(in: NSRange(location: 0, length: storage.length)) { attributes, range, _ in
+            guard Self.isCode(attributes) else { return }
+            layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: range)
+        }
     }
 
     private func configure() {

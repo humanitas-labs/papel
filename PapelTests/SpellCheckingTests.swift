@@ -31,6 +31,20 @@ struct SpellCheckingTests {
         )
     }
 
+    /// A mark laid down before styling (the checker beat the styler to a
+    /// fresh document) comes off on the next restyle; prose keeps its own.
+    @Test
+    func restyleClearsMarksLeftInCode() {
+        let textView = makeView("teh `mispeled` word")
+        let layoutManager = textView.layoutManager!
+        let flag = NSNumber(value: NSAttributedString.SpellingState.spelling.rawValue)
+        layoutManager.addTemporaryAttribute(.spellingState, value: flag, forCharacterRange: range(of: "teh", in: textView))
+        layoutManager.addTemporaryAttribute(.spellingState, value: flag, forCharacterRange: range(of: "mispeled", in: textView))
+        textView.syntaxStyler.apply(to: textView)
+        #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: range(of: "mispeled", in: textView).location, effectiveRange: nil) == nil)
+        #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: range(of: "teh", in: textView).location, effectiveRange: nil) != nil)
+    }
+
     /// The override hands `super` only the results that touch no code; the
     /// filter is observed directly, since annotation needs a live window.
     @Test

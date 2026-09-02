@@ -126,6 +126,7 @@ final class MarkdownSyntaxStyler {
             storage.addAttribute(.kern, value: 0, range: range)
         }
         storage.endEditing()
+        (textView as? PapelTextView)?.clearCheckingMarksInCode()
 
         textView.typingAttributes = Self.baseAttributes
         textView.setSelectedRange(selection)
