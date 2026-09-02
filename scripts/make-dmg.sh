@@ -36,6 +36,7 @@ if [ -n "$IDENTITY" ]; then
     -derivedDataPath "$DERIVED" \
     CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" DEVELOPMENT_TEAM="$TEAM" \
     ENABLE_HARDENED_RUNTIME=YES OTHER_CODE_SIGN_FLAGS="--timestamp" \
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
     ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO -quiet
 else
   echo "No Developer ID Application identity in the keychain; ad-hoc signing."
@@ -47,7 +48,8 @@ fi
 APP="$DERIVED/Build/Products/Release/Papel.app"
 
 notarize() {
-  # $1: the file to submit. Waits, then staples. Fails the build on rejection.
+  # $1: the file to submit. Waits; fails the build on rejection. The
+  # caller staples, since a ticket goes on the app or DMG, never a zip.
   if [ -n "${NOTARY_KEY:-}" ]; then
     xcrun notarytool submit "$1" --wait \
       --key "$NOTARY_KEY" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID"
@@ -55,7 +57,6 @@ notarize() {
     xcrun notarytool submit "$1" --wait \
       --apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$TEAM"
   fi
-  xcrun stapler staple "$1"
 }
 
 CAN_NOTARIZE=0
@@ -92,6 +93,7 @@ if [ -n "$IDENTITY" ]; then
 fi
 if [ "$CAN_NOTARIZE" = 1 ]; then
   notarize "$OUT"
+  xcrun stapler staple "$OUT"
   spctl -a -vv -t open --context context:primary-signature "$OUT" || true
 fi
 

@@ -2,7 +2,7 @@
 
 > A quiet, native markdown editor for macOS.
 
-![Papel showing its own README: the ink-brush mark, a heading, an italic quote behind a rule, and a few paragraphs of prose](docs/assets/papel.png)
+![Papel showing its own README: a heading, an italic quote behind a rule, and a photograph of a raked rock garden](docs/assets/papel.png)
 
 Papel is the simplest markdown editor imaginable.
 
