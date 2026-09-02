@@ -291,15 +291,20 @@ final class PaperTextView: NSTextView {
         )
     }
 
+    /// Only the landed image's own bands repaint. Invalidating the whole
+    /// view would redraw every band AppKit has prepared beyond the
+    /// viewport, each asking for its bitmap again; past the cache budget
+    /// that evicts and re-decodes in a loop, flashing the panels.
     @objc private func imageDidLoad(_ notification: Notification) {
-        guard let url = notification.object as? URL, let storage = textStorage, storage.length > 0 else { return }
-        var shown = false
-        storage.enumerateAttribute(.imageSource, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
-            guard value as? URL == url else { return }
-            shown = true
-            stop.pointee = true
+        guard let url = notification.object as? URL,
+              let layoutManager = layoutManager as? PaperLayoutManager,
+              let storage = textStorage, storage.length > 0 else { return }
+        let origin = textContainerOrigin
+        let all = layoutManager.glyphRange(forCharacterRange: NSRange(location: 0, length: storage.length), actualCharacterRange: nil)
+        for band in layoutManager.imageBands(forGlyphRange: all, width: MarkdownSyntaxStyler.measure(of: self))
+        where band.url == url {
+            setNeedsDisplay(band.rect.offsetBy(dx: origin.x, dy: origin.y).insetBy(dx: -1, dy: -1))
         }
-        if shown { needsDisplay = true }
     }
 
     /// An empty document ghosts a title where the first line will land, so
