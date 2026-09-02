@@ -68,6 +68,31 @@ struct MarkdownSyntaxStylerTests {
         #expect(emFont?.fontDescriptor.symbolicTraits.contains(.italic) == true)
         #expect(codeFont?.fontDescriptor.symbolicTraits.contains(.monoSpace) == true)
     }
+
+    @Test
+    func commentsRecedeAndStayLiteral() {
+        let textView = PaperTextView()
+        textView.string = "before <!-- **note** [x](y) --> after\n\n```\n<!-- code -->\n```\n\n# Head <!-- open\n---\n"
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try! #require(textView.textStorage)
+        let text = textView.string as NSString
+        func at(_ needle: String) -> Int { text.range(of: needle).location }
+
+        let opener = at("<!--")
+        #expect(storage.attribute(.foregroundColor, at: opener, effectiveRange: nil) as? NSColor == Appearance.mutedInk)
+        #expect(storage.attribute(.concealable, at: opener, effectiveRange: nil) == nil, "the delimiter stays in view")
+        let note = at("note")
+        #expect(storage.attribute(.foregroundColor, at: note, effectiveRange: nil) as? NSColor == Appearance.mutedInk)
+        #expect((storage.attribute(.font, at: note, effectiveRange: nil) as? NSFont)?.fontDescriptor.symbolicTraits.contains(.bold) == false, "no Markdown inside a comment")
+        #expect(storage.attribute(.linkDestination, at: at("x](y"), effectiveRange: nil) == nil)
+        #expect(storage.attribute(.foregroundColor, at: at("after"), effectiveRange: nil) as? NSColor == Appearance.ink, "prose resumes after -->")
+        #expect(storage.attribute(.font, at: at("code -->"), effectiveRange: nil) as? NSFont == Appearance.codeFont(), "a comment inside a fence is code")
+        let head = at("Head")
+        #expect((storage.attribute(.font, at: head, effectiveRange: nil) as? NSFont)?.pointSize == Appearance.headingSize(level: 1), "the heading before the comment keeps its size")
+        #expect(storage.attribute(.foregroundColor, at: at("open"), effectiveRange: nil) as? NSColor == Appearance.mutedInk)
+        #expect(storage.attribute(.thematicBreak, at: at("---"), effectiveRange: nil) == nil, "an unterminated comment runs to the end")
+        #expect(storage.attribute(.foregroundColor, at: at("---"), effectiveRange: nil) as? NSColor == Appearance.mutedInk)
+    }
 }
 
 extension MarkdownSyntaxStylerTests {

@@ -30,6 +30,11 @@ final class MarkdownSyntaxStyler {
     private static let linkPattern = try! NSRegularExpression(
         pattern: #"(?<!!)\[([^\]\n]+)\]\(([^)\s]+)\)"#
     )
+    /// An HTML comment, `<!-- … -->`, across lines; one never closed runs
+    /// to the end of the document, as a browser reads it.
+    private static let commentPattern = try! NSRegularExpression(
+        pattern: #"<!--[\s\S]*?(?:-->|\z)"#
+    )
     /// `->` in prose draws as a single arrow off the active paragraph.
     private static let arrowPattern = try! NSRegularExpression(
         pattern: #"(?<![-<])->(?!>)"#
@@ -108,9 +113,11 @@ final class MarkdownSyntaxStyler {
             documentURL: (textView as? PaperTextView)?.documentURL,
             width: Self.measure(of: textView),
             excluding: Self.fencedCodeRanges(in: source, range: fullRange)
+                + Self.commentRanges(in: source, range: fullRange)
         )
         applyListMarkers(to: storage, source: source, range: fullRange)
         applyCodeBlocks(to: storage, source: source, range: fullRange)
+        applyComments(to: storage, source: source, range: fullRange)
         // Concealed characters stay in the layout as zero-advance control
         // glyphs; a kern (the letter spacing) on them would still widen the
         // line off the active paragraph, so they carry none.
@@ -561,6 +568,40 @@ final class MarkdownSyntaxStyler {
             let arrow = NSRange(location: match.range.location + 1, length: 1)
             storage.addAttribute(.glyphSubstitute, value: "→", range: arrow)
             storage.addAttribute(.font, value: Appearance.markerFont(for: "→"), range: arrow)
+        }
+    }
+
+    /// The ranges of HTML comments outside fenced code, from the source
+    /// alone, for the passes that run before the comment pass.
+    private static func commentRanges(in source: String, range: NSRange) -> [NSRange] {
+        let fenced = fencedCodeRanges(in: source, range: range)
+        var ranges: [NSRange] = []
+        commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match, !fenced.contains(where: { NSLocationInRange(match.range.location, $0) }) else { return }
+            ranges.append(match.range)
+        }
+        return ranges
+    }
+
+    /// A comment recedes into the muted ink, delimiters and all, so a
+    /// note-to-self or a disabled section reads as one and not as the
+    /// document. Nothing inside it is Markdown: earlier passes' styling is
+    /// undone, and nothing conceals, so `<!--` and `-->` stay in view.
+    /// Comments inside code stay code; this pass runs after the code pass,
+    /// so the code font marks them.
+    private func applyComments(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
+            for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .linkDestination,
+                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor] {
+                storage.removeAttribute(key, range: match.range)
+            }
+            storage.addAttribute(.font, value: Appearance.bodyFont(), range: match.range)
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: match.range)
         }
     }
 
