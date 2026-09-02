@@ -95,20 +95,20 @@ struct Theme: Equatable, Sendable, Identifiable {
 
     var id: String { name }
 
-    /// The shipped default: the system's own canvas and ink.
-    static let apple = Theme(
-        name: "apple", title: "Apple",
-        palette: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD"),
+    /// The shipped default: white under a warm near-black ink.
+    static let enso = Theme(
+        name: "enso", title: "Enso",
+        palette: Palette(canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3"),
         isBuiltIn: true
     )
 
     static let builtIn: [Theme] = [
-        apple,
+        enso,
+        Theme(name: "apple", title: "Apple",
+              palette: Palette(canvas: "#FFFFFF", ink: "#272727", canvasDark: "#212323", inkDark: "#DDDDDD"),
+              isBuiltIn: true),
         Theme(name: "papel", title: "Papel",
               palette: Palette(canvas: "#F6F3EC", ink: "#1B1916", canvasDark: "#1B1916", inkDark: "#E8E3D6"),
-              isBuiltIn: true),
-        Theme(name: "enso", title: "Enso",
-              palette: Palette(canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3"),
               isBuiltIn: true),
         Theme(name: "slate", title: "Slate",
               palette: Palette(canvas: "#F2F3F5", ink: "#1F2328", canvasDark: "#15181C", inkDark: "#D9DEE5"),
@@ -138,12 +138,12 @@ struct Theme: Equatable, Sendable, Identifiable {
     }
 
     /// A user theme parsed from a theme file. Keys the file leaves out fall
-    /// back to Apple's values, so a light-only theme still has a dark pair.
+    /// back to Enso's values, so a light-only theme still has a dark pair.
     static func user(named name: String, text: String) -> Theme {
         Theme(
             name: canonicalName(name),
             title: name,
-            palette: apple.palette.applying(Configuration.parse(text).colorOverrides),
+            palette: enso.palette.applying(Configuration.parse(text).colorOverrides),
             isBuiltIn: false
         )
     }

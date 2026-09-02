@@ -112,7 +112,7 @@ final class ConfigurationStore: ObservableObject {
 
     /// The configured theme, or Apple when nothing has that name.
     var resolvedTheme: Theme {
-        theme(named: current.theme) ?? .apple
+        theme(named: current.theme) ?? .enso
     }
 
     /// The colours in use: the resolved theme under the config's overrides.
