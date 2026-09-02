@@ -10,8 +10,14 @@
 #   NOTARY_KEY_ID=ABC123DEFG                 its Key ID
 #   NOTARY_ISSUER_ID=xxxxxxxx-...            the team's Issuer ID
 #
-# Without the identity the build is ad-hoc signed, as before; without the
-# credentials it is signed but not notarized. Either case is reported.
+# or, with an app-specific password instead of an API key:
+#
+#   NOTARY_APPLE_ID=you@example.com
+#   NOTARY_PASSWORD=xxxx-xxxx-xxxx-xxxx      an app-specific password
+#
+# (the team ID comes from the signing identity). Without the identity the
+# build is ad-hoc signed, as before; without credentials it is signed but
+# not notarized. Either case is reported.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -42,14 +48,23 @@ APP="$DERIVED/Build/Products/Release/Papel.app"
 
 notarize() {
   # $1: the file to submit. Waits, then staples. Fails the build on rejection.
-  xcrun notarytool submit "$1" --wait \
-    --key "$NOTARY_KEY" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID"
+  if [ -n "${NOTARY_KEY:-}" ]; then
+    xcrun notarytool submit "$1" --wait \
+      --key "$NOTARY_KEY" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID"
+  else
+    xcrun notarytool submit "$1" --wait \
+      --apple-id "$NOTARY_APPLE_ID" --password "$NOTARY_PASSWORD" --team-id "$TEAM"
+  fi
   xcrun stapler staple "$1"
 }
 
 CAN_NOTARIZE=0
-if [ -n "$IDENTITY" ] && [ -n "${NOTARY_KEY:-}" ] && [ -n "${NOTARY_KEY_ID:-}" ] && [ -n "${NOTARY_ISSUER_ID:-}" ]; then
-  CAN_NOTARIZE=1
+if [ -n "$IDENTITY" ]; then
+  if [ -n "${NOTARY_KEY:-}" ] && [ -n "${NOTARY_KEY_ID:-}" ] && [ -n "${NOTARY_ISSUER_ID:-}" ]; then
+    CAN_NOTARIZE=1
+  elif [ -n "${NOTARY_APPLE_ID:-}" ] && [ -n "${NOTARY_PASSWORD:-}" ]; then
+    CAN_NOTARIZE=1
+  fi
 fi
 
 if [ "$CAN_NOTARIZE" = 1 ]; then
@@ -61,7 +76,7 @@ if [ "$CAN_NOTARIZE" = 1 ]; then
   xcrun stapler staple "$APP"
   rm -f "$ZIP"
 elif [ -n "$IDENTITY" ]; then
-  echo "NOTARY_KEY / NOTARY_KEY_ID / NOTARY_ISSUER_ID not set; signed but not notarized."
+  echo "No notary credentials (NOTARY_KEY… or NOTARY_APPLE_ID/NOTARY_PASSWORD); signed but not notarized."
 fi
 
 rm -rf "$STAGE" && mkdir -p "$STAGE" dist
