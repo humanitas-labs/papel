@@ -63,6 +63,7 @@ targets:
         INFOPLIST_FILE: Paper/Resources/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: org.humanitas.paper
         PRODUCT_NAME: Paper
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
   PaperTests:
     type: bundle.unit-test
