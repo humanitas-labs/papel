@@ -222,4 +222,37 @@ struct ImageTests {
         }
         #expect(spacing(at: 0, in: textView) == 300 + Appearance.paragraphSpacing)
     }
+
+    /// An image-looking line inside a fenced code block is literal text: it
+    /// must not resolve, decode, or watch the file it names (#24).
+    @Test
+    func anImageInsideAFenceIsNeitherDecodedNorWatched() throws {
+        let url = writePNG("fenced.png", width: 200, height: 100)
+        ImageStore.shared.forget(url)
+        let textView = styledView("```\n![alt](fenced.png)\n```\n", documentURL: documentURL)
+        let storage = try #require(textView.textStorage)
+        var found = false
+        storage.enumerateAttribute(.imageSource, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
+            if value != nil { found = true }
+        }
+        #expect(!found)
+        #expect(!ImageStore.shared.isCached(url))
+    }
+
+    /// The store drops its least recently used bitmaps past the byte
+    /// budget; a document naming many images cannot grow memory without
+    /// bound (#23). The evicted file simply decodes again when asked.
+    @Test
+    func theStoreEvictsLeastRecentlyUsedPastItsBudget() throws {
+        let first = writePNG("lru-one.png", width: 100, height: 100)
+        let second = writePNG("lru-two.png", width: 100, height: 100)
+        let budget = ImageStore.shared.byteBudget
+        defer { ImageStore.shared.byteBudget = budget }
+
+        ImageStore.shared.byteBudget = 100 * 100 * 4 + 1
+        #expect(ImageStore.shared.entry(for: first) != nil)
+        #expect(ImageStore.shared.entry(for: second) != nil)
+        #expect(!ImageStore.shared.isCached(first))
+        #expect(ImageStore.shared.isCached(second))
+    }
 }

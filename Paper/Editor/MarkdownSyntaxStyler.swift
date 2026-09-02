@@ -106,7 +106,8 @@ final class MarkdownSyntaxStyler {
         let imageURLs = applyBlockImages(
             to: storage, source: source, range: fullRange,
             documentURL: (textView as? PaperTextView)?.documentURL,
-            width: Self.measure(of: textView)
+            width: Self.measure(of: textView),
+            excluding: Self.fencedCodeRanges(in: source, range: fullRange)
         )
         applyListMarkers(to: storage, source: source, range: fullRange)
         applyCodeBlocks(to: storage, source: source, range: fullRange)
@@ -497,12 +498,15 @@ final class MarkdownSyntaxStyler {
         source: String,
         range: NSRange,
         documentURL: URL?,
-        width: CGFloat
+        width: CGFloat,
+        excluding fenced: [NSRange]
     ) -> Set<URL> {
         let text = source as NSString
         var urls: Set<URL> = []
         Self.blockImagePattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
+            guard let match, !Self.isCode(at: match.range.location, in: storage),
+                  !fenced.contains(where: { NSLocationInRange(match.range.location, $0) })
+            else { return }
             let altRange = match.range(at: 1)
             let destination = text.substring(with: match.range(at: 2))
             let syntax = NSRange(location: text.range(of: "![", options: [], range: match.range).location, length: 0)
@@ -556,6 +560,18 @@ final class MarkdownSyntaxStyler {
             storage.addAttribute(.glyphSubstitute, value: "→", range: arrow)
             storage.addAttribute(.font, value: Appearance.markerFont(for: "→"), range: arrow)
         }
+    }
+
+    /// The ranges of fenced code blocks. The block-image pass runs before
+    /// the code pass (which resets whole lines), so `isCode` cannot see the
+    /// code font yet; an image-looking line inside a fence renders literal
+    /// but must also not resolve, decode, or watch the file it names.
+    private static func fencedCodeRanges(in source: String, range: NSRange) -> [NSRange] {
+        var ranges: [NSRange] = []
+        codeBlockPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            if let match { ranges.append(match.range) }
+        }
+        return ranges
     }
 
     /// Whether the character sits inside a code span (the code font is
