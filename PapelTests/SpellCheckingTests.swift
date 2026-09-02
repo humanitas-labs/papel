@@ -45,6 +45,33 @@ struct SpellCheckingTests {
         #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: range(of: "teh", in: textView).location, effectiveRange: nil) != nil)
     }
 
+    /// On current macOS the checker writes `.spellingState` straight into
+    /// the layout manager, so the mark is refused there for code and kept
+    /// for prose, on every setter.
+    @Test
+    func layoutManagerRefusesMarksInCode() {
+        let textView = makeView("teh `mispeled` word [x](http://exmaple.com)\n\n```\nblokc\n```")
+        let layoutManager = textView.layoutManager!
+        let flag = NSNumber(value: NSAttributedString.SpellingState.spelling.rawValue)
+        let whole = NSRange(location: 0, length: textView.string.utf16.count)
+        func mark(at needle: String) -> Any? {
+            layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: range(of: needle, in: textView).location, effectiveRange: nil)
+        }
+
+        layoutManager.addTemporaryAttribute(.spellingState, value: flag, forCharacterRange: whole)
+        #expect(mark(at: "teh") != nil && mark(at: "word") != nil)
+        #expect(mark(at: "mispeled") == nil && mark(at: "exmaple") == nil && mark(at: "blokc") == nil)
+
+        layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: whole)
+        layoutManager.setTemporaryAttributes([.spellingState: flag, .toolTip: "t"], forCharacterRange: whole)
+        #expect(mark(at: "teh") != nil && mark(at: "mispeled") == nil && mark(at: "blokc") == nil)
+        #expect(layoutManager.temporaryAttribute(.toolTip, atCharacterIndex: range(of: "mispeled", in: textView).location, effectiveRange: nil) != nil, "other temporary attributes still land in code")
+
+        layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: whole)
+        layoutManager.addTemporaryAttributes([.spellingState: flag], forCharacterRange: range(of: "mispeled", in: textView))
+        #expect(mark(at: "mispeled") == nil)
+    }
+
     /// The override hands `super` only the results that touch no code; the
     /// filter is observed directly, since annotation needs a live window.
     @Test

@@ -852,9 +852,10 @@ final class PapelTextView: NSTextView {
         return found
     }
 
-    static func isCode(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
-        attributes[.codeBlock] != nil || attributes[.address] != nil
-            || (attributes[.backgroundColor] as? NSColor) == Appearance.codeBlockBackground
+    nonisolated static func isCode(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+        if attributes[.codeBlock] != nil || attributes[.address] != nil { return true }
+        guard let color = attributes[.backgroundColor] as? NSColor else { return false }
+        return MainActor.assumeIsolated { color == Appearance.codeBlockBackground }
     }
 
     /// The checker can run on text before it is styled — on a freshly

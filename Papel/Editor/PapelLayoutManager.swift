@@ -56,6 +56,65 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         nil
     }
 
+    // MARK: Spelling marks
+
+    // The checker lays its underlines down as the `.spellingState`
+    // temporary attribute, and on current macOS it does so through the
+    // layout manager directly rather than the text view's result handler.
+    // So the mark is refused here, at the one choke point every path
+    // shares, wherever the storage says the characters are code.
+
+    override func addTemporaryAttribute(_ attrName: NSAttributedString.Key, value: Any, forCharacterRange charRange: NSRange) {
+        guard attrName == .spellingState else {
+            return super.addTemporaryAttribute(attrName, value: value, forCharacterRange: charRange)
+        }
+        for range in proseRanges(in: charRange) {
+            super.addTemporaryAttribute(attrName, value: value, forCharacterRange: range)
+        }
+    }
+
+    override func addTemporaryAttributes(_ attrs: [NSAttributedString.Key: Any], forCharacterRange charRange: NSRange) {
+        guard attrs[.spellingState] != nil else {
+            return super.addTemporaryAttributes(attrs, forCharacterRange: charRange)
+        }
+        var rest = attrs
+        rest[.spellingState] = nil
+        if !rest.isEmpty { super.addTemporaryAttributes(rest, forCharacterRange: charRange) }
+        for range in proseRanges(in: charRange) {
+            super.addTemporaryAttribute(.spellingState, value: attrs[.spellingState]!, forCharacterRange: range)
+        }
+    }
+
+    override func setTemporaryAttributes(_ attrs: [NSAttributedString.Key: Any], forCharacterRange charRange: NSRange) {
+        guard attrs[.spellingState] != nil else {
+            return super.setTemporaryAttributes(attrs, forCharacterRange: charRange)
+        }
+        var rest = attrs
+        rest[.spellingState] = nil
+        super.setTemporaryAttributes(rest, forCharacterRange: charRange)
+        for range in proseRanges(in: charRange) {
+            super.addTemporaryAttribute(.spellingState, value: attrs[.spellingState]!, forCharacterRange: range)
+        }
+    }
+
+    /// The parts of `charRange` that are not code: not a fenced block, not
+    /// an inline span, not a link or image address.
+    private func proseRanges(in charRange: NSRange) -> [NSRange] {
+        guard let storage = textStorage else { return [charRange] }
+        let clipped = NSIntersectionRange(charRange, NSRange(location: 0, length: storage.length))
+        guard clipped.length > 0 else { return [] }
+        var ranges: [NSRange] = []
+        storage.enumerateAttributes(in: clipped) { attributes, range, _ in
+            guard !PapelTextView.isCode(attributes) else { return }
+            if let last = ranges.last, NSMaxRange(last) == range.location {
+                ranges[ranges.count - 1] = NSUnionRange(last, range)
+            } else {
+                ranges.append(range)
+            }
+        }
+        return ranges
+    }
+
     /// Changes the revealed range, regenerating glyphs only for the parts of
     /// the old and new ranges that carry concealable punctuation or list
     /// markers. Paragraphs without either cost nothing to enter or leave.
