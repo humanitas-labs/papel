@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- In-document anchors: clicking `[text](#fragment)` jumps to the heading whose GitHub-style slug matches (lowercase, punctuation dropped, spaces as hyphens; repeated headings count `-1`, `-2`…), placing the caret on the heading and scrolling it into view. A fragment naming no heading does nothing (#28).
 - Keep a keystroke that lands while an external file change is being adopted: the deferred clean-mark now checks the buffer still matches the adopted disk content, so the unsaved-change protection survives (#25).
 - Back off file-watcher re-arming while a path stays missing: each failed open doubles the wait up to 2 s instead of retrying every 50 ms forever (#26).
 - Bound image resources: decoded bitmaps live in a least-recently-used cache with a byte budget and entry limit, and a document watches at most 64 image files at once (#23).

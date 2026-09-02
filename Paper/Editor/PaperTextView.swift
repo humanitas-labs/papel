@@ -604,11 +604,24 @@ final class PaperTextView: NSTextView {
         return storage.attribute(.linkDestination, at: index, effectiveRange: nil) as? String
     }
 
-    /// Absolute URLs open as they are; anything else is a path relative to
-    /// the document, and stays closed while the document is unsaved.
+    /// Absolute URLs open as they are; a `#fragment` jumps to its heading
+    /// in this document; anything else is a path relative to the document,
+    /// and stays closed while the document is unsaved.
     private func open(_ destination: String) {
+        if destination.hasPrefix("#") {
+            jump(toFragment: destination)
+            return
+        }
         guard let url = linkURL(for: destination) else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    /// Places the caret on the heading the fragment names and scrolls it
+    /// into view; a fragment naming no heading is a no-op.
+    func jump(toFragment fragment: String) {
+        guard let range = MarkdownSyntaxStyler.fragmentRange(fragment, in: string) else { return }
+        setSelectedRange(NSRange(location: range.location, length: 0))
+        scrollRangeToVisible(range)
     }
 
     func linkURL(for destination: String) -> URL? {

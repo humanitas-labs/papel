@@ -574,6 +574,47 @@ final class MarkdownSyntaxStyler {
         return ranges
     }
 
+    /// The GitHub-style slug of a heading: lowercased, punctuation dropped
+    /// (hyphens and underscores kept), spaces and tabs as hyphens — so
+    /// anchors written for GitHub resolve in Paper.
+    static func slug(_ heading: String) -> String {
+        var slug = ""
+        for character in heading.trimmingCharacters(in: .whitespaces).lowercased() {
+            if character.isLetter || character.isNumber || character == "_" || character == "-" {
+                slug.append(character)
+            } else if character == " " || character == "\t" {
+                slug.append("-")
+            }
+        }
+        return slug
+    }
+
+    /// The content range of the heading a `#fragment` names, or nil for one
+    /// naming no heading. A repeated heading takes `-1`, `-2`… suffixes in
+    /// document order, as on GitHub; matching is against the heading text,
+    /// whose markdown punctuation the slug drops anyway.
+    static func fragmentRange(_ fragment: String, in source: String) -> NSRange? {
+        var target = fragment.hasPrefix("#") ? String(fragment.dropFirst()) : fragment
+        target = (target.removingPercentEncoding ?? target).lowercased()
+        guard !target.isEmpty else { return nil }
+
+        let text = source as NSString
+        var counts: [String: Int] = [:]
+        var found: NSRange?
+        headingPattern.enumerateMatches(in: source, range: NSRange(location: 0, length: text.length)) { match, _, stop in
+            guard let match else { return }
+            let content = match.range(at: 2)
+            let base = Self.slug(text.substring(with: content))
+            let seen = counts[base, default: 0]
+            counts[base] = seen + 1
+            if (seen == 0 ? base : "\(base)-\(seen)") == target {
+                found = content
+                stop.pointee = true
+            }
+        }
+        return found
+    }
+
     /// Whether the character sits inside a code span (the code font is
     /// applied by the first inline pass, so later passes can skip it).
     private static func isCode(at location: Int, in storage: NSTextStorage) -> Bool {
