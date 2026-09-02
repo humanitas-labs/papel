@@ -4,8 +4,6 @@
 
 ![Paper showing a Markdown document: a heading, an italic quote behind a rule, an embedded screenshot, and a dashed list](docs/assets/paper.png)
 
-*“I am not allowing myself to do anything other than write.”*
-
 Paper is the simplest markdown editor imaginable, by design.
 
 It is an exercise in absolute simplicity and focus. It rejects anything that isn’t conducive to clear thinking.
