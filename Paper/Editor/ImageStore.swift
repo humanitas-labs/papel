@@ -22,13 +22,25 @@ final class ImageStore {
     private struct Cached {
         let entry: Entry?
         let modified: Date?
+        let bytes: Int
     }
 
     private var cache: [URL: Cached] = [:]
+    /// Least recently used first; eviction order for the byte budget.
+    private var recency: [URL] = []
+    private var totalBytes = 0
 
     /// The longest edge the decoded bitmap keeps, in pixels: twice the
     /// widest measure Settings allows, for Retina.
     static let maximumPixelEdge: CGFloat = 2 * 1200
+
+    /// The decoded bitmaps the cache may hold at once; the least recently
+    /// used are dropped past it and decode again on their next restyle.
+    /// A variable so tests can shrink it.
+    var byteBudget = 256 << 20
+    /// Bounds the entry count too: missing files cache a nil at zero bytes,
+    /// and a document can name any number of those.
+    var entryLimit = 512
 
     /// The image at `url`, or nil when it is remote, missing, or unreadable.
     /// A file edited since it was cached is decoded again.
@@ -36,15 +48,44 @@ final class ImageStore {
         guard url.isFileURL else { return nil }
         let modified = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         if let cached = cache[url], cached.modified == modified {
+            touch(url)
             return cached.entry
         }
+        forget(url)
         let entry = Self.load(url)
-        cache[url] = Cached(entry: entry, modified: modified)
+        let bytes = entry.map { Int($0.image.representations.first.map { $0.pixelsWide * $0.pixelsHigh * 4 } ?? 0) } ?? 0
+        cache[url] = Cached(entry: entry, modified: modified, bytes: bytes)
+        recency.append(url)
+        totalBytes += bytes
+        evictIfNeeded()
         return entry
     }
 
     func forget(_ url: URL) {
-        cache[url] = nil
+        guard let cached = cache.removeValue(forKey: url) else { return }
+        totalBytes -= cached.bytes
+        recency.removeAll { $0 == url }
+    }
+
+    /// Whether `url` is decoded and resident (tests).
+    func isCached(_ url: URL) -> Bool {
+        cache[url] != nil
+    }
+
+    private func touch(_ url: URL) {
+        guard recency.last != url else { return }
+        recency.removeAll { $0 == url }
+        recency.append(url)
+    }
+
+    /// Drops least recently used entries past the budgets. The newest entry
+    /// always stays, even alone over budget: it is the one being drawn.
+    private func evictIfNeeded() {
+        while (totalBytes > byteBudget || cache.count > entryLimit),
+              recency.count > 1,
+              let oldest = recency.first {
+            forget(oldest)
+        }
     }
 
     private static func load(_ url: URL) -> Entry? {

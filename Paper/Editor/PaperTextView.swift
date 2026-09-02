@@ -101,8 +101,18 @@ final class PaperTextView: NSTextView {
     /// watcher re-arming, and it is picked up on the next restyle instead.
     private var imageWatchers: [URL: FileWatcher] = [:]
 
+    /// Each watcher holds a file descriptor, a finite resource; a document
+    /// naming more images than this keeps their bands but watches only
+    /// this many, preferring the ones already watched so churn stays low.
+    private static let imageWatcherLimit = 64
+
     func watchImages(_ urls: Set<URL>) {
-        let wanted = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        var wanted = urls.filter { FileManager.default.fileExists(atPath: $0.path) }
+        if wanted.count > Self.imageWatcherLimit {
+            var capped = Set(wanted.intersection(imageWatchers.keys).prefix(Self.imageWatcherLimit))
+            for url in wanted where capped.count < Self.imageWatcherLimit { capped.insert(url) }
+            wanted = capped
+        }
         for (url, watcher) in imageWatchers where !wanted.contains(url) {
             watcher.cancel()
             imageWatchers[url] = nil
