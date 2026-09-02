@@ -33,7 +33,7 @@ Lastly, it is free and open. We will continue our campaign to make delightful so
 Everything lives in `~/.config/papel/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
 
 ```ini
-font.family = Test Tiempos Text
+font.family = Charter
 font.size = 16
 line.height = 1.11
 letter.spacing = 0.02
