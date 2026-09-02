@@ -1,12 +1,13 @@
 # Paper
 
-> A quiet, native macOS editor for ordinary Markdown files.
-![A Markdown document set as a clean serif page in Paper](docs/assets/paper.png)
+> A quiet, native macOS editor for ordinary Markdown.
+
+![A Markdown image](docs/assets/paper.png)
 
 ## Goals
 
 - *Minimalism* — there is too much noise in the existing editors that I’ve used. I find they have too many controls, and as a result are not conducive to thought.
-- *Focus* — Deliberately rendering only a single document at a time.
+- *Focus* — [ Deliberately rendering only a single document at a time ].
 - *Customizable* — Everyone loves a good theme, and I often want to change the vibe depending on what I’m writing.
 - *Conducive to thought* — It is easy to dismiss the medium, but I believe our tools unconsciously shape our expression.
 
