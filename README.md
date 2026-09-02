@@ -1,8 +1,7 @@
+![The Papel mark, an ink-brush circle](docs/assets/enso-wide.png)
 # Papel
 
 > A quiet, native markdown editor for macOS.
-
-![Papel showing its own README: a heading, an italic quote behind a rule, and a few paragraphs of prose](docs/assets/papel.png)
 
 Papel is the simplest markdown editor imaginable.
 
@@ -17,6 +16,8 @@ It is also deliberately anti-tabs. A second document gets a second window, as th
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
 Lastly, it is free and open. We will continue our campaign to make delightful software abundant again.
+
+![Papel showing its own README: the ink-brush mark, a heading, an italic quote behind a rule, and a few paragraphs of prose](docs/assets/papel.png)
 
 ## Shortcuts
 

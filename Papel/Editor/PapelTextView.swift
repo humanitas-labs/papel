@@ -510,12 +510,18 @@ final class PapelTextView: NSTextView {
 
         Appearance.mutedInk.setFill()
         for rect in rects {
-            NSRect(
+            // A pill: the rule's ends are rounded at half its width.
+            let rule = NSRect(
                 x: origin.x + container.lineFragmentPadding,
                 y: origin.y + rect.minY,
                 width: Appearance.quoteRuleWidth,
                 height: rect.height
-            ).fill(using: .sourceOver)
+            )
+            NSBezierPath(
+                roundedRect: rule,
+                xRadius: Appearance.quoteRuleWidth / 2,
+                yRadius: Appearance.quoteRuleWidth / 2
+            ).fill()
         }
     }
 
