@@ -52,4 +52,22 @@ struct SpellCheckingTests {
 
         #expect(kept == [prose, proseQuote], "prose keeps its spelling and quote results; code loses both")
     }
+
+    @Test
+    func linkAndImageAddressesAreNotChecked() {
+        let textView = makeView("see [the docz](docs/buld.md) and\n\n![a pictur](assets/pictur-here.png)\n")
+        let linkText = range(of: "docz", in: textView)
+        let linkAddress = range(of: "buld", in: textView)
+        let alt = range(of: "pictur", in: textView)
+        let imageAddress = range(of: "pictur-here", in: textView)
+
+        let kept = textView.proseResults([
+            .spellCheckingResult(range: linkText),
+            .spellCheckingResult(range: linkAddress),
+            .spellCheckingResult(range: alt),
+            .spellCheckingResult(range: imageAddress),
+        ]).map(\.range)
+
+        #expect(kept == [linkText, alt], "link text and alt text are prose; the addresses are not")
+    }
 }

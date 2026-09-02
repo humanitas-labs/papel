@@ -15,15 +15,6 @@ final class PaperTextView: NSTextView {
     var imageWash: (url: URL, alpha: CGFloat)?
     var imageWashTimer: Timer?
 
-    /// The image a single click marked, drawn under a wash until the next
-    /// click or keystroke; see `ImagePreview.swift`. The wash fades, so
-    /// the band it covers and its current strength are kept apart.
-    var selectedImage: URL? {
-        didSet { if selectedImage != oldValue { animateImageWash() } }
-    }
-    var imageWash: (url: URL, alpha: CGFloat)?
-    var imageWashTimer: Timer?
-
     var documentURL: URL? {
         didSet {
             guard documentURL != oldValue else { return }
@@ -342,7 +333,6 @@ final class PaperTextView: NSTextView {
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
         drawImages(in: rect)
-        drawImageSelection(in: rect)
         drawImageSelection(in: rect)
         drawPlaceholder()
     }
@@ -731,7 +721,6 @@ final class PaperTextView: NSTextView {
         let unmodified = event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
         if unmodified, clickImage(with: event) { return }
         selectedImage = nil
-        selectedImage = nil
         let plainClick = event.clickCount == 1 && unmodified
         super.mouseDown(with: event)
         if plainClick, let destination, selectedRange().length == 0,
@@ -817,10 +806,12 @@ final class PaperTextView: NSTextView {
         enclosingScrollView?.backgroundColor = Appearance.canvas
     }
 
-    /// Code is not prose. Every annotation continuous checking wants to
-    /// make — spelling and grammar underlines, quote and text replacements
-    /// — arrives here first, so results touching a fenced block or an inline
-    /// span are dropped and the rest of the document keeps its checking.
+    /// Code is not prose, and neither is the address of a link or an
+    /// image. Every annotation continuous checking wants to make —
+    /// spelling and grammar underlines, quote and text replacements —
+    /// arrives here first, so results touching a fenced block, an inline
+    /// span, or a `(destination)` are dropped and the rest of the document
+    /// keeps its checking.
     override func handleTextCheckingResults(
         _ results: [NSTextCheckingResult],
         forRange range: NSRange,
@@ -839,21 +830,21 @@ final class PaperTextView: NSTextView {
         )
     }
 
-    /// The results that touch no code.
+    /// The results that touch no code and no address.
     func proseResults(_ results: [NSTextCheckingResult]) -> [NSTextCheckingResult] {
         results.filter { !touchesCode($0.range) }
     }
 
-    /// Whether any character in `range` is code: inside a fenced block (the
-    /// `.codeBlock` mark) or an inline span (the chip background, the same
-    /// mark the layout manager rounds).
+    /// Whether any character in `range` is code — inside a fenced block
+    /// (the `.codeBlock` mark) or an inline span (the chip background, the
+    /// same mark the layout manager rounds) — or a link or image address.
     func touchesCode(_ range: NSRange) -> Bool {
         guard let storage = textStorage else { return false }
         let clipped = NSIntersectionRange(range, NSRange(location: 0, length: storage.length))
         guard clipped.length > 0 else { return false }
         var found = false
         storage.enumerateAttributes(in: clipped) { attributes, _, stop in
-            if attributes[.codeBlock] != nil
+            if attributes[.codeBlock] != nil || attributes[.address] != nil
                 || (attributes[.backgroundColor] as? NSColor) == Appearance.codeBlockBackground {
                 found = true
                 stop.pointee = true

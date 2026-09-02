@@ -22,6 +22,9 @@ extension NSAttributedString.Key {
     /// The destination of a Markdown link, as its source string, on the
     /// link's text. Opened with ⌘-click; a plain click places the caret.
     static let linkDestination = NSAttributedString.Key("paper.linkDestination")
+    /// The `(destination)` of a link or image: a path or URL, not prose,
+    /// so text checking leaves it alone.
+    static let address = NSAttributedString.Key("paper.address")
     /// Marks a paragraph that is a block image (`![alt](file)` alone on its
     /// line) whose file loaded; the value is the resolved file `URL`. The
     /// paragraph's spacing reserves the band the text view draws it in.
