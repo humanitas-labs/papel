@@ -151,6 +151,10 @@
     border: 1px solid rgba(var(--ink-rgb), 0.22);
   }
   .outline:hover { background: rgba(var(--ink-rgb), 0.04); }
+  .supporters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 var(--indent); }
+  .supporters li { padding-left: 0; }
+  .supporters li::before { content: none; }
+  @media (max-width: 600px) { .supporters { grid-template-columns: repeat(2, 1fr); } }
   .muted { color: rgba(var(--ink-rgb), 0.62); font-size: 0.88em; }
 </style>
 </head>
@@ -186,17 +190,19 @@
   <p>Lastly, it is free and open. We will continue our campaign to make delightful software abundant again.</p>
   <div class="blank"></div>
 
+  <hr>
+  <div class="blank"></div>
+
   <h2 id="supporters">Supporters</h2>
   <div class="blank"></div>
   <p>Papel is free. These people paid for it anyway, and keep it that way.</p>
   <div class="blank"></div>
-  <ul>
-    <li>Will</li>
+  <ul class="supporters">
+    <li>Will Tholke</li>
+    <li>Ross Sylvester</li>
   </ul>
   <div class="blank"></div>
 
-  <hr>
-  <div class="blank"></div>
   <p class="muted">Made by <a href="https://github.com/humanitas-labs">Andrew Jones</a>. Source and releases on <a href="https://github.com/humanitas-labs/papel">GitHub</a>.</p>
 </main>
 </body>
