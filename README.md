@@ -4,7 +4,7 @@
 
 ![Paper showing a Markdown document: a heading, an italic quote behind a rule, an embedded screenshot, and a dashed list](docs/assets/paper.png)
 
-*“I am not allowing myself to do anything other than write*.”
+*“I am not allowing myself to do anything other than write.”*
 
 That is the whole idea of Paper, in a nutshell. 
 
@@ -14,7 +14,7 @@ Every control an editor gives you is a standing invitation to do something other
 
 So Paper does away with those controls. There is nothing other than the text.
 
-It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to fork if that philosophy doesn’t suit you.
+It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/paper/fork) if that philosophy doesn’t suit you.
 
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
