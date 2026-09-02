@@ -2,6 +2,7 @@
 
 ## 0.3.1 — 2026.09.02
 
+- File > Export > PDF writes a snapshot of the page (measure, decorations, concealed syntax) without changing the Markdown file. The page is the measure plus a margin, on the light canvas, not the live window's width or dark appearance. Block images that have not scrolled into view are decoded for the export so their bands are not empty panels.
 - Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.
 - Ship with the `apple` theme, line height 1.2, and paragraph spacing 12 as the defaults, and add the `enso` theme: white under the ink #2D2B29, and #13181C under #BFC1C3 in the dark appearance.
 - Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).
