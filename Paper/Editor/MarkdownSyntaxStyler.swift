@@ -515,7 +515,7 @@ final class MarkdownSyntaxStyler {
 
             let url = MarkdownResource.localURL(for: destination, relativeTo: documentURL)
             if let url { urls.insert(url) }
-            guard let url, let entry = ImageStore.shared.entry(for: url) else {
+            guard let url, let dimensions = ImageStore.shared.dimensions(for: url) else {
                 storage.addAttribute(.font, value: Appearance.italicFont(), range: altRange)
                 storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: altRange)
                 for range in [opener, closer] {
@@ -526,7 +526,7 @@ final class MarkdownSyntaxStyler {
             }
 
             let paragraph = text.paragraphRange(for: match.range)
-            let size = ImageStore.fit(entry.naturalSize, width: width)
+            let size = ImageStore.fit(dimensions.naturalSize, width: width)
             storage.addAttribute(
                 .paragraphStyle,
                 value: Appearance.paragraphStyle(spacing: size.height + Appearance.paragraphSpacing),

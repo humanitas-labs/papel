@@ -255,4 +255,24 @@ struct ImageTests {
         #expect(!ImageStore.shared.isCached(first))
         #expect(ImageStore.shared.isCached(second))
     }
+
+    /// Styling reserves the band from the file header alone and decodes no
+    /// pixel; the bitmap decodes off the main actor the first time a band
+    /// asks for it and announces itself when it lands (#30).
+    @Test
+    func stylingReservesTheBandWithoutDecodingAndTheBitmapArrivesLater() async throws {
+        let url = writePNG("lazy.png", width: 200, height: 150)
+        ImageStore.shared.forget(url)
+        let textView = styledView("![alt](lazy.png)", documentURL: documentURL)
+        #expect(spacing(at: 0, in: textView) == 150 + Appearance.paragraphSpacing)
+        #expect(!ImageStore.shared.isCached(url))
+
+        // The first ask starts a decode and returns nothing yet.
+        #expect(ImageStore.shared.image(for: url) == nil)
+        for _ in 0..<100 where !ImageStore.shared.isCached(url) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let entry = try #require(ImageStore.shared.image(for: url))
+        #expect(entry.naturalSize == NSSize(width: 200, height: 150))
+    }
 }

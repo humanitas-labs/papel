@@ -387,8 +387,8 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             )
             guard !measured.contains(range) else { return }
             measured.append(range)
-            guard let entry = ImageStore.shared.entry(for: url) else { return }
-            let size = ImageStore.fit(entry.naturalSize, width: width)
+            guard let dimensions = ImageStore.shared.dimensions(for: url) else { return }
+            let size = ImageStore.fit(dimensions.naturalSize, width: width)
             let glyphs = self.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
             var bottom = -CGFloat.greatestFiniteMagnitude
             var padding: CGFloat = 0

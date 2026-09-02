@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Decode images lazily, off the main thread: styling reserves each band from the file header alone, the bitmap decodes on a serial background queue the first time its band is drawn (so images that never scroll into view never decode), and the band shows a quiet panel of the final size until it lands. A document naming forty large images opens without a freeze (#30).
 - In-document anchors: clicking `[text](#fragment)` jumps to the heading whose GitHub-style slug matches (lowercase, punctuation dropped, spaces as hyphens; repeated headings count `-1`, `-2`…), placing the caret on the heading and scrolling it into view. A fragment naming no heading does nothing (#28).
 - Keep a keystroke that lands while an external file change is being adopted: the deferred clean-mark now checks the buffer still matches the adopted disk content, so the unsaved-change protection survives (#25).
 - Back off file-watcher re-arming while a path stays missing: each failed open doubles the wait up to 2 s instead of retrying every 50 ms forever (#26).

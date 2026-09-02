@@ -24,6 +24,7 @@ final class PaperTextView: NSTextView {
 
         configure()
         observeSettings()
+        observeImageLoads()
     }
 
     @available(*, unavailable)
@@ -253,21 +254,52 @@ final class PaperTextView: NSTextView {
         let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
         let bands = layoutManager.imageBands(forGlyphRange: glyphRange, width: MarkdownSyntaxStyler.measure(of: self))
         for band in bands {
-            guard let entry = ImageStore.shared.entry(for: band.url) else { continue }
             let placed = band.rect.offsetBy(dx: origin.x, dy: origin.y)
             guard placed.intersects(dirtyRect) else { continue }
-            NSGraphicsContext.saveGraphicsState()
-            NSBezierPath(
+            let outline = NSBezierPath(
                 roundedRect: placed,
                 xRadius: Appearance.imageCornerRadius,
                 yRadius: Appearance.imageCornerRadius
-            ).addClip()
+            )
+            // Drawing a band is what asks for its bitmap, so only images
+            // that reach the screen decode. Until one lands the band is a
+            // quiet panel the size the image will be; nothing moves when
+            // the bitmap replaces it.
+            guard let entry = ImageStore.shared.image(for: band.url) else {
+                Appearance.codeBlockBackground.setFill()
+                outline.fill()
+                continue
+            }
+            NSGraphicsContext.saveGraphicsState()
+            outline.addClip()
             entry.image.draw(
                 in: placed, from: .zero, operation: .sourceOver, fraction: 1,
                 respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high]
             )
             NSGraphicsContext.restoreGraphicsState()
         }
+    }
+
+    /// A bitmap decoded off the main actor lands with a notification; a
+    /// view whose document shows that file repaints its bands.
+    private func observeImageLoads() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(imageDidLoad(_:)),
+            name: ImageStore.didLoadNotification,
+            object: nil
+        )
+    }
+
+    @objc private func imageDidLoad(_ notification: Notification) {
+        guard let url = notification.object as? URL, let storage = textStorage, storage.length > 0 else { return }
+        var shown = false
+        storage.enumerateAttribute(.imageSource, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+            guard value as? URL == url else { return }
+            shown = true
+            stop.pointee = true
+        }
+        if shown { needsDisplay = true }
     }
 
     /// An empty document ghosts a title where the first line will land, so
