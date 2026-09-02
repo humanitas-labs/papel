@@ -7,6 +7,7 @@ import Testing
 /// never edited, the band is constant whether the line is concealed or
 /// revealed, and a missing or remote file stands as its alt text.
 @MainActor
+@Suite(.serialized)
 struct ImageTests {
     /// A folder holding the "document" and the images it references.
     private let folder: URL = {
@@ -249,30 +250,244 @@ struct ImageTests {
         let budget = ImageStore.shared.byteBudget
         defer { ImageStore.shared.byteBudget = budget }
 
-        ImageStore.shared.byteBudget = 100 * 100 * 4 + 1
         #expect(ImageStore.shared.entry(for: first) != nil)
+        // Room for exactly one of them.
+        ImageStore.shared.byteBudget = ImageStore.shared.residentBytes + 1
         #expect(ImageStore.shared.entry(for: second) != nil)
         #expect(!ImageStore.shared.isCached(first))
         #expect(ImageStore.shared.isCached(second))
     }
 
-    /// Styling reserves the band from the file header alone and decodes no
-    /// pixel; the bitmap decodes off the main actor the first time a band
-    /// asks for it and announces itself when it lands (#30).
+    // MARK: - Demand-driven decoding
+
+    private func until(_ condition: @MainActor () -> Bool) async throws {
+        for _ in 0..<200 where !condition() {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    /// A decoder the test holds shut; the store's real decoder runs once
+    /// the gate opens. Installed for one test, restored after.
+    private final class Gate: Sendable {
+        private let semaphore = DispatchSemaphore(value: 0)
+        func open() { semaphore.signal() }
+        func wait() { semaphore.wait() }
+    }
+
+    private func holdDecodes() -> Gate {
+        let gate = Gate()
+        let real = ImageStore.shared.decode
+        ImageStore.shared.decode = { url in
+            gate.wait()
+            return real(url)
+        }
+        return gate
+    }
+
+    private func restoreDecoder() {
+        ImageStore.shared.decode = ImageStore.load
+    }
+
+    /// Demand owners stand in for text views; any object identity does.
+    private let ownerToken = NSObject()
+    private let otherToken = NSObject()
+    private var owner: ObjectIdentifier { ObjectIdentifier(ownerToken) }
+
+    /// Styling reserves the band from the file header alone, and neither
+    /// styling nor drawing decodes a pixel: the cache-only lookup drawing
+    /// uses returns nil and queues nothing (#30).
     @Test
-    func stylingReservesTheBandWithoutDecodingAndTheBitmapArrivesLater() async throws {
+    func stylingAndDrawingReserveTheBandWithoutDecoding() throws {
         let url = writePNG("lazy.png", width: 200, height: 150)
         ImageStore.shared.forget(url)
+        let starts = ImageStore.shared.decodeStarts.count
         let textView = styledView("![alt](lazy.png)", documentURL: documentURL)
         #expect(spacing(at: 0, in: textView) == 150 + Appearance.paragraphSpacing)
         #expect(!ImageStore.shared.isCached(url))
 
-        // The first ask starts a decode and returns nothing yet.
-        #expect(ImageStore.shared.image(for: url) == nil)
-        for _ in 0..<100 where !ImageStore.shared.isCached(url) {
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        let entry = try #require(ImageStore.shared.image(for: url))
+        #expect(ImageStore.shared.residentImage(for: url) == nil)
+        #expect(!ImageStore.shared.isQueued(url))
+        #expect(!ImageStore.shared.isDecoding(url))
+        #expect(ImageStore.shared.decodeStarts.count == starts, "nothing drawn or styled starts a decode")
+    }
+
+    /// Demand is what decodes: a visible file arrives off the main actor
+    /// and announces itself; a file nobody demands never starts.
+    @Test
+    func demandDecodesAndAnUndemandedFileNeverStarts() async throws {
+        let wanted = writePNG("wanted.png", width: 200, height: 150)
+        let unwanted = writePNG("unwanted.png", width: 200, height: 150)
+        ImageStore.shared.forget(wanted)
+        ImageStore.shared.forget(unwanted)
+        defer { ImageStore.shared.removeDemand(for: owner) }
+
+        ImageStore.shared.updateDemand(for: owner, visible: [wanted], prefetch: [])
+        try await until { ImageStore.shared.isCached(wanted) }
+        let entry = try #require(ImageStore.shared.residentImage(for: wanted))
         #expect(entry.naturalSize == NSSize(width: 200, height: 150))
+        #expect(!ImageStore.shared.isCached(unwanted))
+        #expect(!ImageStore.shared.decodeStarts.contains(unwanted))
+    }
+
+    /// Demand withdrawn from a queued file removes it before it starts;
+    /// withdrawn from the file in flight, its result is discarded rather
+    /// than admitted.
+    @Test
+    func withdrawnDemandLeavesTheQueueAndDiscardsTheActiveDecode() async throws {
+        let active = writePNG("active.png", width: 100, height: 100)
+        let queued = writePNG("queued.png", width: 100, height: 100)
+        ImageStore.shared.forget(active)
+        ImageStore.shared.forget(queued)
+        let gate = holdDecodes()
+        defer { restoreDecoder(); ImageStore.shared.removeDemand(for: owner) }
+
+        ImageStore.shared.updateDemand(for: owner, visible: [active, queued], prefetch: [])
+        #expect(ImageStore.shared.isDecoding(active))
+        #expect(ImageStore.shared.isQueued(queued))
+
+        ImageStore.shared.updateDemand(for: owner, visible: [], prefetch: [])
+        #expect(!ImageStore.shared.isQueued(queued))
+        let discards = ImageStore.shared.discards
+        gate.open()
+        try await until { ImageStore.shared.discards > discards }
+        #expect(!ImageStore.shared.isCached(active), "the finished decode nobody wants is dropped")
+        #expect(!ImageStore.shared.decodeStarts.contains(queued))
+    }
+
+    /// Visible files decode before prefetch files, whichever was named
+    /// first; two owners naming one file share one decode.
+    @Test
+    func visibleDemandOutranksPrefetchAndOwnersShareADecode() async throws {
+        let first = writePNG("order-first.png", width: 100, height: 100)
+        let near = writePNG("order-near.png", width: 100, height: 100)
+        let seen = writePNG("order-seen.png", width: 100, height: 100)
+        for url in [first, near, seen] { ImageStore.shared.forget(url) }
+        let gate = holdDecodes()
+        let other = ObjectIdentifier(otherToken)
+        defer {
+            restoreDecoder()
+            ImageStore.shared.removeDemand(for: owner)
+            ImageStore.shared.removeDemand(for: other)
+        }
+
+        ImageStore.shared.updateDemand(for: owner, visible: [first], prefetch: [near])
+        ImageStore.shared.updateDemand(for: owner, visible: [first, seen], prefetch: [near])
+        ImageStore.shared.updateDemand(for: other, visible: [seen], prefetch: [near])
+        let before = ImageStore.shared.decodeStarts.count
+        gate.open(); gate.open(); gate.open()
+        try await until { ImageStore.shared.isCached(near) }
+        let starts = Array(ImageStore.shared.decodeStarts.dropFirst(before - 1))
+        #expect(starts == [first, seen, near], "visible first, then prefetch, each once")
+    }
+
+    /// A visible image is never evicted, even over budget; once it is no
+    /// longer visible the cache returns under budget (#23).
+    @Test
+    func aVisibleImageSurvivesEvictionUntilItScrollsAway() async throws {
+        let first = writePNG("pin-one.png", width: 100, height: 100)
+        let second = writePNG("pin-two.png", width: 100, height: 100)
+        ImageStore.shared.forget(first)
+        ImageStore.shared.forget(second)
+        let budget = ImageStore.shared.byteBudget
+        defer {
+            ImageStore.shared.byteBudget = budget
+            ImageStore.shared.removeDemand(for: owner)
+        }
+        ImageStore.shared.byteBudget = 100 * 100 * 4 + 1
+
+        ImageStore.shared.updateDemand(for: owner, visible: [first, second], prefetch: [])
+        try await until { ImageStore.shared.isCached(first) && ImageStore.shared.isCached(second) }
+        #expect(ImageStore.shared.isCached(first), "both visible: over budget rather than flashing")
+        #expect(ImageStore.shared.isCached(second))
+
+        ImageStore.shared.updateDemand(for: owner, visible: [second], prefetch: [first])
+        #expect(!ImageStore.shared.isCached(first), "unpinned, the older one goes")
+        #expect(ImageStore.shared.isCached(second))
+    }
+
+    /// A prefetch that lands into a budget full of visible images evicts
+    /// itself once and then waits: it is not decoded again until room
+    /// frees or it becomes visible. Without this the store decodes and
+    /// evicts it in a loop.
+    @Test
+    func aPrefetchThatCannotFitWaitsInsteadOfLooping() async throws {
+        let shown = writePNG("fit-shown.png", width: 100, height: 100)
+        let near = writePNG("fit-near.png", width: 100, height: 100)
+        ImageStore.shared.forget(shown)
+        ImageStore.shared.forget(near)
+        let budget = ImageStore.shared.byteBudget
+        defer {
+            ImageStore.shared.byteBudget = budget
+            ImageStore.shared.removeDemand(for: owner)
+        }
+        ImageStore.shared.byteBudget = 100 * 100 * 4 + 1
+
+        ImageStore.shared.updateDemand(for: owner, visible: [shown], prefetch: [near])
+        try await until { ImageStore.shared.decodeStarts.filter { $0 == near }.count == 1 && !ImageStore.shared.isDecoding(near) }
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(ImageStore.shared.isCached(shown))
+        #expect(!ImageStore.shared.isCached(near), "no room beside the pinned one")
+        #expect(ImageStore.shared.decodeStarts.filter { $0 == near }.count == 1, "decoded once, then parked")
+        #expect(!ImageStore.shared.isQueued(near))
+
+        ImageStore.shared.updateDemand(for: owner, visible: [near], prefetch: [shown])
+        try await until { ImageStore.shared.isCached(near) }
+        #expect(ImageStore.shared.isCached(near), "visible, it is decoded again and pinned")
+        #expect(!ImageStore.shared.isCached(shown))
+    }
+
+    /// A file forgotten while decoding — rewritten on disk — has its stale
+    /// result rejected; still demanded, it decodes again.
+    @Test
+    func aStaleResultIsRejectedAfterForget() async throws {
+        let url = writePNG("stale.png", width: 100, height: 100)
+        ImageStore.shared.forget(url)
+        let gate = holdDecodes()
+        defer { restoreDecoder(); ImageStore.shared.removeDemand(for: owner) }
+
+        ImageStore.shared.updateDemand(for: owner, visible: [url], prefetch: [])
+        #expect(ImageStore.shared.isDecoding(url))
+        let discards = ImageStore.shared.discards
+        ImageStore.shared.forget(url)
+        gate.open()
+        try await until { ImageStore.shared.discards > discards }
+        #expect(!ImageStore.shared.isCached(url), "the result that started before forget is dropped")
+        #expect(ImageStore.shared.isDecoding(url), "still demanded, it decodes again")
+        gate.open()
+        try await until { ImageStore.shared.isCached(url) }
+        #expect(ImageStore.shared.residentImage(for: url) != nil)
+    }
+
+    /// The view's demand comes from the real viewport: a band in it is
+    /// visible, a band within a viewport of it is prefetch, a band further
+    /// away is neither. A file shown twice is named once.
+    @Test
+    func demandFollowsTheViewportAndNamesARepeatedFileOnce() throws {
+        let url = writePNG("twice.png", width: 100, height: 100)
+        ImageStore.shared.forget(url)
+        let filler = String(repeating: "line\n", count: 60)
+        let textView = styledView("![a](twice.png)\n\n" + filler + "![b](twice.png)\n", documentURL: documentURL)
+        let layoutManager = try #require(textView.layoutManager as? PaperLayoutManager)
+        let container = try #require(textView.textContainer)
+        layoutManager.ensureLayout(for: container)
+        let bands = layoutManager.imageBands(forGlyphRange: layoutManager.glyphRange(for: container), width: 640)
+        #expect(bands.count == 2)
+        let origin = textView.textContainerOrigin
+        let top = bands[0].rect.offsetBy(dx: origin.x, dy: origin.y)
+        let bottom = bands[1].rect.offsetBy(dx: origin.x, dy: origin.y)
+        let width = textView.bounds.width
+
+        let onTop = textView.imageDemand(in: NSRect(x: 0, y: 0, width: width, height: top.maxY + 10))
+        #expect(onTop.visible == [url] && onTop.prefetch.isEmpty, "the top band is visible; the same file below is not named again")
+
+        let between = NSRect(x: 0, y: top.maxY + 10, width: width, height: 50)
+        let nearTop = textView.imageDemand(in: between)
+        #expect(nearTop.visible.isEmpty && nearTop.prefetch == [url], "just under the band: a prefetch")
+
+        let far = NSRect(x: 0, y: top.maxY + 100, width: width, height: 50)
+        #expect(far.maxY + 50 < bottom.minY)
+        let nothing = textView.imageDemand(in: far)
+        #expect(nothing.visible.isEmpty && nothing.prefetch.isEmpty, "a viewport height from either band: nothing")
+        #expect(!ImageStore.shared.isCached(url), "asking for demand decodes nothing by itself")
     }
 }

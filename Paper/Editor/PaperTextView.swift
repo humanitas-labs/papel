@@ -6,6 +6,15 @@ final class PaperTextView: NSTextView {
     /// The file this view edits, set by the editor and kept current across
     /// Save As; relative paths in links and images resolve against its
     /// folder. Nil for a document not yet saved.
+    /// The image a single click marked, drawn under a wash until the next
+    /// click or keystroke; see `ImagePreview.swift`. The wash fades, so
+    /// the band it covers and its current strength are kept apart.
+    var selectedImage: URL? {
+        didSet { if selectedImage != oldValue { animateImageWash() } }
+    }
+    var imageWash: (url: URL, alpha: CGFloat)?
+    var imageWashTimer: Timer?
+
     var documentURL: URL? {
         didSet {
             guard documentURL != oldValue else { return }
@@ -25,6 +34,7 @@ final class PaperTextView: NSTextView {
         configure()
         observeSettings()
         observeImageLoads()
+        observeFrameChanges()
     }
 
     @available(*, unavailable)
@@ -128,19 +138,101 @@ final class PaperTextView: NSTextView {
     private func imageDidChange(at url: URL) {
         ImageStore.shared.forget(url)
         syntaxStyler.apply(to: self)
+        refreshImageDemand()
         needsDisplay = true
     }
 
     /// Watchers hold file descriptors and must be cancelled by hand; the
-    /// view leaving its window is the document closing.
+    /// view leaving its window is the document closing, and its image
+    /// demand goes with it.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if window == nil {
             for watcher in imageWatchers.values { watcher.cancel() }
             imageWatchers = [:]
+            ImageStore.shared.removeDemand(for: ObjectIdentifier(self))
         } else if hasBlockImages {
             syntaxStyler.apply(to: self)
+            refreshImageDemand()
         }
+    }
+
+    // MARK: - Image demand
+
+    /// The scroll view's clip view is the superview; its bounds are the
+    /// viewport, and each change of them is a change of demand.
+    override func viewDidMoveToSuperview() {
+        super.viewDidMoveToSuperview()
+        if let observer = clipBoundsObserver {
+            NotificationCenter.default.removeObserver(observer)
+            clipBoundsObserver = nil
+        }
+        guard let clipView = enclosingScrollView?.contentView else { return }
+        clipView.postsBoundsChangedNotifications = true
+        clipBoundsObserver = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification, object: clipView, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshImageDemand() }
+        }
+    }
+
+    private var clipBoundsObserver: NSObjectProtocol?
+
+    /// The text view resizes itself after every relayout, so its own frame
+    /// change covers restyling, edits, and a narrower measure resizing the
+    /// bands: one observer for every way the bands can move.
+    private func observeFrameChanges() {
+        postsFrameChangedNotifications = true
+        NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification, object: self, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshImageDemand() }
+        }
+    }
+
+    private var refreshingImageDemand = false
+
+    /// Tells the store which images the viewport shows and which lie within
+    /// a viewport of it. The viewport is the real one — `visibleRect`, the
+    /// clip view's bounds — never the rect AppKit asks to draw, which runs
+    /// well past it for responsive scrolling. A view in no window wants
+    /// nothing.
+    func refreshImageDemand() {
+        guard !refreshingImageDemand else { return }
+        refreshingImageDemand = true
+        defer { refreshingImageDemand = false }
+        guard window != nil, hasBlockImages else {
+            ImageStore.shared.removeDemand(for: ObjectIdentifier(self))
+            return
+        }
+        let demand = imageDemand(in: visibleRect)
+        ImageStore.shared.updateDemand(for: ObjectIdentifier(self), visible: demand.visible, prefetch: demand.prefetch)
+    }
+
+    /// The image files whose bands intersect `viewport`, and those whose
+    /// bands lie within one viewport height above or below it, each list
+    /// in document order without repeats. A file shown twice appears once,
+    /// in the higher class.
+    func imageDemand(in viewport: NSRect) -> (visible: [URL], prefetch: [URL]) {
+        guard let layoutManager = layoutManager as? PaperLayoutManager,
+              let container = textContainer else { return ([], []) }
+        let reach = viewport.insetBy(dx: 0, dy: -viewport.height).intersection(bounds)
+        guard !reach.isEmpty else { return ([], []) }
+        let origin = textContainerOrigin
+        let containerRect = reach.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
+        var visible: [URL] = []
+        var prefetch: [URL] = []
+        for band in layoutManager.imageBands(forGlyphRange: glyphRange, width: MarkdownSyntaxStyler.measure(of: self)) {
+            let placed = band.rect.offsetBy(dx: origin.x, dy: origin.y)
+            if placed.intersects(viewport) {
+                if !visible.contains(band.url) { visible.append(band.url) }
+            } else if placed.intersects(reach) {
+                if !prefetch.contains(band.url) { prefetch.append(band.url) }
+            }
+        }
+        prefetch.removeAll { visible.contains($0) }
+        return (visible, prefetch)
     }
 
     /// The rect AppKit proposes spans the whole line fragment, including the
@@ -241,6 +333,7 @@ final class PaperTextView: NSTextView {
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
         drawImages(in: rect)
+        drawImageSelection(in: rect)
         drawPlaceholder()
     }
 
@@ -261,11 +354,12 @@ final class PaperTextView: NSTextView {
                 xRadius: Appearance.imageCornerRadius,
                 yRadius: Appearance.imageCornerRadius
             )
-            // Drawing a band is what asks for its bitmap, so only images
-            // that reach the screen decode. Until one lands the band is a
-            // quiet panel the size the image will be; nothing moves when
-            // the bitmap replaces it.
-            guard let entry = ImageStore.shared.image(for: band.url) else {
+            // Drawing only looks in the cache: AppKit draws well past the
+            // viewport, and a decode per drawn band would pull in every
+            // image it prepares. Demand — the real viewport — decodes.
+            // Until the bitmap lands the band is a quiet panel the size
+            // the image will be; nothing moves when it replaces it.
+            guard let entry = ImageStore.shared.residentImage(for: band.url) else {
                 Appearance.codeBlockBackground.setFill()
                 outline.fill()
                 continue
@@ -291,10 +385,10 @@ final class PaperTextView: NSTextView {
         )
     }
 
-    /// Only the landed image's own bands repaint. Invalidating the whole
-    /// view would redraw every band AppKit has prepared beyond the
-    /// viewport, each asking for its bitmap again; past the cache budget
-    /// that evicts and re-decodes in a loop, flashing the panels.
+    /// Only the landed image's own bands repaint, every one of them: a
+    /// band AppKit prepared off-screen as a placeholder is redrawn with
+    /// the bitmap before it scrolls in, and redrawing is cache-only, so
+    /// off-screen bands cost no decode.
     @objc private func imageDidLoad(_ notification: Notification) {
         guard let url = notification.object as? URL,
               let layoutManager = layoutManager as? PaperLayoutManager,
@@ -626,6 +720,7 @@ final class PaperTextView: NSTextView {
         }
         let unmodified = event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
         if unmodified, clickImage(with: event) { return }
+        selectedImage = nil
         let plainClick = event.clickCount == 1 && unmodified
         super.mouseDown(with: event)
         if plainClick, let destination, selectedRange().length == 0,
