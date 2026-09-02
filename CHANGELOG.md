@@ -3,7 +3,7 @@
 ## 0.3.1 — 2026.09.02
 
 - Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.
-- Ship with the `apple` theme as the default, and add the `enso` theme: white under the ink #2D2B29, and #13181C under #BFC1C3 in the dark appearance.
+- Ship with the `apple` theme, line height 1.2, and paragraph spacing 12 as the defaults, and add the `enso` theme: white under the ink #2D2B29, and #13181C under #BFC1C3 in the dark appearance.
 - Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).
 - A single click marks an image with a wash of the ink that eases in over a third of a second, as Messages does, and eases out on the next click or keystroke.
 - Text checking leaves the `(destination)` of a link or image alone: a path or URL is not prose, so it no longer collects spelling underlines. Link text and alt text are still checked.

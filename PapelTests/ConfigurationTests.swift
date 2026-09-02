@@ -133,8 +133,8 @@ struct ThemeTests {
         #expect(sepia.palette.overrides.fileText == """
         color.canvas = #F4ECD8
         color.ink = #5B4636
-        color.canvas.dark = #1B1916
-        color.ink.dark = #E8E3D6
+        color.canvas.dark = #212323
+        color.ink.dark = #DDDDDD
 
         """)
         #expect(Theme.user(named: "x", text: "").palette == Theme.apple.palette)

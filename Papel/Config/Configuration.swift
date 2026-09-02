@@ -22,8 +22,8 @@ struct Configuration: Equatable, Sendable {
     /// family name replaces it.
     var fontFamily = "New York"
     var fontSize: Double = 14
-    var lineHeight: Double = 1.38
-    var paragraphSpacing: Double = 13
+    var lineHeight: Double = 1.2
+    var paragraphSpacing: Double = 12
     var measure: Double = 640
     /// Tracking in points added between characters; negative tightens.
     var letterSpacing: Double = 0
@@ -121,8 +121,8 @@ struct Configuration: Equatable, Sendable {
 
     # Line height as a multiple of the font size, and space after a paragraph
     # in points.
-    line.height = 1.38
-    paragraph.spacing = 13
+    line.height = 1.2
+    paragraph.spacing = 12
 
     # Maximum text width in points.
     measure = 640
