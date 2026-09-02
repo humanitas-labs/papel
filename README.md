@@ -16,7 +16,7 @@ It is also deliberately anti-tabs. A second document gets a second window, as th
 
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
-Lastly, it is free and open. At [Humanitas Labs](https://github.com/humanitas-labs), we will continue our campaign to make delightful software abundant again.
+Lastly, it is free and open. We will continue our campaign to make delightful software abundant again.
 
 ## Shortcuts
 
