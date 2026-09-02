@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026.09.02
 
 - Decode images lazily, off the main thread: styling reserves each band from the file header alone, the bitmap decodes on a serial background queue the first time its band is drawn (so images that never scroll into view never decode), and the band shows a quiet panel of the final size until it lands. A document naming forty large images opens without a freeze (#30).
 - In-document anchors: clicking `[text](#fragment)` jumps to the heading whose GitHub-style slug matches (lowercase, punctuation dropped, spaces as hyphens; repeated headings count `-1`, `-2`…), placing the caret on the heading and scrolling it into view. A fragment naming no heading does nothing (#28).
