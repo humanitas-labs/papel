@@ -6,13 +6,13 @@
 
 *“I am not allowing myself to do anything other than write.”*
 
-That is the whole idea of Paper, in a nutshell. 
+Paper is the simplest markdown editor imaginable, by design.
 
-It is an exercise in absolute simplicity and focus.
+It is an exercise in absolute simplicity and focus. It rejects anything that isn’t conducive to clear thinking.
 
-Every control an editor gives you is a standing invitation to do something other than write (or read).
+In most editors, every button is a standing invitation to do something other than write (or read). 
 
-So Paper does away with those controls. There is nothing other than the text.
+So I’ve done away with them. There is nothing other than the text.
 
 It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/paper/fork) if that philosophy doesn’t suit you.
 
