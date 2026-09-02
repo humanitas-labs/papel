@@ -1,4 +1,3 @@
-![The Papel mark, an ink-brush circle](docs/assets/enso-wide.png)
 # Papel
 
 > A quiet, native markdown editor for macOS.
