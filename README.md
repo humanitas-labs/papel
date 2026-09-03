@@ -48,11 +48,7 @@ window.height = 877
 
 `papel notes.md` opens a document from the terminal, creating it first when it doesn't exist yet; `papel` alone opens the app. The command is a symlink to a launcher inside the bundle, so it follows the app through updates.
 
-Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under Command Line, which asks for your password; the same section shows where the command lives and removes it. By hand:
-
-```sh
-ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
-```
+Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under Command Line, which asks for your password; the same section shows where the command lives and removes it. The launcher itself is at `Papel.app/Contents/Resources/papel`.
 
 Once it is installed, tell your agent about it: add a line to `~/.claude/CLAUDE.md` (or your project's `AGENTS.md`) saying that Markdown is read in Papel and that `papel <file.md>` opens a document. [Using Papel with Claude](docs/claude.md) has a prompt you can paste that does this. Making Papel the default app for `.md` files, below, means agents that simply `open` a file land in it too.
 
