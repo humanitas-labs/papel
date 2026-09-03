@@ -108,9 +108,9 @@ struct Theme: Equatable, Sendable, Identifiable {
     static let enso = Theme(
         name: "enso", title: "Enso",
         palette: Palette(
-            canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3",
+            canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#191B1D", inkDark: "#F4F9FA",
             selection: "#353535", selectionInk: "#F9F9F9",
-            selectionDark: "#BFC1C3", selectionInkDark: "#13181C"
+            selectionDark: "#F4F9FA", selectionInkDark: "#191B1D"
         ),
         isBuiltIn: true
     )

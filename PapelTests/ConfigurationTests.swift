@@ -140,8 +140,8 @@ struct ThemeTests {
         #expect(sepia.palette.overrides.fileText == """
         color.canvas = #F4ECD8
         color.ink = #5B4636
-        color.canvas.dark = #13181C
-        color.ink.dark = #BFC1C3
+        color.canvas.dark = #191B1D
+        color.ink.dark = #F4F9FA
 
         """)
         #expect(Theme.user(named: "x", text: "").palette.canvas == Theme.enso.palette.canvas)
