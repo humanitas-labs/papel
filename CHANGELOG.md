@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026.09.03
 
 - Defaults: font size 15 (was 14), paragraph spacing 11 (was 12), and letter spacing −0.02 (was 0).
 - Font smoothing is off by default: glyphs draw at their true weight, as Safari draws them. `font.smoothing = on` in the config, or the switch in Settings, brings macOS's smoothing back.
