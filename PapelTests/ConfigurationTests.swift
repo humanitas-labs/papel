@@ -144,7 +144,8 @@ struct ThemeTests {
         color.ink.dark = #BFC1C3
 
         """)
-        #expect(Theme.user(named: "x", text: "").palette == Theme.enso.palette)
+        #expect(Theme.user(named: "x", text: "").palette.canvas == Theme.enso.palette.canvas)
+        #expect(Theme.user(named: "x", text: "").palette.selection == nil, "optional tones are not inherited")
     }
 
     @Test

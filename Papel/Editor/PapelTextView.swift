@@ -815,7 +815,9 @@ final class PapelTextView: NSTextView {
         backgroundColor = Appearance.canvas
         textColor = Appearance.ink
         insertionPointColor = Appearance.ink
-        selectedTextAttributes = [.backgroundColor: Appearance.selection]
+        var selected: [NSAttributedString.Key: Any] = [.backgroundColor: Appearance.selection]
+        if let ink = Appearance.selectionInk { selected[.foregroundColor] = ink }
+        selectedTextAttributes = selected
         enclosingScrollView?.backgroundColor = Appearance.canvas
     }
 

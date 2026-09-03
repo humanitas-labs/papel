@@ -12,11 +12,14 @@ struct Palette: Equatable, Sendable {
     var inkMuted: String?
     var inkQuote: String?
     var selection: String?
+    /// Ink for selected text; nil keeps the text's own colour.
+    var selectionInk: String?
     var codeBackground: String?
     var rule: String?
     var inkMutedDark: String?
     var inkQuoteDark: String?
     var selectionDark: String?
+    var selectionInkDark: String?
     var codeBackgroundDark: String?
     var ruleDark: String?
 
@@ -30,11 +33,13 @@ struct Palette: Equatable, Sendable {
         var inkMuted: String?
         var inkQuote: String?
         var selection: String?
+        var selectionInk: String?
         var codeBackground: String?
         var rule: String?
         var inkMutedDark: String?
         var inkQuoteDark: String?
         var selectionDark: String?
+        var selectionInkDark: String?
         var codeBackgroundDark: String?
         var ruleDark: String?
 
@@ -51,11 +56,13 @@ struct Palette: Equatable, Sendable {
             inkMuted: o.inkMuted ?? inkMuted,
             inkQuote: o.inkQuote ?? inkQuote,
             selection: o.selection ?? selection,
+            selectionInk: o.selectionInk ?? selectionInk,
             codeBackground: o.codeBackground ?? codeBackground,
             rule: o.rule ?? rule,
             inkMutedDark: o.inkMutedDark ?? inkMutedDark,
             inkQuoteDark: o.inkQuoteDark ?? inkQuoteDark,
             selectionDark: o.selectionDark ?? selectionDark,
+            selectionInkDark: o.selectionInkDark ?? selectionInkDark,
             codeBackgroundDark: o.codeBackgroundDark ?? codeBackgroundDark,
             ruleDark: o.ruleDark ?? ruleDark
         )
@@ -65,9 +72,9 @@ struct Palette: Equatable, Sendable {
     var overrides: Overrides {
         Overrides(
             canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark,
-            inkMuted: inkMuted, inkQuote: inkQuote, selection: selection,
+            inkMuted: inkMuted, inkQuote: inkQuote, selection: selection, selectionInk: selectionInk,
             codeBackground: codeBackground, rule: rule,
-            inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, selectionDark: selectionDark,
+            inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, selectionDark: selectionDark, selectionInkDark: selectionInkDark,
             codeBackgroundDark: codeBackgroundDark, ruleDark: ruleDark
         )
     }
@@ -95,10 +102,16 @@ struct Theme: Equatable, Sendable, Identifiable {
 
     var id: String { name }
 
-    /// The shipped default: white under a warm near-black ink.
+    /// The shipped default: white under a warm near-black ink. Its
+    /// selection is a solid, near-black under off-white in the light
+    /// appearance and the inverse in the dark.
     static let enso = Theme(
         name: "enso", title: "Enso",
-        palette: Palette(canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3"),
+        palette: Palette(
+            canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#13181C", inkDark: "#BFC1C3",
+            selection: "#353535", selectionInk: "#F9F9F9",
+            selectionDark: "#BFC1C3", selectionInkDark: "#13181C"
+        ),
         isBuiltIn: true
     )
 
@@ -137,13 +150,18 @@ struct Theme: Equatable, Sendable, Identifiable {
         }
     }
 
-    /// A user theme parsed from a theme file. Keys the file leaves out fall
-    /// back to Enso's values, so a light-only theme still has a dark pair.
+    /// A user theme parsed from a theme file. Canvas and ink the file leaves
+    /// out fall back to Enso's, so a light-only theme still has a dark pair;
+    /// the optional tones stay unset and derive from the ink as usual.
     static func user(named name: String, text: String) -> Theme {
-        Theme(
+        let base = Palette(
+            canvas: enso.palette.canvas, ink: enso.palette.ink,
+            canvasDark: enso.palette.canvasDark, inkDark: enso.palette.inkDark
+        )
+        return Theme(
             name: canonicalName(name),
             title: name,
-            palette: enso.palette.applying(Configuration.parse(text).colorOverrides),
+            palette: base.applying(Configuration.parse(text).colorOverrides),
             isBuiltIn: false
         )
     }

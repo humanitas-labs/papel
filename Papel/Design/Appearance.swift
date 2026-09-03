@@ -90,6 +90,10 @@ enum Appearance {
     /// system accent blue, so it sits inside the canvas palette.
     static var selection: NSColor { colors.selection }
 
+    /// Ink for selected text when the theme sets one; nil leaves the text
+    /// its own colour under the highlight.
+    static var selectionInk: NSColor? { colors.selectionInk }
+
     static var palette: Palette { ConfigurationStore.shared.palette }
 
     private struct Colors {
@@ -99,6 +103,7 @@ enum Appearance {
         let mutedInk: NSColor
         let quoteInk: NSColor
         let selection: NSColor
+        let selectionInk: NSColor?
         let codeBackground: NSColor
         let hairline: NSColor
     }
@@ -124,6 +129,10 @@ enum Appearance {
             mutedInk: tone(palette.inkMuted, palette.inkMutedDark, alpha: 0.28),
             quoteInk: tone(palette.inkQuote, palette.inkQuoteDark, alpha: 0.62),
             selection: tone(palette.selection, palette.selectionDark, alpha: 0.13),
+            selectionInk: (palette.selectionInk ?? palette.selectionInkDark) == nil ? nil : dynamic(
+                light: color(hex: palette.selectionInk ?? palette.canvas),
+                dark: color(hex: palette.selectionInkDark ?? palette.canvasDark)
+            ),
             codeBackground: tone(palette.codeBackground, palette.codeBackgroundDark, alpha: 0.055),
             hairline: tone(palette.rule, palette.ruleDark, alpha: 0.10)
         )
