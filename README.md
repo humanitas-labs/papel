@@ -50,7 +50,9 @@ window.height = 877
 
 Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under Command Line, which asks for your password; the same section shows where the command lives and removes it. The launcher itself is at `Papel.app/Contents/Resources/papel`.
 
-Once it is installed, tell your agent about it: add a line to `~/.claude/CLAUDE.md` (or your project's `AGENTS.md`) saying that Markdown is read in Papel and that `papel <file.md>` opens a document. [Using Papel with Claude](docs/claude.md) has a prompt you can paste that does this. Making Papel the default app for `.md` files, below, means agents that simply `open` a file land in it too.
+Then tell your agent. Papel reloads a clean document whenever the file changes on disk, so an agent that edits the file is enough after the first open. Paste this into Claude Code or your agent of choice:
+
+> Add the following to my global instructions: Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
 
 ## Default app for Markdown
 
@@ -60,4 +62,3 @@ To make double-clicking a `.md` file open Papel: select any Markdown file in Fin
 
 - [Build and test](docs/build.md)
 - [Architecture](docs/architecture.md)
-- [Using Papel with Claude](docs/claude.md)
