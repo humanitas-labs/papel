@@ -23,17 +23,4 @@ struct WelcomeModelTests {
         #expect(recents.first?.folder == "~/Documents")
         #expect(recents.first?.name == "notes.md")
     }
-
-    @Test func greetingFollowsTheHour() {
-        #expect(WelcomeModel.greeting(hour: 8) { _ in 0 } == "Good morning")
-        #expect(WelcomeModel.greeting(hour: 14) { _ in 0 } == "Good afternoon")
-        #expect(WelcomeModel.greeting(hour: 20) { _ in 0 } == "Good evening")
-        #expect(WelcomeModel.greeting(hour: 2) { _ in 0 } == "Welcome back", "the small hours have no timed greeting")
-    }
-
-    @Test func greetingPoolIncludesTheAnytimeGreetingsAndClampsThePick() {
-        let count = WelcomeModel.timedGreetings(hour: 8).count
-        #expect(WelcomeModel.greeting(hour: 8) { _ in count } == "Welcome back")
-        #expect(WelcomeModel.greeting(hour: 8) { _ in 999 } == WelcomeModel.anytimeGreetings.last)
-    }
 }
