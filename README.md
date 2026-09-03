@@ -6,17 +6,31 @@
 
 Papel is the simplest markdown editor imaginable.
 
-It is an exercise in restraint.
+There is nothing other than the text, by design.
 
-In most editors, every button is a standing invitation to do something other than write (or read). 
+In most editors, every button is a standing invitation to do something other than write (or read).
 
-So I’ve done away with them. There is nothing other than the text.
-
-It is also deliberately anti-tabs. A second document gets a second window, as the Mac has always done it. That is a choice in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/papel/fork) if that philosophy doesn’t suit you.
+Here, each document gets its own window, so you can focus with no distractions. Every choice has been made in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/papel/fork) if that philosophy doesn’t suit your needs.
 
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
 Lastly, it is free and open. We will continue our campaign to make delightful software abundant again.
+
+## CLI
+
+> Meant to be used as a companion to agents. Let them open the files for you while you work.
+
+`papel notes.md` opens a document from the terminal, creating it first when it doesn't exist yet; `papel` alone opens the app. Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under CLI, which asks for your password; the same section shows where the command lives and removes it. The launcher itself is at `Papel.app/Contents/Resources/papel`.
+
+Give this prompt to your agent of choice (it is also in the guide Papel opens on first launch, and under Guide on the welcome window):
+
+> Add the following to my global instructions: 
+>
+>Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
+
+## Default app for Markdown
+
+To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
 
 ## Shortcuts
 
@@ -43,20 +57,6 @@ theme = slate
 window.width = 1374
 window.height = 877
 ```
-
-## CLI
-
-`papel notes.md` opens a document from the terminal, creating it first when it doesn't exist yet; `papel` alone opens the app. The command is a symlink to a launcher inside the bundle, so it follows the app through updates.
-
-Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under CLI, which asks for your password; the same section shows where the command lives and removes it. The launcher itself is at `Papel.app/Contents/Resources/papel`.
-
-Then tell your agent. Papel reloads a clean document whenever the file changes on disk, so an agent that edits the file is enough after the first open. Paste this into Claude Code or your agent of choice (it is also in the guide Papel opens on first launch, and under Guide on the welcome window):
-
-> Add the following to my global instructions: Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
-
-## Default app for Markdown
-
-To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
 
 ## More
 
