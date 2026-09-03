@@ -4,6 +4,7 @@
 
 - Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.
 - Add the `enso` theme, white under the ink #2D2B29 and #13181C under #BFC1C3 in the dark appearance, and ship with it, line height 1.2, and paragraph spacing 12 as the defaults.
+- Weights are numbers: `font.weight` (new, default 400) and `heading.weight` (default 500) take any value from 100 to 900, or the CSS names. New York and any variable face take the exact value on the weight axis; a static family takes its nearest face. Bold runs three hundred above the body weight. Settings gets sliders for both.
 - A `font.smoothing` key, and a Font smoothing switch in Settings: on applies macOS's smoothing, which thickens every stem a little; off draws glyphs at their true weight, as Safari does. On by default.
 - The block-quote rule is a pill: its ends are rounded at half its width, in the app and on the site.
 - Double-click a block image to open it in the system Quick Look panel, zoomed out of its band, with ← → across the document's images and Open with Preview one click away. The pointer is the arrow over an image, and a click on one leaves the caret alone so the source line stays concealed and the band stays put (#34).

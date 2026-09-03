@@ -30,7 +30,7 @@ struct ConfigurationTests {
         #expect(config.lineHeight == 1.6)
         #expect(config.paragraphSpacing == 8)
         #expect(config.measure == 720)
-        #expect(config.headingWeight == .semibold)
+        #expect(config.headingWeight == 600)
     }
 
     @Test
@@ -38,7 +38,7 @@ struct ConfigurationTests {
         let config = Configuration.parse("""
         font.size = large
         line.height = nan
-        heading.weight = heavy
+        heading.weight = heavyish
         measure = 10
         font.family =
         unknown.key = 1
@@ -55,10 +55,10 @@ struct ConfigurationTests {
     func mergingUpdatesValuesInPlaceAndAppendsMissingKeys() {
         var config = Configuration()
         config.fontSize = 15.4
-        config.headingWeight = .bold
+        config.headingWeight = 700
         let text = "# keep me\nfont.size = 14   \nmystery = 1\n\nheading.weight = medium\n"
         let merged = config.merged(into: text)
-        #expect(merged.hasPrefix("# keep me\nfont.size = 15.4\nmystery = 1\n\nheading.weight = bold\n"))
+        #expect(merged.hasPrefix("# keep me\nfont.size = 15.4\nmystery = 1\n\nheading.weight = 700\n"))
         #expect(merged.contains("\nfont.family = New York\n"))
         #expect(Configuration.parse(merged) == config)
 
@@ -106,6 +106,9 @@ struct ThemeTests {
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowWidth == 1200)
         #expect(Configuration.parse("window.width = 1200\nwindow.height = 100").windowHeight == 520, "clamped")
         #expect(Configuration.parse("letter.spacing = 9").letterSpacing == 3, "clamped")
+        #expect(Configuration.parse("heading.weight = 540").headingWeight == 540)
+        #expect(Configuration.parse("font.weight = light").fontWeight == 300)
+        #expect(Configuration.parse("font.weight = 2000").fontWeight == 900, "clamped")
         #expect(Configuration().fontSmoothing, "smoothing is on by default")
         #expect(!Configuration.parse("font.smoothing = off").fontSmoothing)
         #expect(Configuration.parse("font.smoothing = OFF\nfont.smoothing = maybe").fontSmoothing == false, "an unknown value keeps the last good one")

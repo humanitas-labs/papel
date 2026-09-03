@@ -4,20 +4,6 @@ import Foundation
 /// Values are validated and clamped on parse so a typo in the file degrades
 /// to the default for that key rather than breaking the window.
 struct Configuration: Equatable, Sendable {
-    enum HeadingWeight: String, CaseIterable, Sendable {
-        case regular, medium, semibold, bold
-
-        /// `NSFontManager` weight on its 0–15 scale.
-        var fontManagerWeight: Int {
-            switch self {
-            case .regular: 5
-            case .medium: 6
-            case .semibold: 8
-            case .bold: 9
-            }
-        }
-    }
-
     /// "New York" is the system serif, present on every Mac; any installed
     /// family name replaces it.
     var fontFamily = "New York"
@@ -30,7 +16,10 @@ struct Configuration: Equatable, Sendable {
     /// Whether AppKit's font smoothing, which thickens every stem a little,
     /// is applied. Off renders glyphs at their true weight, as WebKit does.
     var fontSmoothing: Bool = true
-    var headingWeight: HeadingWeight = .medium
+    /// Weights on the CSS scale, 100–900. A face with a variable weight axis
+    /// takes the exact value; a static family takes its nearest face.
+    var fontWeight: Double = 400
+    var headingWeight: Double = 500
     /// Corner radius in points a block image is clipped to; 0 is square.
     var imageCornerRadius: Double = 12
     /// The theme's canonical name: a built-in or a file in `themes/`. Kept
@@ -101,6 +90,7 @@ struct Configuration: Equatable, Sendable {
     static let paragraphSpacingRange: ClosedRange<Double> = 0...60
     static let measureRange: ClosedRange<Double> = 320...1200
     static let letterSpacingRange: ClosedRange<Double> = -1...3
+    static let weightRange: ClosedRange<Double> = 100...900
     static let imageCornerRadiusRange: ClosedRange<Double> = 0...40
     static let windowWidthRange: ClosedRange<Double> = 640...4000
     static let windowHeightRange: ClosedRange<Double> = 520...3000
@@ -122,6 +112,10 @@ struct Configuration: Equatable, Sendable {
     font.family = New York
     font.size = 14
 
+    # Body weight, 100–900 (regular is 400). New York and other variable
+    # faces take any value; static families use their nearest face.
+    font.weight = 400
+
     # Line height as a multiple of the font size, and space after a paragraph
     # in points.
     line.height = 1.2
@@ -137,9 +131,8 @@ struct Configuration: Equatable, Sendable {
     # little; off draws glyphs at their true weight, as Safari does.
     font.smoothing = on
 
-    # Heading weight: regular, medium, semibold, or bold. The nearest installed
-    # face is used.
-    heading.weight = medium
+    # Heading weight, 100–900, or regular, medium, semibold, or bold.
+    heading.weight = 500
 
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
@@ -219,8 +212,10 @@ struct Configuration: Equatable, Sendable {
             case "off", "false", "no": fontSmoothing = false
             default: break
             }
+        case "font.weight":
+            fontWeight = Self.weight(value) ?? fontWeight
         case "heading.weight":
-            headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
+            headingWeight = Self.weight(value) ?? headingWeight
         case "image.corner.radius":
             imageCornerRadius = Self.number(value, in: Self.imageCornerRadiusRange) ?? imageCornerRadius
         case "window.width":
@@ -242,12 +237,13 @@ struct Configuration: Equatable, Sendable {
         [
             ("font.family", fontFamily),
             ("font.size", Self.format(fontSize)),
+            ("font.weight", Self.format(fontWeight)),
             ("line.height", Self.format(lineHeight)),
             ("paragraph.spacing", Self.format(paragraphSpacing)),
             ("measure", Self.format(measure)),
             ("letter.spacing", Self.format(letterSpacing)),
             ("font.smoothing", fontSmoothing ? "on" : "off"),
-            ("heading.weight", headingWeight.rawValue),
+            ("heading.weight", Self.format(headingWeight)),
             ("image.corner.radius", Self.format(imageCornerRadius)),
             ("theme", theme),
             ("window.width", Self.format(windowWidth)),
@@ -287,6 +283,22 @@ struct Configuration: Equatable, Sendable {
     private static func format(_ number: Double) -> String {
         number == number.rounded() ? String(Int(number)) : String(format: "%.2f", number)
             .replacingOccurrences(of: #"0+$"#, with: "", options: .regularExpression)
+    }
+
+    /// A weight as a number in `weightRange`, or one of the CSS names.
+    static func weight(_ value: String) -> Double? {
+        switch value.trimmingCharacters(in: .whitespaces).lowercased() {
+        case "thin": return 100
+        case "extralight", "ultralight": return 200
+        case "light": return 300
+        case "regular", "normal", "book": return 400
+        case "medium": return 500
+        case "semibold", "demibold": return 600
+        case "bold": return 700
+        case "extrabold", "heavy": return 800
+        case "black": return 900
+        default: return number(value, in: weightRange)
+        }
     }
 
     private static func number(_ value: String, in range: ClosedRange<Double>) -> Double? {

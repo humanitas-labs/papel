@@ -13,7 +13,8 @@ enum Appearance {
     static var paragraphSpacing: CGFloat { CGFloat(configuration.paragraphSpacing) }
     static var letterSpacing: CGFloat { CGFloat(configuration.letterSpacing) }
     static var fontSmoothing: Bool { configuration.fontSmoothing }
-    static var headingWeight: Int { configuration.headingWeight.fontManagerWeight }
+    static var bodyWeight: CGFloat { CGFloat(configuration.fontWeight) }
+    static var headingWeight: CGFloat { CGFloat(configuration.headingWeight) }
 
     static let minimumHorizontalMargin: CGFloat = 64
     static let topMargin: CGFloat = 80
@@ -145,52 +146,102 @@ enum Appearance {
     /// family and resolves through the `.serif` design instead.
     static let systemSerifFamily = "New York"
 
-    /// The configured family when installed, otherwise the system serif (New
-    /// York) so rendering never falls back to a generic face.
+    /// Whether the configured family is installed; otherwise the system
+    /// serif (New York) stands in, so rendering never falls back to a
+    /// generic face.
+    private static var preferredFamilyIsInstalled: Bool {
+        preferredFamily != systemSerifFamily
+            && NSFontManager.shared.availableFontFamilies.contains(preferredFamily)
+    }
+
+    /// The body face at the configured weight.
     static func bodyFont(size: CGFloat = bodySize) -> NSFont {
-        if preferredFamily != systemSerifFamily, let preferred = NSFont(
-            descriptor: NSFontDescriptor(fontAttributes: [.family: preferredFamily]),
-            size: size
-        ), preferred.familyName == preferredFamily {
-            return preferred
-        }
-        let system = NSFont.systemFont(ofSize: size)
-        let descriptor = system.fontDescriptor.withDesign(.serif) ?? system.fontDescriptor
-        return NSFont(descriptor: descriptor, size: size) ?? system
+        font(size: size, weight: bodyWeight, italic: false)
     }
 
     static func italicFont(size: CGFloat = bodySize) -> NSFont {
-        let descriptor = bodyFont(size: size).fontDescriptor.withSymbolicTraits(.italic)
-        return NSFont(descriptor: descriptor, size: size) ?? bodyFont(size: size)
+        font(size: size, weight: bodyWeight, italic: true)
     }
 
+    /// Bold is the body weight plus three hundred, at least the bold face.
     static func boldFont(size: CGFloat = bodySize) -> NSFont {
-        let descriptor = bodyFont(size: size).fontDescriptor.withSymbolicTraits(.bold)
-        return NSFont(descriptor: descriptor, size: size) ?? bodyFont(size: size)
+        font(size: size, weight: max(bodyWeight + 300, 700), italic: false)
     }
 
-    /// Headings use the family's face nearest to the configured weight.
-    /// Families without that face resolve to the closest installed one. The
-    /// system serif has no family `NSFontManager` can weight, so it takes
-    /// the system font at the configured weight in the serif design.
+    /// Headings use the configured heading weight.
     static func headingFont(size: CGFloat) -> NSFont {
-        let body = bodyFont(size: size)
-        if let family = body.familyName, family == preferredFamily,
-           let font = NSFontManager.shared.font(withFamily: family, traits: [], weight: headingWeight, size: size) {
+        font(size: size, weight: headingWeight, italic: false)
+    }
+
+    /// A face at `weight` on the CSS scale. The system serif takes the
+    /// weight through `NSFont.Weight`, which is continuous. An installed
+    /// family with a variable weight axis takes the exact value on that
+    /// axis; a static family takes its nearest face through the font
+    /// manager.
+    static func font(size: CGFloat, weight: CGFloat, italic: Bool) -> NSFont {
+        let weight = min(max(weight, 100), 900)
+        guard preferredFamilyIsInstalled else {
+            let system = NSFont.systemFont(ofSize: size, weight: systemWeight(weight))
+            var descriptor = system.fontDescriptor.withDesign(.serif) ?? system.fontDescriptor
+            if italic { descriptor = descriptor.withSymbolicTraits(.italic) }
+            return NSFont(descriptor: descriptor, size: size) ?? system
+        }
+        let base = NSFont(descriptor: NSFontDescriptor(fontAttributes: [.family: preferredFamily]), size: size)
+            ?? NSFont.systemFont(ofSize: size)
+        if let axis = weightAxis(of: base) {
+            let value = min(max(weight, axis.minimum), axis.maximum)
+            var descriptor = base.fontDescriptor.addingAttributes([.variation: [NSNumber(value: axis.identifier): value]])
+            if italic { descriptor = descriptor.withSymbolicTraits(.italic) }
+            if let font = NSFont(descriptor: descriptor, size: size) { return font }
+        }
+        let traits: NSFontTraitMask = italic ? .italicFontMask : []
+        if let font = NSFontManager.shared.font(withFamily: preferredFamily, traits: traits, weight: managerWeight(weight), size: size) {
             return font
         }
-        let weighted = NSFont.systemFont(ofSize: size, weight: systemWeight)
-        let descriptor = weighted.fontDescriptor.withDesign(.serif) ?? weighted.fontDescriptor
-        return NSFont(descriptor: descriptor, size: size) ?? body
+        let descriptor = italic ? base.fontDescriptor.withSymbolicTraits(.italic) : base.fontDescriptor
+        return NSFont(descriptor: descriptor, size: size) ?? base
     }
 
-    private static var systemWeight: NSFont.Weight {
-        switch configuration.headingWeight {
-        case .regular: .regular
-        case .medium: .medium
-        case .semibold: .semibold
-        case .bold: .bold
+    /// The `wght` axis of a variable face, if it has one.
+    private static func weightAxis(of font: NSFont) -> (identifier: Int, minimum: CGFloat, maximum: CGFloat)? {
+        guard let axes = CTFontCopyVariationAxes(font) as? [[String: Any]] else { return nil }
+        for axis in axes {
+            guard let identifier = axis[kCTFontVariationAxisIdentifierKey as String] as? Int,
+                  identifier == 0x77676874,
+                  let minimum = axis[kCTFontVariationAxisMinimumValueKey as String] as? CGFloat,
+                  let maximum = axis[kCTFontVariationAxisMaximumValueKey as String] as? CGFloat
+            else { continue }
+            return (identifier, minimum, maximum)
         }
+        return nil
+    }
+
+    /// CSS weight to `NSFont.Weight`, interpolated between Apple's named
+    /// stops so the system's variable faces take any value.
+    static func systemWeight(_ css: CGFloat) -> NSFont.Weight {
+        let stops: [(CGFloat, CGFloat)] = [
+            (100, NSFont.Weight.ultraLight.rawValue), (200, NSFont.Weight.thin.rawValue),
+            (300, NSFont.Weight.light.rawValue), (400, NSFont.Weight.regular.rawValue),
+            (500, NSFont.Weight.medium.rawValue), (600, NSFont.Weight.semibold.rawValue),
+            (700, NSFont.Weight.bold.rawValue), (800, NSFont.Weight.heavy.rawValue),
+            (900, NSFont.Weight.black.rawValue),
+        ]
+        return NSFont.Weight(rawValue: interpolate(css, stops))
+    }
+
+    /// CSS weight to the font manager's 0–15 scale, for static families.
+    static func managerWeight(_ css: CGFloat) -> Int {
+        let stops: [(CGFloat, CGFloat)] = [(100, 1), (200, 2), (300, 3), (400, 5), (500, 6), (600, 8), (700, 9), (800, 10), (900, 12)]
+        return Int(interpolate(css, stops).rounded())
+    }
+
+    private static func interpolate(_ x: CGFloat, _ stops: [(CGFloat, CGFloat)]) -> CGFloat {
+        if x <= stops[0].0 { return stops[0].1 }
+        for (a, b) in zip(stops, stops.dropFirst()) where x <= b.0 {
+            let t = (x - a.0) / (b.0 - a.0)
+            return a.1 + (b.1 - a.1) * t
+        }
+        return stops[stops.count - 1].1
     }
 
     static func paragraphStyle(spacing: CGFloat? = nil) -> NSParagraphStyle {

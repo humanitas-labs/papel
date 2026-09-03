@@ -155,15 +155,12 @@ struct SettingsView: View {
                     ForEach(families, id: \.self) { Text($0).tag($0) }
                 }
                 numberRow("Size", binding(\.fontSize), in: Configuration.fontSizeRange, unit: "pt")
+                numberRow("Weight", binding(\.fontWeight), in: Configuration.weightRange, unit: "")
                 numberRow("Line height", binding(\.lineHeight), in: Configuration.lineHeightRange, unit: "×")
                 numberRow("Letter spacing", binding(\.letterSpacing), in: Configuration.letterSpacingRange, unit: "pt")
                 numberRow("Paragraph spacing", binding(\.paragraphSpacing), in: Configuration.paragraphSpacingRange, unit: "pt")
                 numberRow("Measure", binding(\.measure), in: Configuration.measureRange, unit: "pt")
-                Picker("Heading weight", selection: binding(\.headingWeight)) {
-                    ForEach(Configuration.HeadingWeight.allCases, id: \.self) {
-                        Text($0.rawValue.capitalized).tag($0)
-                    }
-                }
+                numberRow("Heading weight", binding(\.headingWeight), in: Configuration.weightRange, unit: "")
                 Toggle("Font smoothing", isOn: binding(\.fontSmoothing))
             }
 

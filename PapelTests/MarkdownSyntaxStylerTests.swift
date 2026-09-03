@@ -174,7 +174,7 @@ struct ConfigurationDrivenAppearanceTests {
         config.lineHeight = 1.5
         config.paragraphSpacing = 20
         config.measure = 700
-        config.headingWeight = .bold
+        config.headingWeight = 700
         config.letterSpacing = 0.5
         withConfiguration(config) {
             #expect(Appearance.letterSpacing == 0.5)
