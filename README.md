@@ -37,6 +37,7 @@ font.family = New York
 font.size = 16
 line.height = 1.11
 letter.spacing = 0.02
+font.smoothing = off
 measure = 655
 theme = slate
 window.width = 1374

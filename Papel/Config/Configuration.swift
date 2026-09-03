@@ -27,6 +27,9 @@ struct Configuration: Equatable, Sendable {
     var measure: Double = 640
     /// Tracking in points added between characters; negative tightens.
     var letterSpacing: Double = 0
+    /// Whether AppKit's font smoothing, which thickens every stem a little,
+    /// is applied. Off renders glyphs at their true weight, as WebKit does.
+    var fontSmoothing: Bool = true
     var headingWeight: HeadingWeight = .medium
     /// Corner radius in points a block image is clipped to; 0 is square.
     var imageCornerRadius: Double = 12
@@ -130,6 +133,10 @@ struct Configuration: Equatable, Sendable {
     # Letter spacing in points added between characters (negative tightens).
     letter.spacing = 0
 
+    # Font smoothing: on applies macOS's smoothing, which thickens stems a
+    # little; off draws glyphs at their true weight, as Safari does.
+    font.smoothing = on
+
     # Heading weight: regular, medium, semibold, or bold. The nearest installed
     # face is used.
     heading.weight = medium
@@ -206,6 +213,12 @@ struct Configuration: Equatable, Sendable {
             measure = Self.number(value, in: Self.measureRange) ?? measure
         case "letter.spacing":
             letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
+        case "font.smoothing":
+            switch value.lowercased() {
+            case "on", "true", "yes": fontSmoothing = true
+            case "off", "false", "no": fontSmoothing = false
+            default: break
+            }
         case "heading.weight":
             headingWeight = HeadingWeight(rawValue: value.lowercased()) ?? headingWeight
         case "image.corner.radius":
@@ -233,6 +246,7 @@ struct Configuration: Equatable, Sendable {
             ("paragraph.spacing", Self.format(paragraphSpacing)),
             ("measure", Self.format(measure)),
             ("letter.spacing", Self.format(letterSpacing)),
+            ("font.smoothing", fontSmoothing ? "on" : "off"),
             ("heading.weight", headingWeight.rawValue),
             ("image.corner.radius", Self.format(imageCornerRadius)),
             ("theme", theme),

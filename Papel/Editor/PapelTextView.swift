@@ -323,6 +323,13 @@ final class PapelTextView: NSTextView {
         super.setNeedsDisplay(padded, avoidAdditionalLayout: flag)
     }
 
+    /// Glyphs draw with or without AppKit's font smoothing, per the config.
+    /// The flag lives on the context for the length of this draw.
+    override func draw(_ dirtyRect: NSRect) {
+        NSGraphicsContext.current?.cgContext.setShouldSmoothFonts(Appearance.fontSmoothing)
+        super.draw(dirtyRect)
+    }
+
     /// Draws block-quote rules in the margin right after the canvas fill and
     /// before the glyphs. Drawing them in `draw(_:)` fails both ways: before
     /// `super` the background fill covers them, after it the context is

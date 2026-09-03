@@ -12,6 +12,7 @@ enum Appearance {
     static var lineHeightMultiple: CGFloat { CGFloat(configuration.lineHeight) }
     static var paragraphSpacing: CGFloat { CGFloat(configuration.paragraphSpacing) }
     static var letterSpacing: CGFloat { CGFloat(configuration.letterSpacing) }
+    static var fontSmoothing: Bool { configuration.fontSmoothing }
     static var headingWeight: Int { configuration.headingWeight.fontManagerWeight }
 
     static let minimumHorizontalMargin: CGFloat = 64

@@ -164,6 +164,7 @@ struct SettingsView: View {
                         Text($0.rawValue.capitalized).tag($0)
                     }
                 }
+                Toggle("Font smoothing", isOn: binding(\.fontSmoothing))
             }
 
             Section("Images") {
