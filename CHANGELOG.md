@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Defaults: font size 15 (was 14), paragraph spacing 11 (was 12), and letter spacing −0.02 (was 0).
+- Font smoothing is off by default: glyphs draw at their true weight, as Safari draws them. `font.smoothing = on` in the config, or the switch in Settings, brings macOS's smoothing back.
 - A guide on first launch: a Markdown document, opened in the editor itself, with what Papel is, the shortcuts, the prompt to paste into an agent, where the `papel` command was installed (or how to install it), and how to make Papel the default app for Markdown, under the mark. It is written to `~/Library/Application Support/Papel/welcome.md`, so nothing lands in your folders, and a Guide item on the welcome window opens it again, rewriting it only when it is gone.
 - A welcome window when there is nothing to open: on launch without a document, and on a Dock click with no window up. It lists New, Open, Settings, and up to five recent documents on ⌘1 to ⌘5 under the Enso mark and a greeting, and closes itself once a document window opens.
 - `color.ink.label` and `color.ink.label.dark`: the ink of the welcome window's section titles and row icons. Enso sets it to #68737E in both appearances; other themes derive it from the ink like the quote tone.

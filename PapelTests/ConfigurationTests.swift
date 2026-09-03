@@ -109,9 +109,9 @@ struct ThemeTests {
         #expect(Configuration.parse("heading.weight = 540").headingWeight == 540)
         #expect(Configuration.parse("font.weight = light").fontWeight == 300)
         #expect(Configuration.parse("font.weight = 2000").fontWeight == 900, "clamped")
-        #expect(Configuration().fontSmoothing, "smoothing is on by default")
-        #expect(!Configuration.parse("font.smoothing = off").fontSmoothing)
-        #expect(Configuration.parse("font.smoothing = OFF\nfont.smoothing = maybe").fontSmoothing == false, "an unknown value keeps the last good one")
+        #expect(!Configuration().fontSmoothing, "smoothing is off by default")
+        #expect(Configuration.parse("font.smoothing = on").fontSmoothing)
+        #expect(Configuration.parse("font.smoothing = ON\nfont.smoothing = maybe").fontSmoothing == true, "an unknown value keeps the last good one")
         #expect(Configuration.parse("font.smoothing = off").entries.contains { $0.key == "font.smoothing" && $0.value == "off" })
         #expect(Configuration.parse("image.corner.radius = 0").imageCornerRadius == 0, "square")
         #expect(Configuration.parse("image.corner.radius = 99").imageCornerRadius == 40, "clamped")
@@ -259,7 +259,7 @@ struct ConfigurationStoreTests {
         let store = ConfigurationStore(fileURL: url)
         defer { ConfigurationStore.forgetActivePreset(for: url) }
         store.start()
-        #expect(store.current.fontSize == 14)
+        #expect(store.current.fontSize == 15)
 
         try "font.size = 19\nmeasure = 700".write(to: url, atomically: atomically, encoding: .utf8)
         let deadline = ContinuousClock.now + .seconds(3)

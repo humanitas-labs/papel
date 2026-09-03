@@ -7,15 +7,16 @@ struct Configuration: Equatable, Sendable {
     /// "New York" is the system serif, present on every Mac; any installed
     /// family name replaces it.
     var fontFamily = "New York"
-    var fontSize: Double = 14
+    var fontSize: Double = 15
     var lineHeight: Double = 1.2
-    var paragraphSpacing: Double = 12
+    var paragraphSpacing: Double = 11
     var measure: Double = 640
     /// Tracking in points added between characters; negative tightens.
-    var letterSpacing: Double = 0
+    var letterSpacing: Double = -0.02
     /// Whether AppKit's font smoothing, which thickens every stem a little,
-    /// is applied. Off renders glyphs at their true weight, as WebKit does.
-    var fontSmoothing: Bool = true
+    /// is applied. Off, the default, renders glyphs at their true weight,
+    /// as WebKit does.
+    var fontSmoothing: Bool = false
     /// Weights on the CSS scale, 100–900. A face with a variable weight axis
     /// takes the exact value; a static family takes its nearest face.
     var fontWeight: Double = 400
@@ -114,7 +115,7 @@ struct Configuration: Equatable, Sendable {
     # always available; any installed family name works — for example
     # Charter, Iowan Old Style, Palatino, or Georgia.
     font.family = New York
-    font.size = 14
+    font.size = 15
 
     # Body weight, 100–900 (regular is 400). New York and other variable
     # faces take any value; static families use their nearest face.
@@ -123,17 +124,17 @@ struct Configuration: Equatable, Sendable {
     # Line height as a multiple of the font size, and space after a paragraph
     # in points.
     line.height = 1.2
-    paragraph.spacing = 12
+    paragraph.spacing = 11
 
     # Maximum text width in points.
     measure = 640
 
     # Letter spacing in points added between characters (negative tightens).
-    letter.spacing = 0
+    letter.spacing = -0.02
 
     # Font smoothing: on applies macOS's smoothing, which thickens stems a
     # little; off draws glyphs at their true weight, as Safari does.
-    font.smoothing = on
+    font.smoothing = off
 
     # Heading weight, 100–900, or regular, medium, semibold, or bold.
     heading.weight = 500
