@@ -61,6 +61,8 @@ struct InlineFormattingTests {
         #expect(apply(.underline, to: "a b c", selection: NSRange(location: 2, length: 1)).0 == "a <u>b</u> c")
         #expect(apply(.code, to: "run ls now", selection: NSRange(location: 4, length: 2)).0 == "run `ls` now")
         #expect(apply(.underline, to: "a <u>b</u> c", selection: NSRange(location: 5, length: 1)).0 == "a b c")
+        #expect(apply(.strikethrough, to: "a b c", selection: NSRange(location: 2, length: 1)).0 == "a ~~b~~ c")
+        #expect(apply(.strikethrough, to: "a ~~b~~ c", selection: NSRange(location: 4, length: 1)).0 == "a b c")
     }
 
     @Test @MainActor
@@ -76,6 +78,23 @@ struct InlineFormattingTests {
         #expect(storage.attribute(.concealable, at: 2, effectiveRange: nil) as? Bool == true, "<u>")
         #expect(storage.attribute(.concealable, at: 9, effectiveRange: nil) as? Bool == true, "</u>")
         #expect(storage.attribute(.concealable, at: 5, effectiveRange: nil) == nil)
+    }
+
+    @Test @MainActor
+    func strikethroughRendersAndConceals() throws {
+        let text = "a ~~word~~ here\n"
+        let textView = PapelTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        textView.string = text
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try #require(textView.textStorage)
+        #expect(storage.attribute(.strikethroughStyle, at: 4, effectiveRange: nil) as? Int == NSUnderlineStyle.single.rawValue)
+        #expect(storage.attribute(.strikethroughStyle, at: 2, effectiveRange: nil) == nil, "the tildes are not struck")
+        #expect(storage.attribute(.strikethroughStyle, at: 11, effectiveRange: nil) == nil, "prose after is not struck")
+        #expect(storage.attribute(.concealable, at: 2, effectiveRange: nil) as? Bool == true, "opening ~~")
+        #expect(storage.attribute(.concealable, at: 8, effectiveRange: nil) as? Bool == true, "closing ~~")
+        #expect(storage.attribute(.concealable, at: 4, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.foregroundColor, at: 2, effectiveRange: nil) as? NSColor == Appearance.mutedInk)
     }
 
     @Test @MainActor

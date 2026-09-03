@@ -87,7 +87,7 @@ struct CodeBlockTests {
 
     @Test
     func doubleBacktickSpansPairByRunLength() throws {
-        let textView = styledView("- `#`, `*`, `` ` ``, `<u>`, and `[a](b)` are concealed")
+        let textView = styledView("- `#`, `*`, `` ` ``, `<u>`, `~~x~~`, and `[a](b)` are concealed")
         let storage = try #require(textView.textStorage)
         let text = textView.string as NSString
 
@@ -107,7 +107,10 @@ struct CodeBlockTests {
             #expect(storage.attribute(.font, at: and.location + offset, effectiveRange: nil) as? NSFont == Appearance.bodyFont())
         }
 
-        // A link inside a code span stays literal.
+        // Strikethrough and a link inside a code span stay literal.
+        let struck = text.range(of: "~~x~~")
+        #expect(storage.attribute(.strikethroughStyle, at: struck.location + 2, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.concealable, at: struck.location, effectiveRange: nil) == nil)
         let link = text.range(of: "[a](b)")
         #expect(storage.attribute(.linkDestination, at: link.location + 1, effectiveRange: nil) == nil)
         #expect(storage.attribute(.font, at: link.location, effectiveRange: nil) as? NSFont == Appearance.codeFont())

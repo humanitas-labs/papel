@@ -43,6 +43,11 @@ final class MarkdownSyntaxStyler {
     private static let underlinePattern = try! NSRegularExpression(
         pattern: #"<u>([^<\n]+)</u>"#
     )
+    /// `~~text~~` strikes through. Only the double tilde counts: a lone `~`
+    /// is ordinary prose (`~5 minutes`, `~/.config`).
+    private static let strikethroughPattern = try! NSRegularExpression(
+        pattern: #"~~([^~\n]+)~~"#
+    )
     /// A block image: `![alt](destination)` alone on its line. An image
     /// inside a sentence is left as typed.
     private static let blockImagePattern = try! NSRegularExpression(
@@ -106,6 +111,7 @@ final class MarkdownSyntaxStyler {
             range: fullRange
         )
         applyUnderline(to: storage, source: source, range: fullRange)
+        applyStrikethrough(to: storage, source: source, range: fullRange)
         applyLinks(to: storage, source: source, range: fullRange)
         applyArrows(to: storage, source: source, range: fullRange)
         let imageURLs = applyBlockImages(
@@ -467,6 +473,21 @@ final class MarkdownSyntaxStyler {
         }
     }
 
+    /// `~~text~~`: the content is struck through in its own ink; the tildes
+    /// are dimmed and, off the active paragraph, concealed.
+    private func applyStrikethrough(
+        to storage: NSTextStorage,
+        source: String,
+        range: NSRange
+    ) {
+        Self.strikethroughPattern.enumerateMatches(in: source, range: range) { match, _, _ in
+            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
+            let contentRange = match.range(at: 1)
+            storage.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: contentRange)
+            dimDelimiters(around: contentRange, in: match.range, storage: storage)
+        }
+    }
+
     private func applyLinks(
         to storage: NSTextStorage,
         source: String,
@@ -597,7 +618,7 @@ final class MarkdownSyntaxStyler {
     ) {
         Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
-            for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .linkDestination,
+            for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .strikethroughStyle, .linkDestination,
                         .address, .cursor, .imageSource, .thematicBreak, .backgroundColor] {
                 storage.removeAttribute(key, range: match.range)
             }

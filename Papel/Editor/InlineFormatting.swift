@@ -3,13 +3,14 @@ import Foundation
 /// Inline Markdown emphasis as a toggle over a range of source text. Pure:
 /// computes the edit, never touches a view, so the cases are testable.
 enum InlineFormat: CaseIterable {
-    case bold, italic, underline, code
+    case bold, italic, underline, strikethrough, code
 
     var open: String {
         switch self {
         case .bold: "**"
         case .italic: "*"
         case .underline: "<u>"
+        case .strikethrough: "~~"
         case .code: "`"
         }
     }

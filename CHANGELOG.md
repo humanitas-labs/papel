@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 — 2026.09.03
+
+- Strikethrough: `~~text~~` draws struck through, the tildes muted on the active paragraph and concealed off it like the other inline delimiters. Only the double tilde counts, so `~5 minutes` stays prose; a pair inside a code span or an HTML comment renders literal. ⌘⇧X and a Strikethrough item in the Format menu toggle it around the selection or the word under the caret (#12).
+
 ## 0.3.1 — 2026.09.02
 
 - Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.

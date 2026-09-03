@@ -144,6 +144,29 @@ extension MarkdownSyntaxStylerTests {
         #expect(both?.contains(.bold) == true)
         #expect(both?.contains(.italic) == true)
     }
+
+    @Test
+    func strikethroughComposesAndStaysOutOfCodeAndComments() {
+        let textView = PapelTextView()
+        textView.string = "**~~both~~** `~~code~~` <!-- ~~note~~ --> ~single~ a~~b\n"
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try! #require(textView.textStorage)
+        let text = textView.string as NSString
+        func at(_ needle: String) -> Int { text.range(of: needle).location }
+
+        let both = at("both")
+        #expect(storage.attribute(.strikethroughStyle, at: both, effectiveRange: nil) as? Int == NSUnderlineStyle.single.rawValue)
+        #expect((storage.attribute(.font, at: both, effectiveRange: nil) as? NSFont)?.fontDescriptor.symbolicTraits.contains(.bold) == true)
+        let code = at("code")
+        #expect(storage.attribute(.strikethroughStyle, at: code, effectiveRange: nil) == nil, "a code span stays literal")
+        #expect(storage.attribute(.concealable, at: code - 2, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.font, at: code - 2, effectiveRange: nil) as? NSFont == Appearance.codeFont())
+        let note = at("note")
+        #expect(storage.attribute(.strikethroughStyle, at: note, effectiveRange: nil) == nil, "no Markdown inside a comment")
+        #expect(storage.attribute(.concealable, at: note - 2, effectiveRange: nil) == nil)
+        #expect(storage.attribute(.strikethroughStyle, at: at("single"), effectiveRange: nil) == nil, "a lone tilde is prose")
+        #expect(storage.attribute(.concealable, at: at("a~~b") + 1, effectiveRange: nil) == nil, "an unpaired ~~ is prose")
+    }
 }
 
 struct SelectionClampingTests {

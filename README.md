@@ -22,7 +22,7 @@ Lastly, it is free and open. We will continue our campaign to make delightful so
 
 | Keys | Action |
 | --- | --- |
-| ⌘B / ⌘I / ⌘U / ⌘E | toggle `**bold**`, `*italic*`, `<u>underline</u>`, `` `code` `` around the selection or word |
+| ⌘B / ⌘I / ⌘U / ⌘⇧X / ⌘E | toggle `**bold**`, `*italic*`, `<u>underline</u>`, `~~strikethrough~~`, `` `code` `` around the selection or word |
 | ⌘K | add a link, destination from the clipboard when it holds a URL |
 | click / ⌘-click | open a link |
 | double-click an image | open it in Quick Look |

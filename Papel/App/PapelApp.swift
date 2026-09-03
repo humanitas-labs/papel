@@ -5,6 +5,7 @@ struct PapelApp: App {
     /// Observed so scene-level values such as the default window size
     /// follow the configuration.
     @ObservedObject private var store = ConfigurationStore.shared
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     init() {
         ConfigurationStore.shared.start()
     }
@@ -28,6 +29,8 @@ struct PapelApp: App {
                     .keyboardShortcut("i", modifiers: .command)
                 Button("Underline") { NSApp.sendAction(#selector(PapelTextView.toggleUnderline(_:)), to: nil, from: nil) }
                     .keyboardShortcut("u", modifiers: .command)
+                Button("Strikethrough") { NSApp.sendAction(#selector(PapelTextView.toggleStrikethrough(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("x", modifiers: [.command, .shift])
                 Button("Code") { NSApp.sendAction(#selector(PapelTextView.toggleCode(_:)), to: nil, from: nil) }
                     .keyboardShortcut("e", modifiers: .command)
                 Divider()

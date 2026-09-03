@@ -688,6 +688,7 @@ final class PapelTextView: NSTextView {
     @objc func toggleBold(_ sender: Any?) { toggle(.bold) }
     @objc func toggleItalic(_ sender: Any?) { toggle(.italic) }
     @objc func toggleUnderline(_ sender: Any?) { toggle(.underline) }
+    @objc func toggleStrikethrough(_ sender: Any?) { toggle(.strikethrough) }
     @objc func toggleCode(_ sender: Any?) { toggle(.code) }
 
     /// ⌘K: the selection (or word) becomes link text; the destination is
