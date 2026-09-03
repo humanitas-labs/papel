@@ -146,6 +146,55 @@ extension MarkdownSyntaxStylerTests {
     }
 
     @Test
+    func underscoreEmphasisFollowsWordBoundaries() {
+        let textView = PapelTextView()
+        textView.string = "_word_ __word__ ___word___ ***word*** _two words_ snake_case_name a_b trailing_ _leading *a*_b_ `_x_` <!-- __y__ -->\n"
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try! #require(textView.textStorage)
+        let text = textView.string as NSString
+        func at(_ needle: String) -> Int { text.range(of: needle).location }
+        func traits(_ index: Int) -> NSFontDescriptor.SymbolicTraits? {
+            (storage.attribute(.font, at: index, effectiveRange: nil) as? NSFont)?.fontDescriptor.symbolicTraits
+        }
+        func concealed(_ index: Int) -> Bool { storage.attribute(.concealable, at: index, effectiveRange: nil) != nil }
+
+        #expect(traits(1)?.contains(.italic) == true, "_word_")
+        #expect(concealed(0) && concealed(5))
+        let strong = at("__word__")
+        #expect(traits(strong + 2)?.contains(.bold) == true, "__word__")
+        #expect(traits(strong + 2)?.contains(.italic) == false)
+        #expect(concealed(strong) && concealed(strong + 1) && concealed(strong + 6) && concealed(strong + 7))
+        for triple in ["___word___", "***word***"] {
+            let start = at(triple)
+            #expect(traits(start + 3)?.contains(.bold) == true, "\(triple) is bold")
+            #expect(traits(start + 3)?.contains(.italic) == true, "\(triple) is italic")
+            for offset in [0, 1, 2, 7, 8, 9] { #expect(concealed(start + offset), "\(triple) delimiter \(offset)") }
+        }
+        let two = at("_two words_")
+        #expect(traits(two + 5)?.contains(.italic) == true, "spaces inside the pair")
+        #expect(concealed(two) && concealed(two + 10))
+
+        for literal in ["snake_case_name", "a_b", "_leading", "trailing_"] {
+            let range = text.range(of: literal)
+            for index in range.location..<NSMaxRange(range) {
+                #expect(traits(index)?.contains(.italic) == false, "\(literal) is literal")
+                #expect(traits(index)?.contains(.bold) == false, "\(literal) is literal")
+                #expect(!concealed(index), "\(literal) stays visible")
+            }
+        }
+        let mixed = at("*a*_b_")
+        #expect(traits(mixed + 1)?.contains(.italic) == true)
+        #expect(traits(mixed + 4)?.contains(.italic) == true, "an underscore pair after a star pair")
+        #expect(concealed(mixed + 3) && concealed(mixed + 5))
+        let code = at("_x_")
+        #expect(traits(code + 1)?.contains(.italic) == false, "a code span stays literal")
+        #expect(!concealed(code))
+        let comment = at("__y__")
+        #expect(traits(comment + 2)?.contains(.bold) == false, "no Markdown inside a comment")
+        #expect(!concealed(comment))
+    }
+
+    @Test
     func strikethroughComposesAndStaysOutOfCodeAndComments() {
         let textView = PapelTextView()
         textView.string = "**~~both~~** `~~code~~` <!-- ~~note~~ --> ~single~ a~~b\n"

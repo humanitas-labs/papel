@@ -57,6 +57,19 @@ struct InlineFormattingTests {
     }
 
     @Test
+    func underscoreDelimitersUnwrapButAreNeverWritten() {
+        #expect(apply(.italic, to: "a _word_ b", selection: NSRange(location: 4, length: 0)).0 == "a word b", "caret inside")
+        #expect(apply(.italic, to: "a _word_ b", selection: NSRange(location: 3, length: 4)).0 == "a word b", "word selected")
+        #expect(apply(.italic, to: "a _word_ b", selection: NSRange(location: 2, length: 6)).0 == "a word b", "delimiters selected")
+        #expect(apply(.bold, to: "a __word__ b", selection: NSRange(location: 5, length: 0)).0 == "a word b")
+        #expect(apply(.italic, to: "a __word__ b", selection: NSRange(location: 5, length: 0)).0 == "a __*word*__ b",
+                "italic leaves a bold underscore pair whole")
+        #expect(apply(.italic, to: "a snake_case b", selection: NSRange(location: 6, length: 0)).0 == "a *snake_case* b",
+                "an interior underscore is part of the word")
+        #expect(apply(.italic, to: "a word b", selection: NSRange(location: 3, length: 0)).0 == "a *word* b", "wrap still writes stars")
+    }
+
+    @Test
     func underlineAndCodeUseTheirOwnDelimiters() {
         #expect(apply(.underline, to: "a b c", selection: NSRange(location: 2, length: 1)).0 == "a <u>b</u> c")
         #expect(apply(.code, to: "run ls now", selection: NSRange(location: 4, length: 2)).0 == "run `ls` now")

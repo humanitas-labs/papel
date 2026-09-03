@@ -14,11 +14,29 @@ final class MarkdownSyntaxStyler {
     private static let headingPattern = try! NSRegularExpression(
         pattern: #"(?m)^(#{1,6})[\t ]+(.+)$"#
     )
+    /// `***both***` and `___both___`: bold and italic at once. Matched
+    /// before the doubles, which would otherwise take the inner pair and
+    /// leave the outer delimiters plain.
+    private static let strongEmphasisPattern = try! NSRegularExpression(
+        pattern: #"\*\*\*([^*\n]+)\*\*\*|(?<!\w)___(?=\S)([^_\n]+?)(?<=\S)___(?!\w)"#
+    )
     private static let strongPattern = try! NSRegularExpression(
         pattern: #"\*\*([^*\n]+)\*\*"#
     )
     private static let emphasisPattern = try! NSRegularExpression(
         pattern: #"(?<!\*)\*([^*\n]+)\*(?!\*)"#
+    )
+    /// The underscore spellings, `__strong__` and `_emphasis_`. Following
+    /// CommonMark, an underscore run is a delimiter only at a word boundary
+    /// (`\w` includes `_`, so a neighbouring underscore disqualifies it too)
+    /// and the content starts and ends with something visible, so
+    /// `snake_case_name`, `a_b`, `_leading`, and `trailing_` stay literal.
+    /// Asterisks keep their intraword behaviour above.
+    private static let underscoreStrongPattern = try! NSRegularExpression(
+        pattern: #"(?<!\w)__(?=\S)([^_\n]+?)(?<=\S)__(?!\w)"#
+    )
+    private static let underscoreEmphasisPattern = try! NSRegularExpression(
+        pattern: #"(?<!\w)_(?=\S)([^_\n]+?)(?<=\S)_(?!\w)"#
     )
     /// A code span opens and closes with backtick runs of the same length,
     /// so `` ` `` holds a literal backtick; the closer can neither borrow
@@ -97,6 +115,13 @@ final class MarkdownSyntaxStyler {
         // stays literal.
         applyInlineCode(to: storage, source: source, range: fullRange)
         applyDelimitedStyle(
+            Self.strongEmphasisPattern,
+            trait: [.bold, .italic],
+            to: storage,
+            source: source,
+            range: fullRange
+        )
+        applyDelimitedStyle(
             Self.strongPattern,
             trait: .bold,
             to: storage,
@@ -105,6 +130,20 @@ final class MarkdownSyntaxStyler {
         )
         applyDelimitedStyle(
             Self.emphasisPattern,
+            trait: .italic,
+            to: storage,
+            source: source,
+            range: fullRange
+        )
+        applyDelimitedStyle(
+            Self.underscoreStrongPattern,
+            trait: .bold,
+            to: storage,
+            source: source,
+            range: fullRange
+        )
+        applyDelimitedStyle(
+            Self.underscoreEmphasisPattern,
             trait: .italic,
             to: storage,
             source: source,
@@ -196,7 +235,9 @@ final class MarkdownSyntaxStyler {
     ) {
         pattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
-            let contentRange = match.range(at: 1)
+            let contentRange = (1..<match.numberOfRanges)
+                .map { match.range(at: $0) }
+                .first { $0.location != NSNotFound } ?? match.range
 
             storage.enumerateAttribute(.font, in: contentRange) { value, fontRange, _ in
                 let current = (value as? NSFont) ?? Appearance.bodyFont()
