@@ -44,15 +44,19 @@ final class PapelTextView: NSTextView {
 
     /// Every selection setter funnels through this primitive, so it is the one
     /// place that decides which paragraphs show their Markdown punctuation:
-    /// those the selection touches. While an input method holds marked text
-    /// the revealed range is frozen, as restyling already is.
+    /// those the selection touches. The reveal waits for the selection to
+    /// settle: AppKit passes `stillSelecting` while the mouse is down, and a
+    /// paragraph revealed under a pressed pointer shifts its glyphs so the
+    /// tracking loop reads the shift as a drag and selects a character or
+    /// two (#42). While an input method holds marked text the revealed range
+    /// is frozen, as restyling already is.
     override func setSelectedRanges(
         _ ranges: [NSValue],
         affinity: NSSelectionAffinity,
         stillSelecting: Bool
     ) {
         super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
-        guard !hasMarkedText() else { return }
+        guard !stillSelecting, !hasMarkedText() else { return }
         revealSelectedParagraphs()
     }
 

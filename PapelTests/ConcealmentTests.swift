@@ -148,6 +148,45 @@ struct ConcealmentTests {
         #expect(!isNull(layoutManager, characterAt: 21))
     }
 
+    /// A click places the caret with `stillSelecting` and the reveal waits
+    /// for the final call at mouse up, so the text under the pressed pointer
+    /// stays put through AppKit's tracking loop.
+    @Test
+    func revealWaitsForTheSelectionToSettle() {
+        let (textView, layoutManager) = makeTextView(Self.sample, selectedAt: 12)
+        #expect(isNull(layoutManager, characterAt: 0))
+
+        let inHeading = [NSValue(range: NSRange(location: 3, length: 0))]
+        textView.setSelectedRanges(inHeading, affinity: .downstream, stillSelecting: true)
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(textView.selectedRange().location == 3, "the caret moves at once")
+        #expect(isNull(layoutManager, characterAt: 0), "the heading stays concealed while the mouse is down")
+        #expect(x(layoutManager, characterAt: 2) == 0)
+
+        textView.setSelectedRanges(inHeading, affinity: .downstream, stillSelecting: false)
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(!isNull(layoutManager, characterAt: 0), "mouse up reveals it")
+        #expect(x(layoutManager, characterAt: 2) > 0)
+    }
+
+    @Test
+    func dragSettlesOnTheUnionOfItsParagraphs() {
+        let (textView, layoutManager) = makeTextView(Self.sample, selectedAt: 12)
+        #expect(isNull(layoutManager, characterAt: 0))
+        #expect(isNull(layoutManager, characterAt: 21))
+
+        let across = [NSValue(range: NSRange(location: 4, length: 20))]
+        textView.setSelectedRanges(across, affinity: .downstream, stillSelecting: true)
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(isNull(layoutManager, characterAt: 0))
+        #expect(isNull(layoutManager, characterAt: 21))
+
+        textView.setSelectedRanges(across, affinity: .downstream, stillSelecting: false)
+        layoutManager.ensureLayout(for: textView.textContainer!)
+        #expect(!isNull(layoutManager, characterAt: 0))
+        #expect(!isNull(layoutManager, characterAt: 21))
+    }
+
     @Test
     func arrowKeysIntoAndOutOfAHeadingToggleIt() {
         let (textView, layoutManager) = makeTextView(Self.sample, selectedAt: 12)

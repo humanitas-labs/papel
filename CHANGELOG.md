@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 — 2026.09.03
+
+- A click no longer selects a character or two. The clicked paragraph revealed its concealed syntax while the mouse was still down, the text shifted under the pointer, and the tracking loop read the shift as a drag. The reveal now waits for mouse up (#42).
+
 ## 0.5.0 — 2026.09.03
 
 - Defaults: font size 15 (was 14), paragraph spacing 11 (was 12), and letter spacing −0.02 (was 0).
