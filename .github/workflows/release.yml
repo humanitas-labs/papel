@@ -59,8 +59,13 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
           rm "$RUNNER_TEMP/certificate.p12"
+          # The runner image lacks the Developer ID G2 intermediate, without
+          # which the identity's chain is incomplete and it counts as invalid.
+          curl -sSfo "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$KEYCHAIN"
+          security find-identity -p codesigning
           security find-identity -v -p codesigning | grep -q "Developer ID Application" \
-            || { echo "No Developer ID Application identity after import"; exit 1; }
+            || { echo "No valid Developer ID Application identity after import"; exit 1; }
 
       - name: Build, sign, notarize, and package
         env:
