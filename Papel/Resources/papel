@@ -9,7 +9,7 @@
 #
 # The script lives at Papel.app/Contents/Resources/papel and finds the
 # app from its own real location, so a symlink on the PATH works from
-# anywhere. Settings ▸ Command Line puts one there; by hand:
+# anywhere. Settings ▸ CLI puts one there; by hand:
 #   ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
 
 usage() {

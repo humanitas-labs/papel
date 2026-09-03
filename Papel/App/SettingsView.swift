@@ -177,7 +177,7 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Command Line") {
+            Section("CLI") {
                 CommandLineToolRow()
             }
         }

@@ -4,13 +4,26 @@ import AppKit
 /// launch with nothing to open by running an Open panel before the app
 /// finishes launching and never forwards the untitled-file hooks, so the
 /// panel is the signal: when it is up at launch, it is dismissed for the
-/// welcome window. A launch with a file, or with restored windows, has no
-/// panel and is untouched.
+/// welcome window, or on the first launch for the welcome document. A
+/// launch with a file, or with restored windows, has no panel and is
+/// untouched.
+///
+/// The `papel` command installs itself here too, first, so the welcome
+/// document can say where it went.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard let panel = NSApp.windows.first(where: { $0 is NSOpenPanel }) as? NSOpenPanel else { return }
-        panel.cancel(nil)
-        WelcomeWindow.show()
+        // Not under tests: the test host would put the link on the
+        // tester's PATH and open the guide over the test run.
+        let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        let panel = NSApp.windows.first(where: { $0 is NSOpenPanel }) as? NSOpenPanel
+        panel?.cancel(nil)
+        let firstLaunch = ConfigurationStore.shared.isFirstLaunch && !testing
+        if panel != nil, !firstLaunch { WelcomeWindow.show() }
+        guard !testing else { return }
+        Task {
+            await CommandLineTool.shared.installQuietly()
+            if panel != nil, firstLaunch { await WelcomeDocument.open(replacing: true) }
+        }
     }
 
     /// A Dock click while no window is open.

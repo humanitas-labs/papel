@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+- A guide on first launch: a Markdown document, opened in the editor itself, with what Papel is, the shortcuts, the prompt to paste into an agent, where the `papel` command was installed (or how to install it), and how to make Papel the default app for Markdown, under the mark. It is written to `~/Library/Application Support/Papel/welcome.md`, so nothing lands in your folders, and a Guide item on the welcome window opens it again, rewriting it only when it is gone.
 - A welcome window when there is nothing to open: on launch without a document, and on a Dock click with no window up. It lists New, Open, Settings, and up to five recent documents on ⌘1 to ⌘5 under the Enso mark and a greeting, and closes itself once a document window opens.
 - `color.ink.label` and `color.ink.label.dark`: the ink of the welcome window's section titles and row icons. Enso sets it to #68737E in both appearances; other themes derive it from the ink like the quote tone.
-- The `papel` command installs itself: on launch, a symlink goes into the first directory you own on your shell's PATH (`/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin`, `~/bin`), and is repaired when the app moves and the link no longer resolves. Settings ▸ Command Line shows where it is, installs it into `/usr/local/bin` with your password when nothing else is writable, and removes it; a removed command stays removed (#18).
+- Settings' Command Line section is now CLI.
+- The `papel` command installs itself: on launch, a symlink goes into the first directory you own on your shell's PATH (`/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin`, `~/bin`), and is repaired when the app moves and the link no longer resolves. Settings ▸ CLI shows where it is, installs it into `/usr/local/bin` with your password when nothing else is writable, and removes it; a removed command stays removed (#18).
 - `papel --help` and `papel --version`; `--` ends the options. Files are passed as absolute paths, so names that begin with a dash open instead of tripping `touch`, and a missing app fails with a message instead of silently doing nothing.
 
 ## 0.4.0 — 2026.09.03

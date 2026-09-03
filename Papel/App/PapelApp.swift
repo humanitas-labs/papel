@@ -8,10 +8,6 @@ struct PapelApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     init() {
         ConfigurationStore.shared.start()
-        // Not under tests: the test host would put the link on the tester's PATH.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
-            Task { await CommandLineTool.shared.installQuietly() }
-        }
     }
 
     var body: some Scene {

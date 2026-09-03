@@ -34,6 +34,9 @@ final class ConfigurationStore: ObservableObject {
     /// built-in of the same name.
     @Published private(set) var themes: [Theme] = Theme.builtIn
     let fileURL: URL
+    /// Whether `start()` had to create the config file: the app's first
+    /// launch, or a reset. The welcome document opens on it.
+    private(set) var isFirstLaunch = false
 
     /// `presets/` beside the config file; one file per preset in the same
     /// `key = value` format, named after the preset.
@@ -252,6 +255,7 @@ final class ConfigurationStore: ObservableObject {
         try? FileManager.default.createDirectory(at: presetsDirectoryURL, withIntermediateDirectories: true)
         try? FileManager.default.createDirectory(at: themesDirectoryURL, withIntermediateDirectories: true)
         guard !FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        isFirstLaunch = true
         try? Configuration.template.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 

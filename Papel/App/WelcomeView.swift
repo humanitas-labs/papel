@@ -30,6 +30,9 @@ struct WelcomeView: View {
                 row("Settings", symbol: "slider.horizontal.3", hint: "⌘,") {
                     NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
                 }
+                row("Guide", symbol: "book", hint: "") {
+                    Task { await WelcomeDocument.open(replacing: false) }
+                }
             }
             if !recents.isEmpty {
                 section("Recent") {

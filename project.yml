@@ -24,7 +24,10 @@ targets:
       - path: Papel
         excludes:
           - Resources/papel
+          - Resources/enso-wide.png
       - path: Papel/Resources/papel
+        buildPhase: resources
+      - path: Papel/Resources/enso-wide.png
         buildPhase: resources
     dependencies:
       - sdk: Quartz.framework
