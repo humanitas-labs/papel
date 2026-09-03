@@ -54,6 +54,8 @@ Papel installs it on first launch when a directory you own is on your shell's PA
 ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
 ```
 
+Once it is installed, tell your agent about it: add a line to `~/.claude/CLAUDE.md` (or your project's `AGENTS.md`) saying that Markdown is read in Papel and that `papel <file.md>` opens a document. [Using Papel with Claude](docs/claude.md) has a prompt you can paste that does this. Making Papel the default app for `.md` files, below, means agents that simply `open` a file land in it too.
+
 ## Default app for Markdown
 
 To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
