@@ -31,6 +31,9 @@
     --canvas: #FFFFFF;
     --ink: #1F2328;
     --ink-rgb: 31, 35, 40;
+    /* Enso's selection: a solid near-black under off-white, the inverse in the dark. */
+    --selection: #353535;
+    --selection-ink: #F9F9F9;
     --body: 14.4px;
     --spacing: 7.69px;
     --line: 1.5;            /* ×1.2 of the face's natural line height */
@@ -41,10 +44,11 @@
     color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --canvas: #15181C; --ink: #D9DEE5; --ink-rgb: 217, 222, 229; }
+    :root { --canvas: #15181C; --ink: #D9DEE5; --ink-rgb: 217, 222, 229; --selection: #F4F9FA; --selection-ink: #191B1D; }
   }
   * { box-sizing: border-box; }
   html { background: var(--canvas); }
+  ::selection { background: var(--selection); color: var(--selection-ink); }
   body {
     margin: 0;
     padding: 80px 64px 80px;
