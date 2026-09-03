@@ -69,6 +69,9 @@ private struct DocumentView: View {
             .frame(minWidth: 640, minHeight: 520)
             .ignoresSafeArea()
             .onChange(of: fileURL, initial: true) { _, url in
+                // The welcome window lists recents; SwiftUI's document
+                // controller does not note them itself.
+                if let url { NSDocumentController.shared.noteNewRecentDocumentURL(url) }
                 watcher?.cancel()
                 watcher = url.map { url in
                     FileWatcher(url: url) { reload(from: url) }

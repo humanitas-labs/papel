@@ -94,6 +94,17 @@ enum Appearance {
     /// its own colour under the highlight.
     static var selectionInk: NSColor? { colors.selectionInk }
 
+    /// A row under the pointer in the welcome window: the faintest wash of
+    /// the ink, #F7F7F7 on Enso's white.
+    static var hover: NSColor { colors.hover }
+
+    /// The welcome window's row icons and section labels: Zed's slate grey on Enso, where it
+    /// sits between the ink and the muted tone in both appearances; the
+    /// quote ink on other themes until each gets its own.
+    static var welcomeIcon: NSColor {
+        palette == Theme.enso.palette ? color(hex: "#68737E") : quoteInk
+    }
+
     static var palette: Palette { ConfigurationStore.shared.palette }
 
     private struct Colors {
@@ -104,6 +115,7 @@ enum Appearance {
         let quoteInk: NSColor
         let selection: NSColor
         let selectionInk: NSColor?
+        let hover: NSColor
         let codeBackground: NSColor
         let hairline: NSColor
     }
@@ -133,6 +145,7 @@ enum Appearance {
                 light: color(hex: palette.selectionInk ?? palette.canvas),
                 dark: color(hex: palette.selectionInkDark ?? palette.canvasDark)
             ),
+            hover: tone(nil, nil, alpha: 0.038),
             codeBackground: tone(palette.codeBackground, palette.codeBackgroundDark, alpha: 0.055),
             hairline: tone(palette.rule, palette.ruleDark, alpha: 0.10)
         )

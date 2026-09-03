@@ -29,3 +29,6 @@ dist/
 
 # Vercel project link
 .vercel/
+
+# Coverage artifacts
+*.profraw
