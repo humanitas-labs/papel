@@ -1,8 +1,8 @@
 import Foundation
 
 /// A theme's colours. Canvas and ink, light and dark, are required; every
-/// other tone (muted punctuation, quoted text, selection, the code band,
-/// the thematic-break rule) is optional and derives from the ink by
+/// other tone (muted punctuation, quoted text, labels, selection, the code
+/// band, the thematic-break rule) is optional and derives from the ink by
 /// opacity when a theme leaves it out.
 struct Palette: Equatable, Sendable {
     var canvas: String
@@ -11,6 +11,8 @@ struct Palette: Equatable, Sendable {
     var inkDark: String
     var inkMuted: String?
     var inkQuote: String?
+    /// Chrome labels: the welcome window's section titles and row icons.
+    var inkLabel: String?
     var selection: String?
     /// Ink for selected text; nil keeps the text's own colour.
     var selectionInk: String?
@@ -18,6 +20,7 @@ struct Palette: Equatable, Sendable {
     var rule: String?
     var inkMutedDark: String?
     var inkQuoteDark: String?
+    var inkLabelDark: String?
     var selectionDark: String?
     var selectionInkDark: String?
     var codeBackgroundDark: String?
@@ -32,12 +35,14 @@ struct Palette: Equatable, Sendable {
         var inkDark: String?
         var inkMuted: String?
         var inkQuote: String?
+        var inkLabel: String?
         var selection: String?
         var selectionInk: String?
         var codeBackground: String?
         var rule: String?
         var inkMutedDark: String?
         var inkQuoteDark: String?
+        var inkLabelDark: String?
         var selectionDark: String?
         var selectionInkDark: String?
         var codeBackgroundDark: String?
@@ -55,12 +60,14 @@ struct Palette: Equatable, Sendable {
             inkDark: o.inkDark ?? inkDark,
             inkMuted: o.inkMuted ?? inkMuted,
             inkQuote: o.inkQuote ?? inkQuote,
+            inkLabel: o.inkLabel ?? inkLabel,
             selection: o.selection ?? selection,
             selectionInk: o.selectionInk ?? selectionInk,
             codeBackground: o.codeBackground ?? codeBackground,
             rule: o.rule ?? rule,
             inkMutedDark: o.inkMutedDark ?? inkMutedDark,
             inkQuoteDark: o.inkQuoteDark ?? inkQuoteDark,
+            inkLabelDark: o.inkLabelDark ?? inkLabelDark,
             selectionDark: o.selectionDark ?? selectionDark,
             selectionInkDark: o.selectionInkDark ?? selectionInkDark,
             codeBackgroundDark: o.codeBackgroundDark ?? codeBackgroundDark,
@@ -72,9 +79,10 @@ struct Palette: Equatable, Sendable {
     var overrides: Overrides {
         Overrides(
             canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark,
-            inkMuted: inkMuted, inkQuote: inkQuote, selection: selection, selectionInk: selectionInk,
+            inkMuted: inkMuted, inkQuote: inkQuote, inkLabel: inkLabel, selection: selection, selectionInk: selectionInk,
             codeBackground: codeBackground, rule: rule,
-            inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, selectionDark: selectionDark, selectionInkDark: selectionInkDark,
+            inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, inkLabelDark: inkLabelDark,
+            selectionDark: selectionDark, selectionInkDark: selectionInkDark,
             codeBackgroundDark: codeBackgroundDark, ruleDark: ruleDark
         )
     }
@@ -104,12 +112,15 @@ struct Theme: Equatable, Sendable, Identifiable {
 
     /// The shipped default: white under a warm near-black ink. Its
     /// selection is a solid, near-black under off-white in the light
-    /// appearance and the inverse in the dark.
+    /// appearance and the inverse in the dark; its labels are Zed's slate
+    /// grey, which sits between the ink and the muted tone in both.
     static let enso = Theme(
         name: "enso", title: "Enso",
         palette: Palette(
             canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#191B1D", inkDark: "#F4F9FA",
+            inkLabel: "#68737E",
             selection: "#353535", selectionInk: "#F9F9F9",
+            inkLabelDark: "#68737E",
             selectionDark: "#F4F9FA", selectionInkDark: "#191B1D"
         ),
         isBuiltIn: true

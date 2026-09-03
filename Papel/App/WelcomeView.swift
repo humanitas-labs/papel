@@ -73,7 +73,7 @@ struct WelcomeView: View {
                 Text(title.uppercased())
                     .font(.system(size: 8.5, weight: .regular, design: .monospaced))
                     .tracking(0.3)
-                    .foregroundStyle(Color(nsColor: Appearance.welcomeIcon))
+                    .foregroundStyle(Color(nsColor: Appearance.labelInk))
                 Rectangle()
                     .fill(Color(nsColor: Appearance.thematicBreakInk))
                     .frame(height: 1)
@@ -103,7 +103,7 @@ private struct WelcomeRow: View {
             HStack(spacing: 8) {
                 Image(systemName: symbol)
                     .font(.system(size: 9.5, weight: .regular))
-                    .foregroundStyle(Color(nsColor: Appearance.welcomeIcon))
+                    .foregroundStyle(Color(nsColor: Appearance.labelInk))
                     .frame(width: 14)
                 Text(title)
                     .font(.system(size: 11))

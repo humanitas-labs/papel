@@ -175,6 +175,18 @@ struct ThemeTests {
     }
 
     @Test
+    func labelInkIsAThemeTokenWithEnsoSettingIt() {
+        #expect(Theme.enso.palette.inkLabel == "#68737E")
+        #expect(Theme.enso.palette.inkLabelDark == "#68737E")
+        #expect(Theme.builtIn(named: "papel")?.palette.inkLabel == nil, "other themes derive it from the ink")
+        let theme = Theme.user(named: "tinted", text: "color.ink.label = #445566\ncolor.ink.label.dark = #99AABB\n")
+        #expect(theme.palette.inkLabel == "#445566")
+        #expect(theme.palette.inkLabelDark == "#99AABB")
+        #expect(theme.palette.overrides.fileText.contains("color.ink.label = #445566\n"))
+        #expect(Configuration.template.contains("\ncolor.ink.label =\n"))
+    }
+
+    @Test
     func mergedWritesEmptyOverridesAsBareKeys() {
         var config = Configuration()
         config.theme = "slate"

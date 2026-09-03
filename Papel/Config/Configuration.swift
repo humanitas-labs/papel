@@ -70,12 +70,14 @@ struct Configuration: Equatable, Sendable {
         ColorKey("color.ink.dark", \.inkDark),
         ColorKey("color.ink.muted", \.inkMuted),
         ColorKey("color.ink.quote", \.inkQuote),
+        ColorKey("color.ink.label", \.inkLabel),
         ColorKey("color.selection", \.selection),
         ColorKey("color.selection.ink", \.selectionInk),
         ColorKey("color.code.background", \.codeBackground),
         ColorKey("color.rule", \.rule),
         ColorKey("color.ink.muted.dark", \.inkMutedDark),
         ColorKey("color.ink.quote.dark", \.inkQuoteDark),
+        ColorKey("color.ink.label.dark", \.inkLabelDark),
         ColorKey("color.selection.dark", \.selectionDark),
         ColorKey("color.selection.ink.dark", \.selectionInkDark),
         ColorKey("color.code.background.dark", \.codeBackgroundDark),
@@ -158,17 +160,20 @@ struct Configuration: Equatable, Sendable {
 
     # The remaining tones are the ink at an opacity unless set here (or in a
     # theme file): muted syntax markers, bullets, and the file label; quoted
-    # text; the selection highlight, and the ink of selected text (unset
-    # keeps the text's own colour); the code band and chip; the thematic
-    # break rule. Each has a .dark form for the dark appearance.
+    # text; the welcome window's labels and icons; the selection highlight,
+    # and the ink of selected text (unset keeps the text's own colour); the
+    # code band and chip; the thematic break rule. Each has a .dark form for
+    # the dark appearance.
     color.ink.muted =
     color.ink.quote =
+    color.ink.label =
     color.selection =
     color.selection.ink =
     color.code.background =
     color.rule =
     color.ink.muted.dark =
     color.ink.quote.dark =
+    color.ink.label.dark =
     color.selection.dark =
     color.selection.ink.dark =
     color.code.background.dark =

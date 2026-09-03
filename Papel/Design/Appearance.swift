@@ -98,12 +98,9 @@ enum Appearance {
     /// the ink, #F7F7F7 on Enso's white.
     static var hover: NSColor { colors.hover }
 
-    /// The welcome window's row icons and section labels: Zed's slate grey on Enso, where it
-    /// sits between the ink and the muted tone in both appearances; the
-    /// quote ink on other themes until each gets its own.
-    static var welcomeIcon: NSColor {
-        palette == Theme.enso.palette ? color(hex: "#68737E") : quoteInk
-    }
+    /// Chrome labels, the welcome window's section titles and row icons:
+    /// the theme's label ink, else the ink at the quote opacity.
+    static var labelInk: NSColor { colors.labelInk }
 
     static var palette: Palette { ConfigurationStore.shared.palette }
 
@@ -113,6 +110,7 @@ enum Appearance {
         let ink: NSColor
         let mutedInk: NSColor
         let quoteInk: NSColor
+        let labelInk: NSColor
         let selection: NSColor
         let selectionInk: NSColor?
         let hover: NSColor
@@ -140,6 +138,7 @@ enum Appearance {
             ink: dynamic(light: lightInk, dark: darkInk),
             mutedInk: tone(palette.inkMuted, palette.inkMutedDark, alpha: 0.28),
             quoteInk: tone(palette.inkQuote, palette.inkQuoteDark, alpha: 0.62),
+            labelInk: tone(palette.inkLabel, palette.inkLabelDark, alpha: 0.62),
             selection: tone(palette.selection, palette.selectionDark, alpha: 0.13),
             selectionInk: (palette.selectionInk ?? palette.selectionInkDark) == nil ? nil : dynamic(
                 light: color(hex: palette.selectionInk ?? palette.canvas),
