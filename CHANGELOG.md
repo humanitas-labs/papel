@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The `papel` command installs itself: on launch, a symlink goes into the first directory you own on your shell's PATH (`/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin`, `~/bin`), and is repaired when the app moves and the link no longer resolves. Settings ▸ Command Line shows where it is, installs it into `/usr/local/bin` with your password when nothing else is writable, and removes it; a removed command stays removed (#18).
+- `papel --help` and `papel --version`; `--` ends the options. Files are passed as absolute paths, so names that begin with a dash open instead of tripping `touch`, and a missing app fails with a message instead of silently doing nothing.
+
 ## 0.4.0 — 2026.09.03
 
 - Strikethrough: `~~text~~` draws struck through, the tildes muted on the active paragraph and concealed off it like the other inline delimiters. Only the double tilde counts, so `~5 minutes` stays prose; a pair inside a code span or an HTML comment renders literal. ⌘⇧X and a Strikethrough item in the Format menu toggle it around the selection or the word under the caret (#12).

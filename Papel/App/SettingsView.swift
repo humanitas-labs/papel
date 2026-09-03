@@ -177,6 +177,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Command Line") {
+                CommandLineToolRow()
+            }
         }
         .formStyle(.grouped)
         .frame(width: 460)
@@ -270,6 +273,78 @@ private struct SettingsWindowConfigurator: NSViewRepresentable {
 
         func configureWindow() {
             window?.collectionBehavior.insert([.fullScreenAuxiliary, .moveToActiveSpace])
+        }
+    }
+}
+
+/// The `papel` command: where it is, and one button to put it there, fix
+/// it, or take it away.
+private struct CommandLineToolRow: View {
+    @ObservedObject private var tool = CommandLineTool.shared
+    @State private var busy = false
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(headline)
+                if let detail {
+                    Text(detail)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+            }
+            Spacer()
+            Button(action: act) { Text(action) }
+                .disabled(busy || !actionable)
+        }
+        Text("`papel notes.md` opens a document from the terminal, creating it when it is new; agents can use it to open documents for you.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        if let error = tool.lastError {
+            Text(error)
+                .font(.caption)
+                .foregroundStyle(.red)
+        }
+        Color.clear.frame(height: 0).task { await tool.refresh() }
+    }
+
+    private var headline: String {
+        switch tool.status {
+        case .notInstalled: "Not installed"
+        case .installed: "Installed"
+        case .broken: "Broken: the app has moved since the command was installed"
+        case .stale: "Points to another copy of Papel"
+        case .foreign: "Another papel command is on the PATH"
+        }
+    }
+
+    private var detail: String? {
+        tool.status.link?.path
+    }
+
+    private var action: String {
+        switch tool.status {
+        case .notInstalled: "Install"
+        case .broken, .stale: "Repair"
+        case .installed, .foreign: "Uninstall"
+        }
+    }
+
+    private var actionable: Bool {
+        if case .foreign = tool.status { return false }
+        return true
+    }
+
+    private func act() {
+        busy = true
+        Task {
+            if tool.status.needsInstall {
+                await tool.install()
+            } else {
+                await tool.uninstall()
+            }
+            busy = false
         }
     }
 }

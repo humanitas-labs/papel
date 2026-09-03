@@ -46,13 +46,13 @@ window.height = 877
 
 ## Command line
 
-The app bundles a small launcher. Put it on your PATH once:
+`papel notes.md` opens a document from the terminal, creating it first when it doesn't exist yet; `papel` alone opens the app. The command is a symlink to a launcher inside the bundle, so it follows the app through updates.
+
+Papel installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under Command Line, which asks for your password; the same section shows where the command lives and removes it. By hand:
 
 ```sh
 ln -s /Applications/Papel.app/Contents/Resources/papel /usr/local/bin/papel
 ```
-
-Then `papel notes.md` opens a document, creating it first when it doesn't exist yet, and `papel` alone opens the app.
 
 ## Default app for Markdown
 
