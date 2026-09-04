@@ -3,6 +3,7 @@
 > A quiet, native markdown editor for macOS.
 
 [Download for Mac](https://github.com/humanitas-labs/paper/releases/latest/download/Paper.dmg) · macOS 15 or later · free, MIT
+
 ![Paper showing its own README: a heading, an italic quote behind a rule, and a photograph of a raked rock garden](docs/assets/paper.png)
 
 Paper is the simplest markdown editor imaginable.
