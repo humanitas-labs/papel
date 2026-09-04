@@ -239,8 +239,7 @@ struct ConfigurationDrivenAppearanceTests {
     }
 
     /// Six heading levels are six sizes, each smaller than the last, with
-    /// `######` at the body size in the quote ink so it still reads as a
-    /// heading (#38).
+    /// `######` at the body size, told apart by weight alone (#38).
     @Test
     func sixHeadingLevelsAreSixSizes() throws {
         let sizes = (1...6).map { Appearance.headingSize(level: $0) }
@@ -258,8 +257,8 @@ struct ConfigurationDrivenAppearanceTests {
         let six = text.range(of: "Six").location
         #expect((storage.attribute(.font, at: five, effectiveRange: nil) as? NSFont)?.pointSize == Appearance.headingSize(level: 5))
         #expect((storage.attribute(.font, at: six, effectiveRange: nil) as? NSFont)?.pointSize == Appearance.bodySize)
-        #expect(storage.attribute(.foregroundColor, at: six, effectiveRange: nil) as? NSColor == Appearance.quoteInk)
-        #expect(storage.attribute(.foregroundColor, at: five, effectiveRange: nil) as? NSColor == Appearance.ink)
+        #expect(storage.attribute(.foregroundColor, at: six, effectiveRange: nil) as? NSColor == Appearance.ink, "weight alone marks it")
+        #expect(storage.attribute(.font, at: six, effectiveRange: nil) as? NSFont == Appearance.headingFont(size: Appearance.bodySize))
     }
 
     @Test

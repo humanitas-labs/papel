@@ -79,7 +79,7 @@ enum Appearance {
 
     /// Heading offsets above the body size, `#` through `######`: six
     /// levels, six sizes. `######` sits at the body size itself and is told
-    /// apart by weight and the muted ink. The offsets scale with the view
+    /// apart by weight alone. The offsets scale with the view
     /// so a heading keeps its proportion to the body.
     static let headingOffsets: [CGFloat] = [12, 8, 5, 3, 1, 0]
 
