@@ -50,14 +50,47 @@ final class PapelTextView: NSTextView {
     /// tracking loop reads the shift as a drag and selects a character or
     /// two (#42). While an input method holds marked text the revealed range
     /// is frozen, as restyling already is.
+    /// A task item's prefix is one unit for the caret (#53), so any range
+    /// reaching into one is snapped out of it here, where every key, click,
+    /// drag, and undo lands.
     override func setSelectedRanges(
         _ ranges: [NSValue],
         affinity: NSSelectionAffinity,
         stillSelecting: Bool
     ) {
+        var ranges = ranges
+        if !hasMarkedText(), let text = textStorage?.string as NSString? {
+            let previous = selectedRanges.count == 1 ? selectedRanges[0].rangeValue : nil
+            ranges = ranges.map { value in
+                let range = value.rangeValue
+                guard NSMaxRange(range) <= text.length else { return value }
+                let snapped = TaskPrefix.snapped(range, previous: previous, in: text)
+                return snapped == range ? value : NSValue(range: snapped)
+            }
+        }
         super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
         guard !stillSelecting, !hasMarkedText() else { return }
         revealSelectedParagraphs()
+    }
+
+    /// Backspace at the start of a task's text removes the whole prefix,
+    /// leaving a plain line; Delete right before the prefix does nothing.
+    /// The prefix never holds the caret, so neither can eat into it.
+    override func deleteBackward(_ sender: Any?) {
+        guard isEditable, !hasMarkedText(),
+              let unit = TaskPrefix.backspaceRange(in: string as NSString, selection: selectedRange())
+        else { return super.deleteBackward(sender) }
+        breakUndoCoalescing()
+        guard shouldChangeText(in: unit, replacementString: "") else { return }
+        textStorage?.replaceCharacters(in: unit, with: "")
+        didChangeText()
+        setSelectedRange(NSRange(location: unit.location, length: 0))
+        breakUndoCoalescing()
+    }
+
+    override func deleteForward(_ sender: Any?) {
+        guard !TaskPrefix.deleteForwardIsBlocked(in: string as NSString, selection: selectedRange()) else { return }
+        super.deleteForward(sender)
     }
 
     /// The union of the paragraphs touched by the selection. Disjoint
@@ -890,11 +923,10 @@ final class PapelTextView: NSTextView {
         }
     }
 
-    /// A click on a task item's box (the point in view coordinates) flips
+    /// A click on a task item's circle (the point in view coordinates) flips
     /// the source between `[ ]` and `[x]`, undoably, and leaves the caret
-    /// where it was so the item stays rendered. False when the point is not
-    /// on a drawn box: the active paragraph shows its source, and a click
-    /// there places the caret as anywhere else.
+    /// where it was. False when the point is not on a circle, and the click
+    /// places the caret as anywhere else.
     @discardableResult
     func toggleTaskBox(at point: NSPoint) -> Bool {
         guard isEditable, let storage = textStorage, storage.length > 0,
@@ -927,8 +959,8 @@ final class PapelTextView: NSTextView {
 
     /// The circle for the task prefix at `prefix`, in text-container
     /// coordinates: the diameter square sitting on the baseline's cap
-    /// height where the `[` renders. Nil on the active paragraph, where
-    /// the source shows and nothing is a circle.
+    /// height where the `[` renders. The prefix conceals on the active
+    /// paragraph as well, so the circle is there whatever the caret does.
     private func taskCircleRect(forPrefix prefix: NSRange) -> NSRect? {
         guard prefix.length >= 3, let layoutManager = layoutManager as? PapelLayoutManager,
               let container = textContainer, let storage = textStorage,

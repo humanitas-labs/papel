@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Task lists: the circle stays on the line the caret is on; `- [ ]` no longer shows as raw text when you edit the item, and the text no longer shifts sideways on the way in. The prefix is one unit for the caret: Left from the start of the text lands before the item, Right lands back at the text, Shift-Left selects the prefix whole, and Up or Down never lands inside it. Backspace at the start of the text removes the whole prefix and leaves a plain line, undoably; Delete right before the prefix does nothing. A click on the circle flips the item on the focused line too. Copy still carries the source (#53).
+
 ## 0.6.0 — 2026.09.03
 
 - Zoom: ⌘+ and ⌘− step the view, ten percent at a time around actual size and in larger steps further out, from 50% to 300%; ⌘0 returns to actual size, and the three sit in the View menu. A badge in the window's top-right corner shows the percentage on every change and while the pointer rests there; click it, type a percentage, and press Return to set the view to exactly that. The whole page scales together, body, headings, measure, indents, code inset, and margins, so it keeps its proportions; it is a lens for the monitor you are on, not a change to the typography. The scale is kept per machine in the app's defaults and never written to the config or a preset, so those stay the same on every machine (#13).

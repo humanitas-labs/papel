@@ -30,13 +30,13 @@ extension NSAttributedString.Key {
     /// paragraph's spacing reserves the band the text view draws it in.
     static let imageSource = NSAttributedString.Key("papel.imageSource")
     /// Marks a task item's prefix, from its list marker through the `]` of
-    /// its `[ ]` / `[x]` box. Off the active paragraph the run draws as one
-    /// box glyph; a click on it flips the character between the brackets.
+    /// its `[ ]` / `[x]` box. The run conceals on every paragraph, the
+    /// active one included, and the text view draws a circle in its place;
+    /// a click on the circle flips the character between the brackets.
     static let taskBox = NSAttributedString.Key("papel.taskBox")
-    /// Marks a character that, off the active paragraph, draws nothing and
-    /// takes the width the value (a `CGFloat`) names: room for something
-    /// the text view draws itself, like a task item's circle. On the active
-    /// paragraph the character renders as typed.
+    /// Marks a character that, while concealed, draws nothing and takes the
+    /// width the value (a `CGFloat`) names: room for something the text view
+    /// draws itself, like a task item's circle.
     static let reservedWidth = NSAttributedString.Key("papel.reservedWidth")
 }
 
@@ -145,10 +145,13 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     }
 
     /// Whether the character is concealed under the current active range.
+    /// A task prefix (`.taskBox`) conceals on the active paragraph too: the
+    /// circle stays and the caret never enters it (#53).
     func isConcealed(characterAt index: Int) -> Bool {
-        guard let storage = textStorage, index < storage.length,
-              !NSLocationInRange(index, activeRange) else { return false }
-        return storage.attribute(.concealable, at: index, effectiveRange: nil) != nil
+        guard let storage = textStorage, index < storage.length else { return false }
+        let attributes = storage.attributes(at: index, effectiveRange: nil)
+        guard attributes[.concealable] != nil else { return false }
+        return !NSLocationInRange(index, activeRange) || attributes[.taskBox] != nil
     }
 
     private func clip(_ range: NSRange) -> NSRange? {
@@ -199,7 +202,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
                 // document to the next heading for every batch of glyphs.
                 run = markers(at: index, in: storage, effectiveRange: &runRange)
             }
-            guard !run.isEmpty, !NSLocationInRange(index, activeRange) else { continue }
+            guard !run.isEmpty, !NSLocationInRange(index, activeRange) || run.pinned else { continue }
 
             if run.concealable || run.reservedWidth != nil {
                 if replacedProperties == nil {
@@ -248,9 +251,9 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         shouldUse action: NSLayoutManager.ControlCharacterAction,
         forControlCharacterAt charIndex: Int
     ) -> NSLayoutManager.ControlCharacterAction {
-        guard let storage = textStorage, charIndex < storage.length,
-              !NSLocationInRange(charIndex, activeRange) else { return action }
+        guard let storage = textStorage, charIndex < storage.length else { return action }
         let attributes = storage.attributes(at: charIndex, effectiveRange: nil)
+        guard !NSLocationInRange(charIndex, activeRange) || attributes[.taskBox] != nil else { return action }
         if attributes[.reservedWidth] != nil { return .whitespace }
         guard attributes[.concealable] != nil else { return action }
         let character = (storage.string as NSString).character(at: charIndex)
@@ -313,6 +316,8 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         var concealable = false
         var substitute: Character?
         var reservedWidth: CGFloat?
+        /// A task prefix: concealed on the active paragraph as well.
+        var pinned = false
         var isEmpty: Bool { !concealable && substitute == nil && reservedWidth == nil }
     }
 
@@ -322,6 +327,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         marks.concealable = attributes[.concealable] != nil
         marks.substitute = (attributes[.glyphSubstitute] as? String)?.first
         marks.reservedWidth = attributes[.reservedWidth] as? CGFloat
+        marks.pinned = attributes[.taskBox] != nil
         return marks
     }
 

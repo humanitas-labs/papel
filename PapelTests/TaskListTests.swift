@@ -2,10 +2,11 @@ import AppKit
 import Testing
 @testable import Papel
 
-/// `- [ ]` and `- [x]` are task items: off the active paragraph the marker
-/// and box conceal and a circle the text view draws stands in their place;
-/// a done item's text recedes into the quote ink; a click on the circle
-/// flips the source; Return continues the task. The file keeps its source.
+/// `- [ ]` and `- [x]` are task items: the marker and box conceal on every
+/// paragraph and a circle the text view draws stands in their place; the
+/// prefix is one unit for the caret; a done item's text recedes into the
+/// quote ink; a click on the circle flips the source; Return continues the
+/// task. The file keeps its source.
 @MainActor
 struct TaskListTests {
     private func makeTextView(_ text: String, selectedAt location: Int) -> (PapelTextView, PapelLayoutManager) {
@@ -65,14 +66,116 @@ struct TaskListTests {
     }
 
     @Test
-    func theActiveParagraphShowsItsSource() throws {
-        let text = "- [ ] open\n- [x] done\n"
+    func theActiveParagraphKeepsItsCircle() throws {
+        let text = "- [ ] open *bold*\n- [x] done\n"
         let (textView, layoutManager) = makeTextView(text, selectedAt: 8)
-        #expect(!layoutManager.isConcealed(characterAt: 0))
-        #expect(!layoutManager.isConcealed(characterAt: 3))
-        #expect(layoutManager.isConcealed(characterAt: 11), "the other item stays rendered")
+        for index in [0, 1, 3, 4] {
+            #expect(layoutManager.isConcealed(characterAt: index), "prefix character \(index) conceals on the active line")
+        }
+        #expect(!layoutManager.isConcealed(characterAt: 11), "the emphasis delimiter reveals as ever")
+        #expect(layoutManager.isConcealed(characterAt: 18), "the other item stays rendered")
         let storage = try #require(textView.textStorage)
-        #expect(storage.attribute(.taskBox, at: 0, effectiveRange: nil) as? String == "[ ]", "the mark stays; only the drawing waits")
+        #expect(storage.attribute(.taskBox, at: 0, effectiveRange: nil) as? String == "[ ]")
+
+        // The text starts past the circle's room on the active line, as
+        // it does off it.
+        let textX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 6)).x
+        let boxX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 2)).x
+        let reserved = try #require(storage.attribute(.reservedWidth, at: 2, effectiveRange: nil) as? CGFloat)
+        let font = try #require(storage.attribute(.font, at: 5, effectiveRange: nil) as? NSFont)
+        let kern = storage.attribute(.kern, at: 5, effectiveRange: nil) as? CGFloat ?? 0
+        let space = (" " as NSString).size(withAttributes: [.font: font]).width + kern
+        #expect(abs(textX - boxX - reserved - space) < 1)
+    }
+
+    @Test
+    func theCaretTreatsThePrefixAsOneUnit() throws {
+        let text = "above\n- [ ] open\n  - [x] nested\n"
+        let (textView, _) = makeTextView(text, selectedAt: 12)
+        func caret() -> NSRange { textView.selectedRange() }
+        #expect(caret() == NSRange(location: 12, length: 0), "the caret at the text's start stays")
+
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: 6, length: 0), "Left hops the prefix")
+        textView.moveRight(nil)
+        #expect(caret() == NSRange(location: 12, length: 0), "Right hops it back")
+
+        for inside in 7...11 {
+            textView.setSelectedRange(NSRange(location: 0, length: 0))
+            textView.setSelectedRange(NSRange(location: inside, length: 0))
+            #expect(caret() == NSRange(location: 12, length: 0), "a caret placed at \(inside) lands at the text's start")
+        }
+
+        textView.setSelectedRange(NSRange(location: 12, length: 0))
+        textView.moveLeftAndModifySelection(nil)
+        #expect(caret() == NSRange(location: 6, length: 6), "Shift-Left selects the prefix whole")
+        textView.setSelectedRange(NSRange(location: 9, length: 5))
+        #expect(caret() == NSRange(location: 6, length: 8), "a selection reaching into the prefix takes it whole")
+        textView.setSelectedRange(NSRange(location: 2, length: 7))
+        #expect(caret() == NSRange(location: 2, length: 10))
+
+        // The nested item's indent is outside the unit: the caret sits
+        // between indent and marker, and Left from the text goes there.
+        let nested = (text as NSString).range(of: "  - [x] nested")
+        textView.setSelectedRange(NSRange(location: nested.location + 8, length: 0))
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: nested.location + 2, length: 0))
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: nested.location + 1, length: 0), "then the indent, a character at a time")
+
+        // Up from the text's start of the nested item lands on the open
+        // item's text, never inside its prefix.
+        textView.setSelectedRange(NSRange(location: nested.location + 8, length: 0))
+        textView.moveUp(nil)
+        #expect(caret().length == 0)
+        #expect(caret().location == 6 || caret().location >= 12, "up never lands inside the prefix")
+    }
+
+    @Test
+    func backspaceAtTheTextStartRemovesThePrefixAndDeleteBeforeItDoesNothing() throws {
+        let text = "- [ ] open\n  - [x] nested\n"
+        let (textView, _) = makeTextView(text, selectedAt: 6)
+        let host = TestUndoHost()
+        host.attach(to: textView)
+        host.undoManager.groupsByEvent = false
+
+        host.undoManager.beginUndoGrouping()
+        textView.deleteBackward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "open\n  - [x] nested\n")
+        #expect(textView.selectedRange() == NSRange(location: 0, length: 0))
+        host.undoManager.undo()
+        #expect(textView.string == text, "one undo step gives the prefix back")
+
+        // Nested: the indent stays.
+        let nested = (text as NSString).range(of: "  - [x] nested")
+        textView.setSelectedRange(NSRange(location: nested.location + 8, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteBackward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- [ ] open\n  nested\n")
+        host.undoManager.undo()
+        #expect(textView.string == text)
+
+        // Delete before the prefix is a no-op; before the indent it is
+        // ordinary.
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteForward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == text)
+        textView.setSelectedRange(NSRange(location: nested.location, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteForward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- [ ] open\n - [x] nested\n")
+
+        // Backspace in the text is ordinary.
+        textView.setSelectedRange(NSRange(location: 7, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteBackward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- [ ] pen\n - [x] nested\n")
     }
 
     @Test
@@ -154,12 +257,15 @@ struct TaskListTests {
         let space = (" " as NSString).size(withAttributes: [.font: font]).width + kern
         #expect(abs(textX - boxX - reserved - space) < 1)
 
-        // On the active paragraph the source shows, and a click there is a
-        // click on text.
+        // The circle is there on the active paragraph too, and a click on
+        // it flips the item without moving the caret.
         textView.setSelectedRange(NSRange(location: 8, length: 0))
         layoutManager.ensureLayout(for: textView.textContainer!)
-        #expect(!textView.toggleTaskBox(at: circlePoint(forCharacterAt: 2)))
-        #expect(textView.string == text)
+        host.undoManager.beginUndoGrouping()
+        #expect(textView.toggleTaskBox(at: circlePoint(forCharacterAt: 2)))
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- [x] open\n- [x] done\n")
+        #expect(textView.selectedRange() == NSRange(location: 8, length: 0))
     }
 
     @Test

@@ -343,10 +343,10 @@ final class MarkdownSyntaxStyler {
                 // A task item: a circle the text view draws stands in for
                 // the marker. The marker, the gap, and the box's characters
                 // conceal, except the `[`, which reserves the circle's
-                // width and the marker gap off the active paragraph; the
-                // hanging indent reserves the same room, so the layout is
-                // stable there. On the active paragraph the line reads as
-                // typed, at its own width, as every concealed line does.
+                // width and the marker gap; the hanging indent reserves the
+                // same room, so the layout is stable. Unlike other
+                // concealment this holds on the active paragraph too, and
+                // the prefix is one unit for the caret (`TaskPrefix`).
                 let box = (source as NSString).substring(with: boxRange)
                 let prefixRange = NSRange(location: markerRange.location, length: NSMaxRange(boxRange) - markerRange.location)
                 let circle = NSRange(location: boxRange.location, length: 1)
