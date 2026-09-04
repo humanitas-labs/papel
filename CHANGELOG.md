@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The "Updated to version" toast sits level with the traffic lights again. It measured them once through the key window, and on the launch that shows it there is no key window yet, so it fell back to a guess and sat too high; it now reads the line from the window it is in, as the title band settles.
 - The update badge shows in document windows too. A release installs itself while you write, and the restart loop that follows sat only in the welcome window, which a writer may never open; it now sits in the bottom-left corner of every document as well, the one coloured thing on the page (#62).
 
 ## 0.7.0 — 2026.09.04
