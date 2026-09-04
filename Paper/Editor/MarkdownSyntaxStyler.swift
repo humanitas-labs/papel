@@ -103,84 +103,215 @@ final class MarkdownSyntaxStyler {
         pattern: #"^(`{3,}|~{3,})(.*)$"#
     )
 
+    // MARK: - Edits since the last pass
+
+    /// The characters edited since the last pass, in the current text's
+    /// coordinates, and the length change that edit made; the text view's
+    /// storage delegate reports them. Two edits before a pass are recorded
+    /// as compound, and the next pass is a full one: they are rare (an undo
+    /// of a grouped change) and not worth reconciling.
+    private var pendingEdit: (range: NSRange, delta: Int)?
+    private var pendingIsCompound = false
+
+    /// The fenced blocks and comments as of the last pass. An edit that
+    /// leaves them the same outside its own chunk was local; one that
+    /// changes them (a fence opened or closed) was not.
+    private var styledFences: [NSRange] = []
+    private var styledComments: [NSRange] = []
+
+    /// Whether the last pass restyled the whole text; for tests.
+    private(set) var lastPassWasFull = true
+
+    func noteEdit(_ range: NSRange, delta: Int) {
+        if pendingEdit != nil { pendingIsCompound = true }
+        pendingEdit = (range, delta)
+    }
+
+    /// Restyles the whole text.
     func apply(to textView: NSTextView) {
         guard let storage = textView.textStorage else { return }
-
         let source = storage.string
         let fullRange = NSRange(location: 0, length: source.utf16.count)
+        let fences = Self.fencedBlocks(in: source, range: fullRange)
+        let comments = Self.commentRanges(in: source, range: fullRange, fenced: fences)
+        apply(to: textView, range: fullRange, fenced: fences, comments: comments)
+        (textView as? PaperTextView)?.clearCheckingMarksInCode(in: fullRange)
+        lastPassWasFull = true
+    }
+
+    /// Restyles the chunk around the edit the storage delegate reported,
+    /// or the whole text when there was none or the edit changed which
+    /// fences and comments there are. Every construct but those two is
+    /// bounded by blank lines, so a blank-line-delimited run of paragraphs,
+    /// widened to any fence or comment it overlaps, restyles to the same
+    /// attributes the full pass would set there.
+    func applyEdited(to textView: NSTextView) {
+        guard let storage = textView.textStorage, let edit = pendingEdit, !pendingIsCompound else {
+            return apply(to: textView)
+        }
+        let source = storage.string
+        let text = source as NSString
+        let fullRange = NSRange(location: 0, length: text.length)
+        let fences = Self.fencedBlocks(in: source, range: fullRange)
+        let comments = Self.commentRanges(in: source, range: fullRange, fenced: fences)
+
+        // The blocks of the last pass, moved to where the edit left them;
+        // one the edit touched is given its old extent plus the change.
+        let oldEnd = edit.range.location + edit.range.length - edit.delta
+        let shifted = (styledFences + styledComments).compactMap { block -> NSRange? in
+            if NSMaxRange(block) <= edit.range.location { return block }
+            if block.location >= oldEnd { return NSRange(location: block.location + edit.delta, length: block.length) }
+            let end = min(text.length, max(NSMaxRange(block) + edit.delta, NSMaxRange(edit.range)))
+            return NSRange(location: block.location, length: max(0, end - block.location))
+        }
+
+        var chunk = Self.chunk(around: edit.range.clamped(to: text.length), in: text)
+        var widened = true
+        while widened {
+            widened = false
+            for block in fences + comments + shifted where Self.touches(block, chunk) && !Self.contains(chunk, block) {
+                chunk = Self.chunk(around: NSUnionRange(chunk, block).clamped(to: text.length), in: text)
+                widened = true
+            }
+        }
+        let outside = { (blocks: [NSRange]) in blocks.filter { !Self.touches($0, chunk) }.sorted { $0.location < $1.location } }
+        guard outside(fences + comments) == outside(shifted) else { return apply(to: textView) }
+
+        apply(to: textView, range: chunk, fenced: fences, comments: comments)
+        (textView as? PaperTextView)?.clearCheckingMarksInCode(in: chunk)
+        lastPassWasFull = false
+    }
+
+    /// The paragraphs around `range` out to the nearest blank lines, one
+    /// paragraph further each way first: an edit that blanks a line splits
+    /// a chunk and one that fills a blank line joins two, and the
+    /// neighbours restyle either way. The bounding blank lines are included.
+    static func chunk(around range: NSRange, in text: NSString) -> NSRange {
+        guard text.length > 0 else { return NSRange(location: 0, length: 0) }
+        var chunk = text.paragraphRange(for: range)
+        if chunk.location > 0 {
+            chunk = NSUnionRange(chunk, text.paragraphRange(for: NSRange(location: chunk.location - 1, length: 0)))
+        }
+        if NSMaxRange(chunk) < text.length {
+            chunk = NSUnionRange(chunk, text.paragraphRange(for: NSRange(location: NSMaxRange(chunk), length: 0)))
+        }
+        while chunk.location > 0, !isBlank(text.paragraphRange(for: NSRange(location: chunk.location, length: 0)), in: text) {
+            chunk = NSUnionRange(chunk, text.paragraphRange(for: NSRange(location: chunk.location - 1, length: 0)))
+        }
+        while NSMaxRange(chunk) < text.length, !isBlank(text.paragraphRange(for: NSRange(location: NSMaxRange(chunk) - 1, length: 0)), in: text) {
+            chunk = NSUnionRange(chunk, text.paragraphRange(for: NSRange(location: NSMaxRange(chunk), length: 0)))
+        }
+        return chunk
+    }
+
+    private static func isBlank(_ paragraph: NSRange, in text: NSString) -> Bool {
+        text.substring(with: paragraph).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private static func touches(_ a: NSRange, _ b: NSRange) -> Bool {
+        a.location < NSMaxRange(b) && b.location < NSMaxRange(a)
+    }
+
+    private static func contains(_ outer: NSRange, _ inner: NSRange) -> Bool {
+        inner.location >= outer.location && NSMaxRange(inner) <= NSMaxRange(outer)
+    }
+
+    private func apply(to textView: NSTextView, range: NSRange, fenced: [NSRange], comments: [NSRange]) {
+        guard let storage = textView.textStorage else { return }
+        pendingEdit = nil
+        pendingIsCompound = false
+        styledFences = fenced
+        styledComments = comments
+
+        let source = storage.string
         let selection = textView.selectedRange()
+        let paperView = textView as? PaperTextView
+        var hadImages = false
+        if range.length > 0 {
+            storage.enumerateAttribute(.imageSource, in: range) { value, _, stop in
+                guard value != nil else { return }
+                hadImages = true
+                stop.pointee = true
+            }
+        }
 
         storage.beginEditing()
-        storage.setAttributes(Self.baseAttributes, range: fullRange)
-        applyThematicBreaks(to: storage, source: source, range: fullRange)
-        applyHeadings(to: storage, source: source, range: fullRange)
-        applyBlockQuotes(to: storage, source: source, range: fullRange)
+        storage.setAttributes(Self.baseAttributes, range: range)
+        applyThematicBreaks(to: storage, source: source, range: range)
+        applyHeadings(to: storage, source: source, range: range)
+        applyBlockQuotes(to: storage, source: source, range: range)
         // Code spans go first among the inline styles: the passes below
         // skip anything already set in the code font, so span content
         // stays literal.
-        applyInlineCode(to: storage, source: source, range: fullRange)
+        applyInlineCode(to: storage, source: source, range: range)
         applyDelimitedStyle(
             Self.strongEmphasisPattern,
             trait: [.bold, .italic],
             to: storage,
             source: source,
-            range: fullRange
+            range: range
         )
         applyDelimitedStyle(
             Self.strongPattern,
             trait: .bold,
             to: storage,
             source: source,
-            range: fullRange
+            range: range
         )
         applyDelimitedStyle(
             Self.emphasisPattern,
             trait: .italic,
             to: storage,
             source: source,
-            range: fullRange
+            range: range
         )
         applyDelimitedStyle(
             Self.underscoreStrongPattern,
             trait: .bold,
             to: storage,
             source: source,
-            range: fullRange
+            range: range
         )
         applyDelimitedStyle(
             Self.underscoreEmphasisPattern,
             trait: .italic,
             to: storage,
             source: source,
-            range: fullRange
+            range: range
         )
-        applyUnderline(to: storage, source: source, range: fullRange)
-        applyStrikethrough(to: storage, source: source, range: fullRange)
-        applyLinks(to: storage, source: source, range: fullRange)
-        applyArrows(to: storage, source: source, range: fullRange)
+        applyUnderline(to: storage, source: source, range: range)
+        applyStrikethrough(to: storage, source: source, range: range)
+        applyLinks(to: storage, source: source, range: range)
+        applyArrows(to: storage, source: source, range: range)
         let imageURLs = applyBlockImages(
-            to: storage, source: source, range: fullRange,
-            documentURL: (textView as? PaperTextView)?.documentURL,
+            to: storage, source: source, range: range,
+            documentURL: paperView?.documentURL,
             width: Self.measure(of: textView),
-            excluding: Self.fencedBlocks(in: source, range: fullRange)
-                + Self.commentRanges(in: source, range: fullRange)
+            excluding: fenced + comments
         )
-        applyListMarkers(to: storage, source: source, range: fullRange)
-        applyCodeBlocks(to: storage, source: source, range: fullRange)
-        applyComments(to: storage, source: source, range: fullRange)
+        applyListMarkers(to: storage, source: source, range: range)
+        applyCodeBlocks(to: storage, source: source, range: range, fenced: fenced)
+        applyComments(to: storage, source: source, range: range, comments: comments)
         // Concealed characters stay in the layout as zero-advance control
         // glyphs; a kern (the letter spacing) on them would still widen the
         // line off the active paragraph, so they carry none.
-        storage.enumerateAttribute(.concealable, in: fullRange) { value, range, _ in
+        storage.enumerateAttribute(.concealable, in: range) { value, range, _ in
             guard value != nil else { return }
             storage.addAttribute(.kern, value: 0, range: range)
         }
         storage.endEditing()
-        (textView as? PaperTextView)?.clearCheckingMarksInCode()
 
         textView.typingAttributes = Self.baseAttributes
         textView.setSelectedRange(selection)
-        (textView as? PaperTextView)?.watchImages(imageURLs)
+        // The watchers want every image the text shows, which is the set
+        // carrying `.imageSource`; a chunk that neither had nor has one
+        // leaves them alone.
+        guard let paperView, hadImages || !imageURLs.isEmpty else { return }
+        var watched = imageURLs
+        storage.enumerateAttribute(.imageSource, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
+            if let url = value as? URL { watched.insert(url) }
+        }
+        paperView.watchImages(watched)
     }
 
     /// `---`, `***`, or `___` alone on a line is a thematic break: the
@@ -379,7 +510,7 @@ final class MarkdownSyntaxStyler {
                 // Non-blank lines that follow without a marker of their own
                 // are lazy continuations of the item (a hard-wrapped item);
                 // they align under the item's text with no spacing between.
-                let continuations = Self.continuationParagraphs(after: paragraphRange, in: source, limit: range.length)
+                let continuations = Self.continuationParagraphs(after: paragraphRange, in: source, limit: NSMaxRange(range))
                 if boxRange.location != NSNotFound, (source as NSString).substring(with: boxRange) != "[ ]" {
                     // A done item's text recedes into the quote ink, with no
                     // strikethrough, so the source still reads as prose.
@@ -435,10 +566,11 @@ final class MarkdownSyntaxStyler {
     private func applyCodeBlocks(
         to storage: NSTextStorage,
         source: String,
-        range: NSRange
+        range: NSRange,
+        fenced: [NSRange]
     ) {
         let text = source as NSString
-        for blockRange in Self.fencedBlocks(in: source, range: range) {
+        for blockRange in fenced where Self.touches(blockRange, range) {
             let block = text.paragraphRange(for: blockRange)
 
             var attributes = Self.baseAttributes
@@ -508,8 +640,8 @@ final class MarkdownSyntaxStyler {
             // spacing between them so they read as one block under one rule.
             let paragraphRange = (source as NSString).paragraphRange(for: match.range)
             let next = NSMaxRange(paragraphRange)
-            let continues = next < range.length
-                && Self.blockQuotePattern.firstMatch(in: source, range: NSRange(location: next, length: range.length - next))?.range.location == next
+            let continues = next < NSMaxRange(range)
+                && Self.blockQuotePattern.firstMatch(in: source, range: NSRange(location: next, length: NSMaxRange(range) - next))?.range.location == next
             storage.addAttribute(
                 .paragraphStyle,
                 value: Appearance.flushParagraphStyle(indent: Appearance.quoteIndent, spacing: continues ? 0 : nil),
@@ -692,8 +824,7 @@ final class MarkdownSyntaxStyler {
 
     /// The ranges of HTML comments outside fenced code, from the source
     /// alone, for the passes that run before the comment pass.
-    private static func commentRanges(in source: String, range: NSRange) -> [NSRange] {
-        let fenced = fencedBlocks(in: source, range: range)
+    private static func commentRanges(in source: String, range: NSRange, fenced: [NSRange]) -> [NSRange] {
         var ranges: [NSRange] = []
         commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !fenced.contains(where: { NSLocationInRange(match.range.location, $0) }) else { return }
@@ -711,16 +842,17 @@ final class MarkdownSyntaxStyler {
     private func applyComments(
         to storage: NSTextStorage,
         source: String,
-        range: NSRange
+        range: NSRange,
+        comments: [NSRange]
     ) {
-        Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
+        for comment in comments where Self.touches(comment, range) {
+            guard !Self.isCode(at: comment.location, in: storage) else { continue }
             for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .strikethroughStyle, .linkDestination,
                         .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth, .listMarker, .pinned] {
-                storage.removeAttribute(key, range: match.range)
+                storage.removeAttribute(key, range: comment)
             }
-            storage.addAttribute(.font, value: Appearance.bodyFont(), range: match.range)
-            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: match.range)
+            storage.addAttribute(.font, value: Appearance.bodyFont(), range: comment)
+            storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: comment)
         }
     }
 

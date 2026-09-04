@@ -3,12 +3,13 @@ import Testing
 @testable import Paper
 
 /// Offscreen renders and restyle timings for manual review. Runs only when
-/// `PAPEL_PROBE_DIR` is set (pass `TEST_RUNNER_PAPEL_PROBE_DIR=…` to
-/// `xcodebuild test`); otherwise every probe is skipped.
+/// `PAPER_PROBE_DIR` is set (export it, and pass
+/// `TEST_RUNNER_PAPER_PROBE_DIR=…` too, to `xcodebuild test-without-building`);
+/// otherwise every probe is skipped.
 @MainActor
 struct RenderProbeTests {
     nonisolated static var probeDirectory: URL? {
-        ProcessInfo.processInfo.environment["PAPEL_PROBE_DIR"].map { URL(fileURLWithPath: $0) }
+        ProcessInfo.processInfo.environment["PAPER_PROBE_DIR"].map { URL(fileURLWithPath: $0) }
     }
 
     private func makeEditor(width: CGFloat, height: CGFloat, text: String) -> (NSScrollView, PaperTextView) {
@@ -173,8 +174,16 @@ struct RenderProbeTests {
         let (_, textView) = makeEditor(width: 1120, height: 800, text: text)
         textView.setSelectedRange(NSRange(location: text.utf16.count / 2, length: 0))
 
+        func milliseconds(since start: ContinuousClock.Instant) -> Double {
+            let elapsed = ContinuousClock.now - start
+            return Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+        }
+        func list(_ values: [Double]) -> String { values.map { String(format: "%.1f", $0) }.joined(separator: ", ") }
+
         // Alternate with and without the concealment delegate on the same
         // view so the overhead is measured against the same document state.
+        // The edit goes through the text view, so the restyle is the one a
+        // keystroke gets: the chunk around the edit.
         let layoutManager = try #require(textView.layoutManager as? PaperLayoutManager)
         var concealing: [Double] = []
         var plain: [Double] = []
@@ -183,13 +192,33 @@ struct RenderProbeTests {
             layoutManager.delegate = conceal ? layoutManager : nil
             let start = ContinuousClock.now
             textView.insertText("x", replacementRange: textView.selectedRange())
-            textView.syntaxStyler.apply(to: textView)
-            let ms = Double((ContinuousClock.now - start).components.attoseconds) / 1e15
+            textView.syntaxStyler.applyEdited(to: textView)
+            let ms = milliseconds(since: start)
             if conceal { concealing.append(ms) } else { plain.append(ms) }
         }
         layoutManager.delegate = layoutManager
-        func list(_ values: [Double]) -> String { values.map { String(format: "%.1f", $0) }.joined(separator: ", ") }
-        let line = "\(fixture): restyle per keystroke ms concealing = \(list(concealing)); plain = \(list(plain))\n"
+        var full: [Double] = []
+        for _ in 0..<3 {
+            let start = ContinuousClock.now
+            textView.syntaxStyler.apply(to: textView)
+            full.append(milliseconds(since: start))
+        }
+        var line = "\(fixture): restyle per keystroke ms concealing = \(list(concealing)); plain = \(list(plain)); full pass = \(list(full))\n"
+
+        // Moving the caret into a paragraph with marks invalidates layout
+        // from there to the end of the text; the cost of a caret jump is
+        // that relayout. Laid out once first, so the jumps measure only it.
+        let container = try #require(textView.textContainer)
+        layoutManager.ensureLayout(for: container)
+        var jumps: [Double] = []
+        let length = textView.string.utf16.count
+        for fraction in [0.1, 0.5, 0.9, 0.2] {
+            let start = ContinuousClock.now
+            textView.setSelectedRange(NSRange(location: Int(Double(length) * fraction), length: 0))
+            layoutManager.ensureLayout(for: container)
+            jumps.append(milliseconds(since: start))
+        }
+        line += "\(fixture): caret jump with relayout ms = \(list(jumps))\n"
         try line.append(to: dir.appendingPathComponent("profile.txt"))
     }
 }

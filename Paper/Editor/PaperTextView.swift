@@ -43,11 +43,6 @@ final class PaperTextView: NSTextView {
 
         storage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(container)
-        // Layout is done as the text is shown, not from the edit to the end
-        // of the text on every keystroke: with contiguous layout the view
-        // sizing after each edit relaid out everything below the caret,
-        // 57 ms per key in a 100 KB document (Debug) against 1 ms without.
-        layoutManager.allowsNonContiguousLayout = true
         super.init(frame: .zero, textContainer: container)
 
         storage.delegate = self
