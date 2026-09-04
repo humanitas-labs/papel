@@ -164,6 +164,12 @@ struct SettingsView: View {
                 Toggle("Font smoothing", isOn: binding(\.fontSmoothing))
             }
 
+            Section("Lists") {
+                numberRow("Task indent", binding(\.taskIndent), in: Configuration.taskIndentRange, unit: "pt")
+                Text("How far a task's circle sits from the text margin; bullets sit at 1.4 × the font size.")
+                    .font(.caption)
+            }
+
             Section("Images") {
                 numberRow("Corner radius", binding(\.imageCornerRadius), in: Configuration.imageCornerRadiusRange, unit: "pt")
             }

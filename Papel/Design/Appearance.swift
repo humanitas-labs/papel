@@ -47,6 +47,11 @@ enum Appearance {
     /// width its concealed `[ ]` reserves, and the stroke of an open one.
     static var taskBoxSize: CGFloat { (bodySize * 0.95).rounded() }
     static let taskBoxStroke: CGFloat = 1.25
+    /// The indent of a top-level task item's circle from the text margin
+    /// (`task.indent`): about half a bullet's by default, so a checklist
+    /// sits in from the prose without the wide circle pushing its text as
+    /// far as a bullet's. Bullets keep `listIndent`.
+    static var taskIndent: CGFloat { (CGFloat(configuration.taskIndent) * Zoom.scale).rounded() }
 
     /// How far each nesting level steps a list item's marker. The source's
     /// two spaces per level are far narrower than a legible step, so the

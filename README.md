@@ -61,6 +61,7 @@ paragraph.spacing = 11
 letter.spacing = -0.02
 font.smoothing = off
 measure = 640
+task.indent = 10
 theme = enso
 window.width = 1400
 window.height = 876

@@ -21,6 +21,10 @@ struct Configuration: Equatable, Sendable {
     /// takes the exact value; a static family takes its nearest face.
     var fontWeight: Double = 400
     var headingWeight: Double = 500
+    /// Indent in points of a task item's circle from the text margin.
+    /// Bullets sit at `listIndent`, 1.4 × the font size; a checklist reads
+    /// better a little closer in.
+    var taskIndent: Double = 10
     /// Corner radius in points a block image is clipped to; 0 is square.
     var imageCornerRadius: Double = 12
     /// Subfolder, relative to the document, that pasted images are written
@@ -101,6 +105,7 @@ struct Configuration: Equatable, Sendable {
     static let letterSpacingRange: ClosedRange<Double> = -1...3
     static let weightRange: ClosedRange<Double> = 100...900
     static let imageCornerRadiusRange: ClosedRange<Double> = 0...40
+    static let taskIndentRange: ClosedRange<Double> = 0...80
     static let windowWidthRange: ClosedRange<Double> = 640...4000
     static let windowHeightRange: ClosedRange<Double> = 520...3000
 
@@ -142,6 +147,10 @@ struct Configuration: Equatable, Sendable {
 
     # Heading weight, 100–900, or regular, medium, semibold, or bold.
     heading.weight = 500
+
+    # Indent in points of a task item's circle from the text margin. Bullets
+    # sit at 1.4 × the font size; 0 puts the circle on the margin.
+    task.indent = 10
 
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
@@ -236,6 +245,8 @@ struct Configuration: Equatable, Sendable {
             fontWeight = Self.weight(value) ?? fontWeight
         case "heading.weight":
             headingWeight = Self.weight(value) ?? headingWeight
+        case "task.indent":
+            taskIndent = Self.number(value, in: Self.taskIndentRange) ?? taskIndent
         case "image.corner.radius":
             imageCornerRadius = Self.number(value, in: Self.imageCornerRadiusRange) ?? imageCornerRadius
         case "image.paste.directory":
@@ -266,6 +277,7 @@ struct Configuration: Equatable, Sendable {
             ("letter.spacing", Self.format(letterSpacing)),
             ("font.smoothing", fontSmoothing ? "on" : "off"),
             ("heading.weight", Self.format(headingWeight)),
+            ("task.indent", Self.format(taskIndent)),
             ("image.corner.radius", Self.format(imageCornerRadius)),
             ("image.paste.directory", imagePasteDirectory),
             ("theme", theme),
