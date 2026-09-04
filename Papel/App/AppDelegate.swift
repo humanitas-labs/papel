@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let panel = NSApp.windows.first(where: { $0 is NSOpenPanel }) as? NSOpenPanel
         panel?.cancel(nil)
         guard !testing else { return }
+        UpdateCheck.runIfDue(configuration: ConfigurationStore.shared.current)
         let firstLaunch = ConfigurationStore.shared.isFirstLaunch
         if panel != nil, !firstLaunch { WelcomeWindow.show() }
         Task {

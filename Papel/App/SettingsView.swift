@@ -194,6 +194,12 @@ struct SettingsView: View {
                 CommandLineToolRow()
                 DefaultApplicationRow()
             }
+
+            Section("Updates") {
+                Toggle("Check for updates", isOn: binding(\.updateCheck))
+                Text("Once a day on launch, asks GitHub for the latest release and shows a download icon in the welcome window when it is newer. Off never makes the request.")
+                    .font(.caption)
+            }
         }
         .formStyle(.grouped)
         .frame(width: 460)

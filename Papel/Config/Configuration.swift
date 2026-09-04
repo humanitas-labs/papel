@@ -42,6 +42,10 @@ struct Configuration: Equatable, Sendable {
     /// last size after that.
     var windowWidth: Double = 1400
     var windowHeight: Double = 876
+    /// Whether to ask GitHub, once a day on launch, for the latest release
+    /// and show a download icon in the welcome window when it is newer.
+    /// Off never makes the request.
+    var updateCheck: Bool = true
     /// Hex overrides for the theme's colours; nil inherits the theme.
     var colorOverrides = Palette.Overrides()
 
@@ -178,6 +182,11 @@ struct Configuration: Equatable, Sendable {
     window.width = 1400
     window.height = 876
 
+    # Once a day on launch, ask GitHub whether a newer Papel is out and show
+    # a download icon in the welcome window when there is. Off never makes
+    # the request.
+    update.check = on
+
     # Colour overrides as #RRGGBB. Leave a value empty to use the theme's.
     color.canvas =
     color.ink =
@@ -262,6 +271,8 @@ struct Configuration: Equatable, Sendable {
             windowWidth = Self.number(value, in: Self.windowWidthRange) ?? windowWidth
         case "window.height":
             windowHeight = Self.number(value, in: Self.windowHeightRange) ?? windowHeight
+        case "update.check":
+            updateCheck = Self.flag(value) ?? updateCheck
         case "theme":
             let name = Theme.canonicalName(value)
             if !name.isEmpty { theme = name }
@@ -292,6 +303,7 @@ struct Configuration: Equatable, Sendable {
             ("theme", theme),
             ("window.width", Self.format(windowWidth)),
             ("window.height", Self.format(windowHeight)),
+            ("update.check", updateCheck ? "on" : "off"),
         ] + Self.colorEntries(colorOverrides)
     }
 

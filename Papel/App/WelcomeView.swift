@@ -12,6 +12,8 @@ struct WelcomeView: View {
     let greeting: String
     /// Observed so a theme or font change restyles the open window.
     @ObservedObject private var store = ConfigurationStore.shared
+    /// Set once the launch check finds a newer release.
+    @ObservedObject private var updates = UpdateCheck.observed
 
     static let columnWidth: CGFloat = 320
 
@@ -53,6 +55,11 @@ struct WelcomeView: View {
         .padding(.bottom, 72)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: Appearance.canvas))
+        .overlay(alignment: .topTrailing) {
+            if let release = updates.available {
+                UpdateBadge(release: release)
+            }
+        }
     }
 
     private var header: some View {
@@ -138,5 +145,30 @@ private struct WelcomeRow: View {
         .padding(.horizontal, -5.5)
         .onHover { hovering = $0 }
         .pointerStyle(.link)
+    }
+}
+
+/// The download icon in the window's top-right corner, where the zoom
+/// badge sits in a document window, shown only when a newer release is
+/// out. Hover names the version; a click opens the DMG link.
+private struct UpdateBadge: View {
+    let release: UpdateCheck.Release
+    @State private var hovering = false
+
+    var body: some View {
+        Button { UpdateCheck.download(release) } label: {
+            Image(systemName: "arrow.down.circle")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundStyle(Color(nsColor: hovering ? Appearance.ink : Appearance.labelInk))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Papel \(release.version) is available")
+        .accessibilityLabel("Download Papel \(release.version)")
+        .onHover { hovering = $0 }
+        .pointerStyle(.link)
+        .padding(.top, 12)
+        .padding(.trailing, 12)
     }
 }
