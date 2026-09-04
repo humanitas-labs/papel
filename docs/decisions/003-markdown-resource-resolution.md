@@ -1,8 +1,10 @@
 # ADR-003 :: Markdown resource resolution
 
-Status: Proposed
+Status: Accepted
 
-Last updated: `2026.08.31`
+Last updated: `2026.09.03`
+
+Acceptance recorded: `2026.09.03`; implemented by `MarkdownResource`, shared by links and images.
 
 > Papel resolves local resources from the Markdown file that names them. It does not infer a project, expand shell syntax, or fetch remote media automatically.
 

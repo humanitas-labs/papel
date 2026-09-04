@@ -6,6 +6,10 @@
 
 - Paste an image (a screenshot, a picture copied from a browser) and it lands as a PNG beside the document, named after the document and the moment (`notes-20260903-141205.png`), with `![](notes-20260903-141205.png)` inserted on its own line at the caret. A Finder copy or drop of an image file is copied the same way, keeping its format. `image.paste.directory = assets` in the config puts them in a subfolder of the document's, created on demand. An unsaved document runs the save sheet first, since there is no folder to write into. ⌘Z removes the line; the file stays (#36).
 
+## 0.5.2 — 2026.09.03
+
+- Align the README and welcome guide with configuration defaults and image-paste behavior. Clarify render-probe setup, update the architecture overview and decision index, and record the revised concealment mechanism without rewriting its history.
+
 ## 0.5.1 — 2026.09.03
 
 - A click no longer selects a character or two. The clicked paragraph revealed its concealed syntax while the mouse was still down, the text shifted under the pointer, and the tracking loop read the shift as a drag. The reveal now waits for mouse up (#42).

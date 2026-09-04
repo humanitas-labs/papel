@@ -2,6 +2,8 @@
 
 Date: `2026.08.31`
 
+Revision: [ADR-004](004-zero-advance-control-glyphs.md), recorded `2026.09.03`, replaces the `.null` glyph mechanism below with zero-advance control glyphs. The source-preservation and contextual-reveal decisions remain in force.
+
 > Papel conceals Markdown syntax during layout while preserving the source text exactly.
 
 ---

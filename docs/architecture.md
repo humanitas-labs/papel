@@ -1,6 +1,6 @@
 # Papel — Architecture
 
-Last updated: `2026.08.31`
+Last updated: `2026.09.03`
 
 > Papel is a native macOS editor for ordinary UTF-8 Markdown files. The file is the only persistent document state. Rendering, configuration, and window state remain outside it.
 
@@ -33,9 +33,9 @@ PapelTextView + MarkdownSyntaxStyler + PapelLayoutManager
 
 The styler replaces presentation attributes across the in-memory text storage, then annotates recognized Markdown constructs. It does not replace source characters. Restyling waits while an input method holds marked text.
 
-`PapelLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs. Glyph substitution renders list markers and arrows without editing their source characters. `PapelTextView` draws block quotes, code blocks, thematic breaks, inline-code chips, placeholders, and images around the laid-out text.
+`PapelLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs and draws inline-code chips. Glyph substitution renders list markers and arrows without editing their source characters. `PapelTextView` draws block quotes, code blocks, thematic breaks, placeholders, and images around the laid-out text.
 
-Block images use paragraph spacing to reserve a stable drawing band below the source line. The source remains present for selection, undo, copy, find, and saving. Local images are decoded through `ImageStore`, downsampled for display, cached for the session, and watched for changes on disk.
+Block images use paragraph spacing to reserve a stable drawing band below the source line. The source remains present for selection, undo, copy, find, and saving. `ImageStore` decodes and downsamples local images off the main actor according to visible and prefetched demand. Its cache evicts least-recently-used unpinned entries under byte and entry budgets; visible images remain pinned and can exceed the byte budget. Image changes on disk invalidate cached content.
 
 ## 3. Invariants and configuration
 
@@ -53,5 +53,6 @@ Block images use paragraph spacing to reserve a stable drawing band below the so
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-001](decisions/001-native-editor.md) | Native document lifecycle and AppKit editing surface | Accepted |
-| [ADR-002](decisions/002-contextual-syntax-concealment.md) | Contextual syntax concealment without source mutation | Accepted |
-| [ADR-003](decisions/003-markdown-resource-resolution.md) | File-relative Markdown resource resolution | Proposed |
+| [ADR-002](decisions/002-contextual-syntax-concealment.md) | Contextual syntax concealment without source mutation | Accepted; mechanism revised by ADR-004 |
+| [ADR-003](decisions/003-markdown-resource-resolution.md) | File-relative Markdown resource resolution | Accepted |
+| [ADR-004](decisions/004-zero-advance-control-glyphs.md) | Zero-advance control glyphs for concealed syntax | Accepted |

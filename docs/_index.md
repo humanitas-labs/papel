@@ -12,5 +12,7 @@
 | --- | --- |
 | [001](decisions/001-native-editor.md) | Native macOS document lifecycle with an AppKit editing core |
 | [002](decisions/002-contextual-syntax-concealment.md) | Conceal Markdown syntax during layout, preserving the source exactly |
+| [003](decisions/003-markdown-resource-resolution.md) | Resolve Markdown resources relative to the saved document |
+| [004](decisions/004-zero-advance-control-glyphs.md) | Use zero-advance control glyphs for concealed syntax; revises ADR-002 |
 
 `assets/` holds the README screenshot; `references/` holds visual references the design steers by.
