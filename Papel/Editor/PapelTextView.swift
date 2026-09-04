@@ -59,12 +59,14 @@ final class PapelTextView: NSTextView {
         stillSelecting: Bool
     ) {
         var ranges = ranges
-        if !hasMarkedText(), let text = textStorage?.string as NSString? {
+        if !hasMarkedText(), let storage = textStorage {
+            let text = storage.string as NSString
             let previous = selectedRanges.count == 1 ? selectedRanges[0].rangeValue : nil
             ranges = ranges.map { value in
                 let range = value.rangeValue
                 guard NSMaxRange(range) <= text.length else { return value }
-                let snapped = ListPrefix.snapped(range, previous: previous, in: text)
+                var snapped = ListPrefix.snapped(range, previous: previous, in: text)
+                snapped = ContinuationIndent.snapped(snapped, previous: previous, in: storage)
                 return snapped == range ? value : NSValue(range: snapped)
             }
         }
@@ -76,21 +78,34 @@ final class PapelTextView: NSTextView {
     /// Backspace at the start of an item's text removes the whole prefix,
     /// leaving a plain line; Delete right before the prefix does nothing.
     /// The prefix never holds the caret, so neither can eat into it.
+    /// Backspace at the text's start of a hard-wrapped item's continuation
+    /// removes the newline and the indent together, joining the lines;
+    /// Delete right before that newline does the same.
     override func deleteBackward(_ sender: Any?) {
-        guard isEditable, !hasMarkedText(),
+        guard isEditable, !hasMarkedText(), let storage = textStorage,
               let unit = ListPrefix.backspaceRange(in: string as NSString, selection: selectedRange())
+                ?? ContinuationIndent.backspaceRange(in: storage, selection: selectedRange())
         else { return super.deleteBackward(sender) }
+        remove(unit)
+    }
+
+    override func deleteForward(_ sender: Any?) {
+        guard !ListPrefix.deleteForwardIsBlocked(in: string as NSString, selection: selectedRange()) else { return }
+        if isEditable, !hasMarkedText(), let storage = textStorage,
+           let unit = ContinuationIndent.deleteForwardRange(in: storage, selection: selectedRange()) {
+            return remove(unit)
+        }
+        super.deleteForward(sender)
+    }
+
+    /// Removes `unit` as one undoable step and leaves the caret at its start.
+    private func remove(_ unit: NSRange) {
         breakUndoCoalescing()
         guard shouldChangeText(in: unit, replacementString: "") else { return }
         textStorage?.replaceCharacters(in: unit, with: "")
         didChangeText()
         setSelectedRange(NSRange(location: unit.location, length: 0))
         breakUndoCoalescing()
-    }
-
-    override func deleteForward(_ sender: Any?) {
-        guard !ListPrefix.deleteForwardIsBlocked(in: string as NSString, selection: selectedRange()) else { return }
-        super.deleteForward(sender)
     }
 
     /// The union of the paragraphs touched by the selection. Disjoint
