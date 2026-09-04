@@ -45,7 +45,9 @@ enum WelcomeDocument {
 
         ## 1. Paper is agent-friendly
 
-        Paper is made to work well with agents. Paste this into Claude Code, Codex, or whichever agent you use, and from then on you can have it open docs in Paper for you:
+        Paper is made to work well with agents.
+
+        Paste this into Claude Code, Codex, or whichever agent you use, and from then on you can have it open docs in Paper for you:
 
         ```
         \(agentPrompt)
