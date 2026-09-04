@@ -49,6 +49,19 @@ extension NSWindow {
         applyCorners()
     }
 
+    /// Places the window in the exact middle of its screen's visible area,
+    /// shrunk to fit it if need be. `center()` sits a window somewhat
+    /// above the middle by design, which reads as too high when the
+    /// window nearly fills the screen.
+    func centerExactly() {
+        guard let visible = (screen ?? NSScreen.main)?.visibleFrame else { center(); return }
+        var size = frame.size
+        size.width = min(size.width, visible.width)
+        size.height = min(size.height, visible.height)
+        let origin = NSPoint(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2)
+        setFrame(NSRect(origin: origin, size: size), display: false)
+    }
+
     /// The window rounds more than the system default: the content view
     /// is masked with a continuous corner and the window itself is
     /// clear, so the shadow follows the mask.

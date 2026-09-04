@@ -27,7 +27,7 @@ enum WelcomeWindow {
         window.isReleasedWhenClosed = false
         window.applyPapelChrome(minSize: NSSize(width: 640, height: 520))
         window.title = "Welcome"
-        window.center()
+        window.centerExactly()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate()
         self.window = window

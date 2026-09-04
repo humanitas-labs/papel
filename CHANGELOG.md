@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The welcome window opens in the exact middle of the screen. AppKit's `center()` sits a window a little above the middle by design, and at the default size that read as too high; it also shrinks to the screen's visible area when the configured size is larger.
 - An image directly under a list item, with no blank line between, keeps its band. The list pass took the line for a hard-wrapped continuation of the item and replaced the spacing the image had reserved, so the text below drew over the picture.
 - Spelling and grammar checking can be turned off: `spelling = off` and `grammar = off` in the config, or the two switches under Settings ▸ Text. Turning one off removes its underlines at once and applies to every open window.
 - Lists sit closer to the margin: bullets, numbers, and task circles are indented 0.8 of the font size, 12 points at the default 15, instead of 1.4, which put a task's circle and text too far in. `list.indent` in the config, and an Indent slider under Settings ▸ Lists, set the multiple; 0 puts the markers on the margin. Quotes keep their inset.
