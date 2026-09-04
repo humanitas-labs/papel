@@ -25,7 +25,7 @@ enum WelcomeDocument {
     static let agentPrompt = """
         Add the following to my global instructions:
 
-        "Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines."
+        > Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
 
         Then check that the `paper` command works: write a short Markdown note to a temporary file and open it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
 

@@ -8,13 +8,19 @@ struct ZoomBadge: View {
     @ObservedObject private var zoom = Zoom.observed
     @ObservedObject private var store = ConfigurationStore.shared
     @State private var flashed = false
-    @State private var hovering = false
+    @State private var zoneHovering = false
+    @State private var pillHovering = false
     @State private var editing = false
+    @State private var visible = false
     @State private var draft = ""
     @State private var hide: Task<Void, Never>?
+    @State private var settle: Task<Void, Never>?
     @FocusState private var focused: Bool
 
-    private var visible: Bool { flashed || hovering || editing }
+    /// The pill, once shown, sits over the zone and takes the hover from
+    /// it, so both report; either keeps the pill up, and a short grace
+    /// before hiding rides over the hand-off.
+    private var wanted: Bool { flashed || zoneHovering || pillHovering || editing }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -22,13 +28,26 @@ struct ZoomBadge: View {
             Color.clear
                 .frame(width: 180, height: 64)
                 .contentShape(Rectangle())
-                .onHover { hovering = $0 }
+                .onHover { zoneHovering = $0 }
             pill
+                .onHover { pillHovering = $0 }
                 .padding(.top, 14)
                 .padding(.trailing, 16)
                 .opacity(visible ? 1 : 0)
                 .allowsHitTesting(visible)
                 .animation(.easeInOut(duration: 0.18), value: visible)
+        }
+        .onChange(of: wanted, initial: true) { _, wanted in
+            settle?.cancel()
+            if wanted {
+                visible = true
+            } else {
+                settle = Task {
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    visible = false
+                }
+            }
         }
         .onChange(of: zoom.scale) { _, _ in flash() }
         .onAppear { if zoom.scale != 1 { flash() } }
@@ -50,12 +69,7 @@ struct ZoomBadge: View {
             }
             Text("%")
         }
-        .font(.system(size: 12, weight: .medium, design: .rounded).monospacedDigit())
-        .foregroundStyle(Color(nsColor: Appearance.labelInk))
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
-        .background(Color(nsColor: Appearance.codeBlockBackground), in: Capsule())
-        .contentShape(Capsule())
+        .badgePill()
         .onTapGesture { if !editing { begin() } }
     }
 

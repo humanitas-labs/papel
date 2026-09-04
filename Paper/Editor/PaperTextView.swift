@@ -22,6 +22,20 @@ final class PaperTextView: NSTextView {
         }
     }
 
+    // MARK: - File ▸ Copy Path
+
+    /// ⌥⌘C: the file's absolute path as plain text. The window hides its
+    /// title bar, so this stands in for the proxy icon.
+    @objc func copyPath(_ sender: Any?) {
+        guard let documentURL else { return }
+        DocumentPath.copy(documentURL)
+    }
+
+    override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
+        if item.action == #selector(copyPath(_:)) { return documentURL != nil }
+        return super.validateUserInterfaceItem(item)
+    }
+
     init() {
         let storage = NSTextStorage()
         let layoutManager = PaperLayoutManager()

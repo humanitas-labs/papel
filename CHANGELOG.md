@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The file name, in the top-left corner. The window hides its title bar, so nothing said which file was open; two testers asked. A pill to the right of the traffic lights, the zoom badge's mirror, shows the name for a moment when a document opens or is saved under another name, and comes back while the pointer rests in that corner. `Untitled` before a save; the full path is the tooltip. A click opens a menu: Copy Path, Copy Name, Show in Finder. File ▸ Copy Path, ⌥⌘C, puts the absolute path on the clipboard as plain text, no `file://`, for pasting into a prompt; it is disabled until the document is saved (#55, #54).
 - Papel is Paper. The app, the bundle (`org.humanitas.paper`), the `paper` command, the config directory (`~/.config/paper`), the built-in theme, the repository (`humanitas-labs/paper`; old links redirect), and the download (`Paper.dmg`) all take the name. Settings and themes under `~/.config/papel` are not migrated; copy the directory across. A Papel 0.6.1 cannot update itself into Paper, since its check of the downloaded app is bound to the old identifier: download the DMG once, and drop `Papel.app` in the bin along with the `papel` link. Earlier changelog entries keep the old name.
 
 ## 0.6.1 — 2026.09.04

@@ -40,8 +40,8 @@ struct WelcomeDocumentTests {
 
     @Test func promptChecksTheCommandAndOffersTheDefault() {
         let prompt = WelcomeDocument.agentPrompt
-        #expect(prompt.hasPrefix("Add the following to my global instructions:\n\n\"Markdown files are read in Paper"))
-        #expect(prompt.contains("mid-paragraph lines.\"\n\nThen check that"))
+        #expect(prompt.hasPrefix("Add the following to my global instructions:\n\n> Markdown files are read in Paper"))
+        #expect(prompt.contains("mid-paragraph lines.\n\nThen check that"))
         #expect(prompt.contains("check that the `paper` command works"))
         #expect(prompt.contains("ask me explicitly whether I want Paper to be the default app for Markdown files"))
         #expect(prompt.contains("Do not change anything until I answer. Only if I say yes, run `paper --set-default`."))

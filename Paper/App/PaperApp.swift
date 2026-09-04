@@ -40,6 +40,11 @@ struct PaperApp: App {
                 Button("Add Link") { NSApp.sendAction(#selector(PaperTextView.insertLink(_:)), to: nil, from: nil) }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            // The path, as plain text, for pasting into a prompt; Finder's key.
+            CommandGroup(after: .saveItem) {
+                Button("Copy Path") { NSApp.sendAction(#selector(PaperTextView.copyPath(_:)), to: nil, from: nil) }
+                    .keyboardShortcut("c", modifiers: [.command, .option])
+            }
             // SwiftUI's document app leaves the Find submenu out of Edit, so
             // nothing would reach find. Built here; the scroll view that
             // owns the find pill answers (`PaperScrollView`).
@@ -91,6 +96,7 @@ private struct DocumentView: View {
         MarkdownEditor(text: $document.text, fileURL: fileURL)
             .background(Color(nsColor: Appearance.canvas))
             .background(WindowConfigurator())
+            .overlay(alignment: .topLeading) { FileBadge(fileURL: fileURL) }
             .overlay(alignment: .topTrailing) { ZoomBadge() }
             .overlay(alignment: .top) { UpdateToast().ignoresSafeArea(.container, edges: .top) }
             .frame(minWidth: 640, minHeight: 520)

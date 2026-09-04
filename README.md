@@ -3,7 +3,6 @@
 > A quiet, native markdown editor for macOS.
 
 [Download for Mac](https://github.com/humanitas-labs/paper/releases/latest/download/Paper.dmg) · macOS 15 or later · free, MIT
-
 ![Paper showing its own README: a heading, an italic quote behind a rule, and a photograph of a raked rock garden](docs/assets/paper.png)
 
 Paper is the simplest markdown editor imaginable.
@@ -26,7 +25,7 @@ Give this prompt to your agent of choice (it is also in the guide Paper opens on
 
 > Add the following to my global instructions:
 >
-> "Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines."
+> > Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
 >
 > Then check that the `paper` command works: write a short Markdown note to a temporary file and open it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
 >
@@ -47,7 +46,10 @@ Give this prompt to your agent of choice (it is also in the guide Paper opens on
 | double-click an image | open it in Quick Look |
 | paste or drop an image | saved beside the document, inserted as `![](…)` |
 | ⌘+ / ⌘− / ⌘0 | zoom the view in and out, back to actual size; click the badge at the top right to type a percentage; per machine, never written to the config |
+| ⌥⌘C | copy the file's path as plain text |
 | ⌘, | settings |
+
+The window has no title bar. Rest the pointer in the top-left corner and a pill shows the file's name, with the full path as its tooltip; click it to copy the path or the name, or to show the file in Finder.
 
 Pasting or dropping an image into an unsaved document asks you to save first. Images go beside the document by default; set `image.paste.directory = assets` to use a relative subfolder instead. Undo removes the inserted Markdown, but keeps the image file.
 
