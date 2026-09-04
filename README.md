@@ -8,7 +8,7 @@ Papel is the simplest markdown editor imaginable.
 
 There is nothing other than the text, by design.
 
-In most editors, every button is a standing invitation to do something other than write (or read). Here, there are no controls, and only one document opens per own window so you can focus with no distractions. Every choice has been made in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/papel/fork) if that philosophy doesn’t suit your needs.
+In most editors, every button seems to invite you to do something other than write (or read). Here, there are no controls, and only one document opens per own window so you can focus with no distractions. Every choice has been made in favor of singular focus. Feel free to [fork](https://github.com/humanitas-labs/papel/fork) if that philosophy doesn’t suit your needs.
 
 It is a descendant of Obsidian’s file > app philosophy. Apps are ephemeral, but files last—and you should own them. Everything is just a file on your computer.
 
