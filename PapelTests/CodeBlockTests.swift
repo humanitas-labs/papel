@@ -62,6 +62,56 @@ struct CodeBlockTests {
         #expect(storage.attribute(.concealable, at: 0, effectiveRange: nil) == nil)
     }
 
+    /// A bare fence typed above a paragraph and a real ```sh block stays a
+    /// literal line: the sh fence opens its own block instead of sitting
+    /// inside the new one, so the paragraph is not swallowed (#39).
+    @Test
+    func aFenceTypedAboveAnotherBlockDoesNotSwallowIt() throws {
+        let source = "## Command line\n```\nInstall it with the command below.\n\n```sh\nbrew install papel\n```\nafter\n"
+        let textView = styledView(source)
+        let storage = try #require(textView.textStorage)
+        let text = textView.string as NSString
+        let typed = text.range(of: "```\n").location
+        let prose = text.range(of: "Install").location
+        let sh = text.range(of: "```sh").location
+        let code = text.range(of: "brew").location
+        let after = text.range(of: "after").location
+        #expect(storage.attribute(.codeBlock, at: typed, effectiveRange: nil) == nil, "the typed fence is prose")
+        #expect(storage.attribute(.concealable, at: typed + 1, effectiveRange: nil) == nil, "and shows as typed")
+        #expect(storage.attribute(.codeBlock, at: prose, effectiveRange: nil) == nil, "the paragraph is prose")
+        #expect(storage.attribute(.codeBlock, at: sh, effectiveRange: nil) != nil, "the sh block is a block")
+        #expect(storage.attribute(.concealable, at: sh + 1, effectiveRange: nil) != nil, "whose fence conceals")
+        #expect(storage.attribute(.font, at: code, effectiveRange: nil) as? NSFont == Appearance.codeFont())
+        #expect(storage.attribute(.codeBlock, at: after, effectiveRange: nil) == nil)
+        #expect(MarkdownSyntaxStyler.fencedBlocks(in: source, range: NSRange(location: 0, length: text.length)).count == 1)
+
+        // Once the typed fence gets its own closer, it is a block of its own
+        // and the sh block is untouched.
+        let closed = styledView("```\nInstall it.\n```\n\n```sh\nbrew install papel\n```\n")
+        let closedStorage = try #require(closed.textStorage)
+        let closedText = closed.string as NSString
+        #expect(closedStorage.attribute(.codeBlock, at: closedText.range(of: "Install").location, effectiveRange: nil) != nil)
+        #expect(closedStorage.attribute(.codeBlock, at: closedText.range(of: "brew").location, effectiveRange: nil) != nil)
+        #expect(MarkdownSyntaxStyler.fencedBlocks(in: closed.string, range: NSRange(location: 0, length: closedText.length)).count == 2)
+    }
+
+    /// The CommonMark ways of showing a fence inside a fence still hold: a
+    /// ``` line inside ~~~ is content, and so is ```sh inside ````.
+    @Test
+    func fencesOfTheOtherCharacterOrShorterAreContent() throws {
+        for source in ["~~~\n```sh\necho\n```\n~~~\n", "````\n```sh\necho\n```\n````\n"] {
+            let textView = styledView(source)
+            let storage = try #require(textView.textStorage)
+            let text = textView.string as NSString
+            let inner = text.range(of: "```sh").location
+            let echo = text.range(of: "echo").location
+            #expect(storage.attribute(.codeBlock, at: inner, effectiveRange: nil) != nil)
+            #expect(storage.attribute(.concealable, at: inner + 1, effectiveRange: nil) == nil, "the inner fence is literal content")
+            #expect(storage.attribute(.font, at: echo, effectiveRange: nil) as? NSFont == Appearance.codeFont())
+            #expect(MarkdownSyntaxStyler.fencedBlocks(in: source, range: NSRange(location: 0, length: text.length)).count == 1)
+        }
+    }
+
     @Test
     func tildeFencesWorkToo() throws {
         let textView = styledView("~~~\ncode\n~~~")

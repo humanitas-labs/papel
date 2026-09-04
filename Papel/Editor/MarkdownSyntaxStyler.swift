@@ -97,12 +97,10 @@ final class MarkdownSyntaxStyler {
     private static let blockQuotePattern = try! NSRegularExpression(
         pattern: #"(?m)^([\t ]*(?:>[\t ]?)+)(.*)$"#
     )
-    /// A fenced code block: an opening fence line (with an optional info
-    /// string), its lines, and a matching closing fence. An unterminated
-    /// fence stays ordinary text, so a half-typed fence never swallows the
-    /// rest of the document.
-    private static let codeBlockPattern = try! NSRegularExpression(
-        pattern: #"(?ms)^(`{3,}|~{3,})[^\n]*$\n(.*?)^\1[`~]*[\t ]*$"#
+    /// A fence line at the margin: three or more backticks or tildes, then
+    /// whatever info string follows. Blocks are paired by `fencedBlocks`.
+    private static let fenceLinePattern = try! NSRegularExpression(
+        pattern: #"^(`{3,}|~{3,})(.*)$"#
     )
 
     func apply(to textView: NSTextView) {
@@ -164,7 +162,7 @@ final class MarkdownSyntaxStyler {
             to: storage, source: source, range: fullRange,
             documentURL: (textView as? PapelTextView)?.documentURL,
             width: Self.measure(of: textView),
-            excluding: Self.fencedCodeRanges(in: source, range: fullRange)
+            excluding: Self.fencedBlocks(in: source, range: fullRange)
                 + Self.commentRanges(in: source, range: fullRange)
         )
         applyListMarkers(to: storage, source: source, range: fullRange)
@@ -445,9 +443,8 @@ final class MarkdownSyntaxStyler {
         range: NSRange
     ) {
         let text = source as NSString
-        Self.codeBlockPattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            guard let match else { return }
-            let block = text.paragraphRange(for: match.range)
+        for blockRange in Self.fencedBlocks(in: source, range: range) {
+            let block = text.paragraphRange(for: blockRange)
 
             var attributes = Self.baseAttributes
             attributes[.font] = Appearance.codeFont()
@@ -458,7 +455,7 @@ final class MarkdownSyntaxStyler {
                 indent: Appearance.codeBlockInset, spacing: 0
             )
             storage.setAttributes(attributes, range: block)
-            let closingLine = text.paragraphRange(for: NSRange(location: NSMaxRange(match.range) - 1, length: 0))
+            let closingLine = text.paragraphRange(for: NSRange(location: NSMaxRange(blockRange) - 1, length: 0))
             storage.addAttribute(
                 .paragraphStyle,
                 value: Appearance.flushParagraphStyle(indent: Appearance.codeBlockInset),
@@ -466,7 +463,7 @@ final class MarkdownSyntaxStyler {
             )
             storage.addAttribute(.codeBlock, value: true, range: block)
 
-            let openingLine = text.paragraphRange(for: NSRange(location: match.range.location, length: 0))
+            let openingLine = text.paragraphRange(for: NSRange(location: blockRange.location, length: 0))
             for line in [openingLine, closingLine] {
                 var fence = line
                 while fence.length > 0 {
@@ -701,7 +698,7 @@ final class MarkdownSyntaxStyler {
     /// The ranges of HTML comments outside fenced code, from the source
     /// alone, for the passes that run before the comment pass.
     private static func commentRanges(in source: String, range: NSRange) -> [NSRange] {
-        let fenced = fencedCodeRanges(in: source, range: range)
+        let fenced = fencedBlocks(in: source, range: range)
         var ranges: [NSRange] = []
         commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !fenced.contains(where: { NSLocationInRange(match.range.location, $0) }) else { return }
@@ -732,16 +729,56 @@ final class MarkdownSyntaxStyler {
         }
     }
 
-    /// The ranges of fenced code blocks. The block-image pass runs before
-    /// the code pass (which resets whole lines), so `isCode` cannot see the
-    /// code font yet; an image-looking line inside a fence renders literal
-    /// but must also not resolve, decode, or watch the file it names.
-    private static func fencedCodeRanges(in source: String, range: NSRange) -> [NSRange] {
-        var ranges: [NSRange] = []
-        codeBlockPattern.enumerateMatches(in: source, range: range) { match, _, _ in
-            if let match { ranges.append(match.range) }
+    /// The ranges of fenced code blocks, from the first character of the
+    /// opening fence to the last of the closing one. The block-image pass
+    /// runs before the code pass (which resets whole lines), so `isCode`
+    /// cannot see the code font yet; an image-looking line inside a fence
+    /// renders literal but must also not resolve, decode, or watch the file
+    /// it names.
+    ///
+    /// Fences pair as CommonMark says, with one departure for the person
+    /// typing: a fence line of the opener's character, at least as long,
+    /// that carries an info string opens a new block rather than sitting as
+    /// content, and the fence that was open is left unclosed, which makes it
+    /// prose. So a bare ``` typed above a real ```sh block stays a literal
+    /// line until it gets its own closer, instead of swallowing the
+    /// paragraph and the block below into one band (#39). A fence of the
+    /// other character, or a shorter one, is content as before, so ~~~
+    /// around a ``` example, or four backticks around three, still work.
+    /// An unterminated fence is never a block, so a half-typed fence never
+    /// swallows the rest of the document.
+    static func fencedBlocks(in source: String, range: NSRange) -> [NSRange] {
+        let text = source as NSString
+        var blocks: [NSRange] = []
+        var open: (character: unichar, length: Int, start: Int)?
+        var location = range.location
+        let end = NSMaxRange(range)
+        while location < end {
+            let paragraph = text.paragraphRange(for: NSRange(location: location, length: 0))
+            defer { location = NSMaxRange(paragraph) }
+            var line = paragraph
+            while line.length > 0 {
+                let last = text.character(at: NSMaxRange(line) - 1)
+                guard last == 0x0A || last == 0x0D else { break }
+                line.length -= 1
+            }
+            guard let match = fenceLinePattern.firstMatch(in: source, range: line) else { continue }
+            let fence = match.range(at: 1)
+            let character = text.character(at: fence.location)
+            let info = text.substring(with: match.range(at: 2)).trimmingCharacters(in: .whitespaces)
+            guard let opener = open else {
+                open = (character, fence.length, line.location)
+                continue
+            }
+            guard character == opener.character, fence.length >= opener.length else { continue }
+            if info.isEmpty {
+                blocks.append(NSRange(location: opener.start, length: NSMaxRange(line) - opener.start))
+                open = nil
+            } else {
+                open = (character, fence.length, line.location)
+            }
         }
-        return ranges
+        return blocks
     }
 
     /// The GitHub-style slug of a heading: lowercased, punctuation dropped
