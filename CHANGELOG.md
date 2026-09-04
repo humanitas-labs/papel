@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The corner badges show a hand pointer on hover: the file name, the zoom percentage, and the update arrow. The text view heard every mouse move as first responder and forced the I-beam back over them.
+
 ## 0.7.2 — 2026.09.04
 
 - Code blocks have a copy icon. Hover a block and it fades in at the top-right corner; a click puts the block's lines on the pasteboard, fences and info string left out, and the icon shrinks into a check for a moment before turning back.

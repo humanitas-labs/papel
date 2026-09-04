@@ -102,8 +102,8 @@ private struct MenuAnchor: NSViewRepresentable {
             addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeInKeyWindow], owner: self))
         }
 
-        override func mouseEntered(with event: NSEvent) { onHover?(true) }
-        override func mouseExited(with event: NSEvent) { onHover?(false) }
+        override func mouseEntered(with event: NSEvent) { onHover?(true); NSCursor.pointingHand.set() }
+        override func mouseExited(with event: NSEvent) { onHover?(false); NSCursor.arrow.set() }
         override func mouseDown(with event: NSEvent) { popUp() }
         override func rightMouseDown(with event: NSEvent) { popUp() }
 

@@ -70,6 +70,7 @@ struct ZoomBadge: View {
             Text("%")
         }
         .badgePill()
+        .pointerStyle(editing ? .default : .link)
         .onTapGesture { if !editing { begin() } }
     }
 

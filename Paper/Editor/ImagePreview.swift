@@ -22,7 +22,13 @@ extension PaperTextView: @preconcurrency QLPreviewPanelDataSource, @preconcurren
     /// Messages, and over a code block's copy icon the hand. The text view
     /// sets its cursor on every mouse move, over any cursor rects, so the
     /// move itself is where the other cursors go in.
+    /// Moves reach the first responder, so the text view hears them even
+    /// when the pointer is over a badge in a corner; those own their own
+    /// pointer, so the I-beam is not forced back over them.
     override func mouseMoved(with event: NSEvent) {
+        if let content = window?.contentView, let hit = content.hitTest(event.locationInWindow), hit !== self, !hit.isDescendant(of: self) {
+            return
+        }
         let point = convert(event.locationInWindow, from: nil)
         if codeCopyButtons.contains(where: { $0.isOnIcon(point) }) {
             NSCursor.pointingHand.set()
