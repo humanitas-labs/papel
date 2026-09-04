@@ -22,15 +22,17 @@ Lastly, it is free and open. We will continue our campaign to make delightful so
 
 `paper notes.md` opens a document from the terminal, creating it first when it doesn't exist yet; `paper` alone opens the app. Paper installs it on first launch when a directory you own is on your shell's PATH, such as `/opt/homebrew/bin` or `~/.local/bin`, and repairs the link when the app moves. When only `/usr/local/bin` is available, install it from Settings (⌘,) under CLI, which asks for your password; the same section shows where the command lives and removes it. The launcher itself is at `Paper.app/Contents/Resources/paper`.
 
-Give this prompt to your agent of choice (it is also in the guide Paper opens on first launch, and under Guide on the welcome window):
+Give this prompt to your agent of choice:
 
-> Add the following to my global instructions:
->
-> > Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
->
-> Then check that the `paper` command works: write a short Markdown note to a temporary file and open it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
->
-> Finally, ask me explicitly whether I want Paper to be the default app for Markdown files, and explain what that means: double-clicking a .md file in Finder would open it in Paper instead of the current app. Do not change anything until I answer. Only if I say yes, run `paper --set-default`.
+```
+Add this to my global instructions:
+
+> Markdown files are read in Paper, a native macOS editor. To show me a document, open it with `paper <file.md>`. Paper reloads from disk, so after the first open just keep editing the file. Never hard-wrap prose in Markdown: a paragraph is one source line.
+
+Then check that the `paper` command works by writing a short note to a temporary file and opening it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
+
+If I am someone who works in the terminal, also tell me that `paper <file>` opens any Markdown file from the shell, and that `paper --set-default` makes Paper the app that opens Markdown files when I double-click them. Ask before running that. If I am not, skip this.
+```
 
 ## Default app for Markdown
 
