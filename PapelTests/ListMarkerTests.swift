@@ -149,15 +149,17 @@ struct ListMarkerTests {
         #expect(range == NSRange(location: 38, length: 1), "a leading tab")
         #expect(storage.attribute(.concealable, at: 50, effectiveRange: nil) == nil, "an unindented continuation has nothing to hide")
 
-        // Off the active paragraph the continuation's text starts where the
-        // item's text does; on it, the source whitespace shows.
+        // The continuation's text starts where the item's text does, off
+        // the active paragraph and on it alike: the indent is pinned, so
+        // the caret entering the line moves nothing sideways.
         let itemX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 2)).x
         let concealedX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 26)).x
         #expect(abs(itemX - concealedX) < 0.5, "item text at \(itemX), continuation at \(concealedX)")
         textView.setSelectedRange(NSRange(location: 30, length: 0))
         layoutManager.ensureLayout(for: textView.textContainer!)
-        let revealedX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 26)).x
-        #expect(revealedX > itemX + 1)
+        let activeX = layoutManager.location(forGlyphAt: layoutManager.glyphIndexForCharacter(at: 26)).x
+        #expect(abs(itemX - activeX) < 0.5, "on the active paragraph the continuation stays at \(itemX), not \(activeX)")
+        #expect(layoutManager.isConcealed(characterAt: 24), "the indent stays concealed under the caret")
         #expect(textView.string == text)
     }
 

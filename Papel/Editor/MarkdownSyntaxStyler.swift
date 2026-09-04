@@ -415,11 +415,14 @@ final class MarkdownSyntaxStyler {
                     )
                     // Source that hard-wraps under the marker indents the
                     // continuation with spaces; the paragraph already sits
-                    // under the text, so that whitespace is concealed off the
-                    // active paragraph rather than rendered on top.
+                    // under the text, so that whitespace is concealed rather
+                    // than rendered on top. It stays concealed on the active
+                    // paragraph too: revealing it would shift the line
+                    // sideways under the caret with nothing new to see.
                     let leading = Self.leadingWhitespace(of: continuation, in: source)
                     if leading.length > 0 {
                         storage.addAttribute(.concealable, value: true, range: leading)
+                        storage.addAttribute(.pinned, value: true, range: leading)
                     }
                 }
             }
@@ -716,7 +719,7 @@ final class MarkdownSyntaxStyler {
         Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .strikethroughStyle, .linkDestination,
-                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth, .listMarker] {
+                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth, .listMarker, .pinned] {
                 storage.removeAttribute(key, range: match.range)
             }
             storage.addAttribute(.font, value: Appearance.bodyFont(), range: match.range)

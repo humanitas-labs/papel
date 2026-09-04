@@ -38,6 +38,11 @@ extension NSAttributedString.Key {
     /// substitute holds on the active paragraph too, so an item never
     /// reflows when the caret enters it (#50).
     static let listMarker = NSAttributedString.Key("papel.listMarker")
+    /// Marks concealable source that stays concealed on the active
+    /// paragraph too: the indent a hard-wrapped list item's continuation
+    /// carries, which nobody edits by hand and whose reveal would shift
+    /// the line sideways under the caret with nothing new to see.
+    static let pinned = NSAttributedString.Key("papel.pinned")
     /// Marks a character that, while concealed, draws nothing and takes the
     /// width the value (a `CGFloat`) names: room for something the text view
     /// draws itself, like a task item's circle.
@@ -155,7 +160,13 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         guard let storage = textStorage, index < storage.length else { return false }
         let attributes = storage.attributes(at: index, effectiveRange: nil)
         guard attributes[.concealable] != nil else { return false }
-        return !NSLocationInRange(index, activeRange) || attributes[.taskBox] != nil
+        return !NSLocationInRange(index, activeRange) || Self.isPinned(attributes)
+    }
+
+    /// Whether the run's rendering holds on the active paragraph: a task
+    /// prefix, a list marker, or source marked `.pinned`.
+    static func isPinned(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+        attributes[.taskBox] != nil || attributes[.listMarker] != nil || attributes[.pinned] != nil
     }
 
     private func clip(_ range: NSRange) -> NSRange? {
@@ -257,7 +268,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     ) -> NSLayoutManager.ControlCharacterAction {
         guard let storage = textStorage, charIndex < storage.length else { return action }
         let attributes = storage.attributes(at: charIndex, effectiveRange: nil)
-        guard !NSLocationInRange(charIndex, activeRange) || attributes[.taskBox] != nil else { return action }
+        guard !NSLocationInRange(charIndex, activeRange) || Self.isPinned(attributes) else { return action }
         if attributes[.reservedWidth] != nil { return .whitespace }
         guard attributes[.concealable] != nil else { return action }
         let character = (storage.string as NSString).character(at: charIndex)
@@ -332,7 +343,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         marks.concealable = attributes[.concealable] != nil
         marks.substitute = (attributes[.glyphSubstitute] as? String)?.first
         marks.reservedWidth = attributes[.reservedWidth] as? CGFloat
-        marks.pinned = attributes[.taskBox] != nil || attributes[.listMarker] != nil
+        marks.pinned = Self.isPinned(attributes)
         return marks
     }
 

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A hard-wrapped list item no longer shifts sideways when the caret enters its continuation line. The indent before the wrapped text stayed concealed off the active paragraph and revealed on it, so the line jumped right by a space or two with nothing new to see; the indent now stays concealed on the active paragraph as well, like the marker.
 - The welcome window opens in the exact middle of the screen. AppKit's `center()` sits a window a little above the middle by design, and at the default size that read as too high; it also shrinks to the screen's visible area when the configured size is larger.
 - An image directly under a list item, with no blank line between, keeps its band. The list pass took the line for a hard-wrapped continuation of the item and replaced the spacing the image had reserved, so the text below drew over the picture.
 - Spelling and grammar checking can be turned off: `spelling = off` and `grammar = off` in the config, or the two switches under Settings ▸ Text. Turning one off removes its underlines at once and applies to every open window.
