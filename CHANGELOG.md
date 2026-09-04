@@ -26,6 +26,7 @@
 
 ## 0.3.1 — 2026.09.02
 
+- File > Export > PDF writes a snapshot of the page (measure, decorations, concealed syntax) without changing the Markdown file. The page is the measure plus a margin, on the light canvas, not the live window's width or dark appearance. Block images that have not scrolled into view are decoded for the export so their bands are not empty panels.
 - Rename the app from Paper to Papel: target, bundle identifier (`org.humanitas.papel`), attribute and notification keys, the `papel` command-line launcher, the DMG, and the configuration directory. The configuration directory is now `~/.config/papel/`. The site moves to papel.sh.
 - Add the `enso` theme, white under the ink #2D2B29 and, in the dark appearance, Spatial's #191B1D under #F4F9FA, and ship with it, line height 1.2, and paragraph spacing 12 as the defaults.
 - Weights are numbers: `font.weight` (new, default 400) and `heading.weight` (default 500) take any value from 100 to 900, or the CSS names. New York and any variable face take the exact value on the weight axis; a static family takes its nearest face. Bold runs three hundred above the body weight. Settings gets sliders for both.

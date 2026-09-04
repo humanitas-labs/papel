@@ -37,6 +37,13 @@ struct PapelApp: App {
                 Button("Add Link") { NSApp.sendAction(#selector(PapelTextView.insertLink(_:)), to: nil, from: nil) }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            CommandGroup(after: .saveItem) {
+                Menu("Export") {
+                    Button("PDF...") {
+                        PDFExport.present()
+                    }
+                }
+            }
             CommandGroup(replacing: .toolbar) {
                 Button("Toggle Full Screen") {
                     NSApp.keyWindow?.toggleFullScreen(nil)
