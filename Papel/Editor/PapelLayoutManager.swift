@@ -86,41 +86,44 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         guard attrName == .spellingState else {
             return super.addTemporaryAttribute(attrName, value: value, forCharacterRange: charRange)
         }
-        for range in proseRanges(in: charRange) {
+        for range in proseRanges(in: charRange, mark: value) {
             super.addTemporaryAttribute(attrName, value: value, forCharacterRange: range)
         }
     }
 
     override func addTemporaryAttributes(_ attrs: [NSAttributedString.Key: Any], forCharacterRange charRange: NSRange) {
-        guard attrs[.spellingState] != nil else {
+        guard let mark = attrs[.spellingState] else {
             return super.addTemporaryAttributes(attrs, forCharacterRange: charRange)
         }
         var rest = attrs
         rest[.spellingState] = nil
         if !rest.isEmpty { super.addTemporaryAttributes(rest, forCharacterRange: charRange) }
-        for range in proseRanges(in: charRange) {
-            super.addTemporaryAttribute(.spellingState, value: attrs[.spellingState]!, forCharacterRange: range)
+        for range in proseRanges(in: charRange, mark: mark) {
+            super.addTemporaryAttribute(.spellingState, value: mark, forCharacterRange: range)
         }
     }
 
     override func setTemporaryAttributes(_ attrs: [NSAttributedString.Key: Any], forCharacterRange charRange: NSRange) {
-        guard attrs[.spellingState] != nil else {
+        guard let mark = attrs[.spellingState] else {
             return super.setTemporaryAttributes(attrs, forCharacterRange: charRange)
         }
         var rest = attrs
         rest[.spellingState] = nil
         super.setTemporaryAttributes(rest, forCharacterRange: charRange)
-        for range in proseRanges(in: charRange) {
-            super.addTemporaryAttribute(.spellingState, value: attrs[.spellingState]!, forCharacterRange: range)
+        for range in proseRanges(in: charRange, mark: mark) {
+            super.addTemporaryAttribute(.spellingState, value: mark, forCharacterRange: range)
         }
     }
 
     /// The parts of `charRange` that are not code: not a fenced block, not
-    /// an inline span, not a link or image address.
-    private func proseRanges(in charRange: NSRange) -> [NSRange] {
+    /// an inline span, not a link or image address. A spelling mark (not a
+    /// grammar one) on a token that is not a word is dropped whole.
+    private func proseRanges(in charRange: NSRange, mark: Any) -> [NSRange] {
         guard let storage = textStorage else { return [charRange] }
         let clipped = NSIntersectionRange(charRange, NSRange(location: 0, length: storage.length))
         guard clipped.length > 0 else { return [] }
+        let isSpelling = (mark as? NSNumber)?.intValue == NSAttributedString.SpellingState.spelling.rawValue
+        if isSpelling, !SpellCheckFilter.keepsMark(at: clipped, in: storage.string as NSString) { return [] }
         var ranges: [NSRange] = []
         storage.enumerateAttributes(in: clipped) { attributes, range, _ in
             guard !PapelTextView.isCode(attributes) else { return }

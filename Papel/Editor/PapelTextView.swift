@@ -1239,9 +1239,15 @@ final class PapelTextView: NSTextView {
         )
     }
 
-    /// The results that touch no code and no address.
+    /// The results that touch no code and no address, less the spelling
+    /// results on tokens that are not words (`SpellCheckFilter`).
     func proseResults(_ results: [NSTextCheckingResult]) -> [NSTextCheckingResult] {
-        results.filter { !touchesCode($0.range) }
+        let text = string as NSString
+        return results.filter { result in
+            guard !touchesCode(result.range) else { return false }
+            guard result.resultType == .spelling else { return true }
+            return SpellCheckFilter.keepsMark(at: result.range, in: text)
+        }
     }
 
     /// Whether any character in `range` is code — inside a fenced block
