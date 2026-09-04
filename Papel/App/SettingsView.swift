@@ -164,6 +164,13 @@ struct SettingsView: View {
                 Toggle("Font smoothing", isOn: binding(\.fontSmoothing))
             }
 
+            Section("Text") {
+                Toggle("Spelling", isOn: binding(\.spelling))
+                Toggle("Grammar", isOn: binding(\.grammar))
+                Text("Checking as you type, underlined; code and link addresses are never checked.")
+                    .font(.caption)
+            }
+
             Section("Lists") {
                 numberRow("Indent", binding(\.listIndent), in: Configuration.listIndentRange, unit: "×")
                 Text("How far bullets, numbers, and task circles sit from the text margin, in font sizes.")

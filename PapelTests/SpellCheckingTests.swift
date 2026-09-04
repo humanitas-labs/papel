@@ -111,4 +111,44 @@ struct SpellCheckingTests {
 
         #expect(kept == [linkText, alt], "link text and alt text are prose; the addresses are not")
     }
+
+    @Test
+    func theConfigTurnsCheckingOffAndDropsItsMarks() throws {
+        let store = ConfigurationStore.shared
+        let saved = store.current
+        defer { store.apply(saved) }
+        var configuration = saved
+        configuration.spelling = true
+        configuration.grammar = true
+        store.apply(configuration)
+
+        let textView = makeView("teh cat\nthem is here\n")
+        let layoutManager = try #require(textView.layoutManager)
+        #expect(textView.isContinuousSpellCheckingEnabled)
+        #expect(textView.isGrammarCheckingEnabled)
+        // Marks as the checker would leave them: a misspelling and a
+        // grammar issue.
+        let spelling = range(of: "teh", in: textView)
+        let grammar = range(of: "them is", in: textView)
+        layoutManager.addTemporaryAttribute(.spellingState, value: NSAttributedString.SpellingState.spelling.rawValue, forCharacterRange: spelling)
+        layoutManager.addTemporaryAttribute(.spellingState, value: NSAttributedString.SpellingState.grammar.rawValue, forCharacterRange: grammar)
+
+        configuration.grammar = false
+        store.apply(configuration)
+        #expect(textView.isContinuousSpellCheckingEnabled)
+        #expect(!textView.isGrammarCheckingEnabled)
+        #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: spelling.location, effectiveRange: nil) != nil, "spelling marks stay")
+        #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: grammar.location, effectiveRange: nil) == nil, "grammar marks go")
+
+        configuration.spelling = false
+        store.apply(configuration)
+        #expect(!textView.isContinuousSpellCheckingEnabled)
+        #expect(layoutManager.temporaryAttribute(.spellingState, atCharacterIndex: spelling.location, effectiveRange: nil) == nil)
+
+        configuration.spelling = true
+        configuration.grammar = true
+        store.apply(configuration)
+        #expect(textView.isContinuousSpellCheckingEnabled)
+        #expect(textView.isGrammarCheckingEnabled)
+    }
 }

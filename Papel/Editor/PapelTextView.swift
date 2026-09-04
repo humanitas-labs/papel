@@ -1153,6 +1153,7 @@ final class PapelTextView: NSTextView {
     @objc private func settingsDidChange() {
         font = Appearance.bodyFont()
         applyColors()
+        applyChecking()
         setFrameSize(frame.size)
         syntaxStyler.apply(to: self)
         needsDisplay = true
@@ -1166,6 +1167,37 @@ final class PapelTextView: NSTextView {
         if let ink = Appearance.selectionInk { selected[.foregroundColor] = ink }
         selectedTextAttributes = selected
         enclosingScrollView?.backgroundColor = Appearance.canvas
+    }
+
+    /// Spelling and grammar checking follow the config. Turning one off
+    /// takes its marks off the document at once; AppKit would otherwise
+    /// leave the underlines until the next edit touched them.
+    private func applyChecking() {
+        let configuration = Appearance.configuration
+        let spelling = configuration.spelling
+        let grammar = configuration.grammar
+        if isContinuousSpellCheckingEnabled != spelling { isContinuousSpellCheckingEnabled = spelling }
+        if isGrammarCheckingEnabled != grammar { isGrammarCheckingEnabled = grammar }
+        guard !spelling || !grammar, let storage = textStorage, let layoutManager, storage.length > 0 else { return }
+        let whole = NSRange(location: 0, length: storage.length)
+        if !spelling, !grammar {
+            layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: whole)
+            return
+        }
+        // One of the two is off: drop only its marks, which the spelling
+        // state flags apart.
+        let dropped: NSAttributedString.SpellingState = spelling ? .grammar : .spelling
+        var index = 0
+        while index < whole.length {
+            var range = NSRange(location: index, length: 0)
+            let value = layoutManager.temporaryAttribute(
+                .spellingState, atCharacterIndex: index, longestEffectiveRange: &range, in: whole
+            )
+            if let raw = value as? Int, raw & dropped.rawValue != 0 {
+                layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: range)
+            }
+            index = max(NSMaxRange(range), index + 1)
+        }
     }
 
     /// Code is not prose, and neither is the address of a link or an
@@ -1248,8 +1280,8 @@ final class PapelTextView: NSTextView {
         allowsUndo = true
         usesFindBar = true
         isIncrementalSearchingEnabled = true
-        isContinuousSpellCheckingEnabled = true
-        isGrammarCheckingEnabled = true
+        isContinuousSpellCheckingEnabled = Appearance.configuration.spelling
+        isGrammarCheckingEnabled = Appearance.configuration.grammar
         isAutomaticQuoteSubstitutionEnabled = true
         // The system's dash substitution is syntax-blind: it eats the second
         // `-` of a thematic break or front-matter fence. Papel does its own,

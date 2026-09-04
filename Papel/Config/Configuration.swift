@@ -17,6 +17,10 @@ struct Configuration: Equatable, Sendable {
     /// is applied. Off, the default, renders glyphs at their true weight,
     /// as WebKit does.
     var fontSmoothing: Bool = false
+    /// The system's continuous spelling and grammar checking, each drawn
+    /// as underlines while you type. Off drops the marks as well.
+    var spelling: Bool = true
+    var grammar: Bool = true
     /// Weights on the CSS scale, 100–900. A face with a variable weight axis
     /// takes the exact value; a static family takes its nearest face.
     var fontWeight: Double = 400
@@ -147,6 +151,10 @@ struct Configuration: Equatable, Sendable {
     # Heading weight, 100–900, or regular, medium, semibold, or bold.
     heading.weight = 500
 
+    # Spelling and grammar checking as you type, each on or off.
+    spelling = on
+    grammar = on
+
     # Indent of a list's bullets, numbers, and task circles from the text
     # margin, as a multiple of the font size; 0 puts them on the margin.
     list.indent = 0.8
@@ -235,11 +243,11 @@ struct Configuration: Equatable, Sendable {
         case "letter.spacing":
             letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
         case "font.smoothing":
-            switch value.lowercased() {
-            case "on", "true", "yes": fontSmoothing = true
-            case "off", "false", "no": fontSmoothing = false
-            default: break
-            }
+            fontSmoothing = Self.flag(value) ?? fontSmoothing
+        case "spelling":
+            spelling = Self.flag(value) ?? spelling
+        case "grammar":
+            grammar = Self.flag(value) ?? grammar
         case "font.weight":
             fontWeight = Self.weight(value) ?? fontWeight
         case "heading.weight":
@@ -276,6 +284,8 @@ struct Configuration: Equatable, Sendable {
             ("letter.spacing", Self.format(letterSpacing)),
             ("font.smoothing", fontSmoothing ? "on" : "off"),
             ("heading.weight", Self.format(headingWeight)),
+            ("spelling", spelling ? "on" : "off"),
+            ("grammar", grammar ? "on" : "off"),
             ("list.indent", Self.format(listIndent)),
             ("image.corner.radius", Self.format(imageCornerRadius)),
             ("image.paste.directory", imagePasteDirectory),
@@ -312,6 +322,15 @@ struct Configuration: Equatable, Sendable {
             lines.append("")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// `on`/`off`, `true`/`false`, or `yes`/`no`; nil for anything else.
+    private static func flag(_ value: String) -> Bool? {
+        switch value.lowercased() {
+        case "on", "true", "yes": return true
+        case "off", "false", "no": return false
+        default: return nil
+        }
     }
 
     private static func format(_ number: Double) -> String {
