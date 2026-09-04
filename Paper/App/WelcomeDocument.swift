@@ -2,8 +2,8 @@ import AppKit
 import Foundation
 
 /// The guide Paper opens on its first launch: a real Markdown file, read
-/// in the editor itself, that says what the app is, lists the shortcuts,
-/// and carries the prompt for an agent. It lives in Application Support,
+/// in the editor itself, that says what the app is, shows the formatting
+/// by wearing it, and carries the prompt for an agent. It lives in Application Support,
 /// out of the user's folders, and the welcome window's Guide item brings
 /// it back whenever it is gone.
 enum WelcomeDocument {
@@ -19,85 +19,53 @@ enum WelcomeDocument {
         return support.appendingPathComponent("Paper", isDirectory: true).appendingPathComponent(fileName)
     }
 
-    /// The README's prompt: the quoted paragraph to add, then a check that the
-    /// command works, then the offer to make Paper the default app, each
-    /// its own paragraph so they read as such in the fence.
+    /// The prompt for an agent: the instruction to add, the check that
+    /// the command works, and the terminal notes to give only to someone
+    /// who works there.
     static let agentPrompt = """
-        Add the following to my global instructions:
+        Add this to my global instructions:
 
-        > Markdown files are read in Paper (a native macOS editor). To show me a document, open it with `paper <file.md>`. Paper reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
+        > Markdown files are read in Paper, a native macOS editor. To show me a document, open it with `paper <file.md>`. Paper reloads from disk, so after the first open just keep editing the file. Never hard-wrap prose in Markdown: a paragraph is one source line.
 
-        Then check that the `paper` command works: write a short Markdown note to a temporary file and open it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
+        Then check that the `paper` command works by writing a short note to a temporary file and opening it with `paper`. If the command is not found, tell me; it installs from Paper's Settings (⌘,) under CLI.
 
-        Finally, ask me explicitly whether I want Paper to be the default app for Markdown files, and explain what that means: double-clicking a .md file in Finder would open it in Paper instead of the current app. Do not change anything until I answer. Only if I say yes, run `paper --set-default`.
+        If I am someone who works in the terminal, also tell me that `paper <file>` opens any Markdown file from the shell, and that `paper --set-default` makes Paper the app that opens Markdown files when I double-click them. Ask before running that. If I am not, skip this.
         """
 
-    /// The command-line paragraph, from what the launch-time install found.
-    static func commandLineNote(_ status: CommandLineTool.Status) -> String {
-        let usage = "`paper notes.md` opens a document from the terminal, creating it first when it doesn't exist yet."
-        switch status {
-        case .installed(let link):
-            return "The `paper` command is installed at `\(Self.abbreviated(link))`. \(usage)"
-        case .notInstalled:
-            return "\(usage) The command is not installed yet; install it from Settings (⌘,) under CLI."
-        case .broken(let link), .stale(let link, _):
-            return "\(usage) The command at `\(Self.abbreviated(link))` points at another copy of Paper; Settings (⌘,) under CLI repairs it."
-        case .foreign(let link):
-            return "\(usage) Something else named `paper` is at `\(Self.abbreviated(link))`, so Paper left it alone."
-        }
-    }
-
-    private static func abbreviated(_ url: URL) -> String {
-        (url.path as NSString).abbreviatingWithTildeInPath
-    }
-
-    static func text(commandLine status: CommandLineTool.Status) -> String {
-        """
+    static let text = """
         ![The Paper mark, an ink-brush circle](\(markName))
 
         # Welcome to Paper!
 
         > A quiet, native markdown editor for macOS.
 
-        Paper is the simplest markdown editor imaginable. There are no buttons and no panels, only the text. Each document gets its own window so you can focus without distractions. Everything is a file on your computer, and you own it.
+        Paper is the simplest markdown editor imaginable. There are no buttons and no panels, only the text. Each document gets its own window so you can focus with no distractions.
 
-        This guide is a Markdown file like any other. Read it here, edit it, or close it; the welcome window's Guide item brings it back.
+        This guide is a Markdown file like any other. Edit it or close it; *Guide* in the welcome window brings it back.
 
-        ## 1. Prompt your agent
+        ## 1. Paper is agent-friendly
 
-        Give this prompt to your agent of choice:
+        Paper is made to work well with agents. Paste this into Claude Code, Codex, or whichever agent you use, and from then on you can have it open docs in Paper for you:
 
         ```
         \(agentPrompt)
         ```
 
-        ## 2. CLI
+        ## 2. The basics
 
-        \(commandLineNote(status))
+        Click into this paragraph and the Markdown shows itself: **bold** is ⌘B, *italic* is ⌘I, `code` is ⌘E, and a [link](https://papel.sh) is ⌘K. Click a link to follow it, ⌘F to find.
 
-        ## 3. Default app for Markdown
+        - [ ] A task, with a circle you can click
+          - [ ] A nested task, with a square you can click
+        - [x] A task that is done
 
-        `paper --set-default` makes double-clicking a `.md` or `.markdown` file open Paper; so does *Make Default* in Settings (⌘,) under CLI. By hand: select any Markdown file in Finder, press ⌘I (Get Info), choose Paper under *Open with*, and click *Change All…*.
+        Paste or drop an image and Paper saves it beside the document. Double-click an image to see it full size.
 
-        ## 4. Shortcuts
+        ## 3. Configuration
 
-        - ⌘B, ⌘I, ⌘U, ⌘⇧X, ⌘E: toggle `**bold**`, `*italic*`, `<u>underline</u>`, `~~strikethrough~~`, `` `code` `` around the selection or word
-        - ⌘K: add a link, destination from the clipboard when it holds a URL
-        - ⌘F, ⌘G, ⇧⌘G: find; next and previous match. Return and ⇧Return step from the field, Esc closes
-        - Click or ⌘-click: open a link
-        - Double-click an image: open it in Quick Look
-        - Paste or drop an image: save a copy beside the document and insert its Markdown reference
-        - ⌘N, ⌘O: new document, open a document
-        - ⌘,: settings
-
-        Pasting or dropping an image into an unsaved document asks you to save first. Images go beside the document by default; set `image.paste.directory = assets` to use a relative subfolder instead. Undo removes the inserted Markdown, but keeps the image file.
-
-        ## 5. Configuration
-
-        Settings live in `$XDG_CONFIG_HOME/paper/config` when set, otherwise `~/.config/paper/config`: typeface, size, measure, theme, window size. The file is written as a commented template on first launch and applied live to open windows whenever it is saved. Settings (⌘,) edits the same file.
+        Settings (⌘,) covers typeface, size, measure, theme, and window size. It edits `~/.config/paper/config`, which you can also edit by hand; changes apply live.
 
         """
-    }
 
     /// Writes the guide at `url`, and the mark beside it from `mark`. An
     /// existing guide is kept unless `replacing`, so a user's edits survive
@@ -117,15 +85,12 @@ enum WelcomeDocument {
         return true
     }
 
-    /// Writes the guide from the command's current status and opens it in
-    /// a document window.
+    /// Writes the guide and opens it in a document window.
     @MainActor
     static func open(replacing: Bool) async {
-        let tool = CommandLineTool.shared
-        if tool.quietOutcome == nil { await tool.refresh() }
         let url = defaultURL
         do {
-            try write(to: url, text: text(commandLine: tool.status), replacing: replacing)
+            try write(to: url, text: text, replacing: replacing)
         } catch {
             NSLog("Paper: could not write the guide: %@", error.localizedDescription)
             return
