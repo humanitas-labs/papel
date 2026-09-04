@@ -18,11 +18,15 @@ extension PaperTextView: @preconcurrency QLPreviewPanelDataSource, @preconcurren
             .map { (rect: $0.rect.offsetBy(dx: origin.x, dy: origin.y), url: $0.url) }
     }
 
-    /// The I-beam belongs to text; over an image the plain arrow, as in Messages.
-    /// The text view sets its cursor on every mouse move, over any cursor
-    /// rects, so the move itself is where the hand goes in.
+    /// The I-beam belongs to text; over an image the plain arrow, as in
+    /// Messages, and over a code block's copy icon the hand. The text view
+    /// sets its cursor on every mouse move, over any cursor rects, so the
+    /// move itself is where the other cursors go in.
     override func mouseMoved(with event: NSEvent) {
-        if imageURL(at: event) != nil {
+        let point = convert(event.locationInWindow, from: nil)
+        if codeCopyButtons.contains(where: { $0.isOnIcon(point) }) {
+            NSCursor.pointingHand.set()
+        } else if imageURL(at: event) != nil {
             NSCursor.arrow.set()
         } else {
             super.mouseMoved(with: event)

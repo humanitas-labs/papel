@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Code blocks have a copy icon. Hover a block and it fades in at the top-right corner; a click puts the block's lines on the pasteboard, fences and info string left out, and the icon shrinks into a check for a moment before turning back.
 - The window can be grabbed again. Since the title band moved into the text view (#61) a press there started a selection; now a press along the traffic lights' row drags the window and a double-click zooms it (#65).
 - After an update restarts Paper, the documents that were open come back. The relaunch used to open the app bare, landing on the welcome window (#63).
 - The guide is shorter and shows the formatting by wearing it: bold, italic, code, a link, and a task list with a nested item, each naming its key. The terminal section is gone; the agent prompt tells the agent to mention the `paper` command and the default-app switch only to someone who works in the terminal.

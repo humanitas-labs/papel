@@ -447,10 +447,16 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     /// the active paragraph, they read as the band's vertical padding.
     @MainActor
     func codeBlockRects(forGlyphRange glyphRange: NSRange) -> [NSRect] {
+        codeBlocks(forGlyphRange: glyphRange).map(\.rect)
+    }
+
+    /// The bands with the paragraph range (fences included) of the block
+    /// each one covers, in document order.
+    func codeBlocks(forGlyphRange glyphRange: NSRange) -> [(range: NSRange, rect: NSRect)] {
         guard let storage = textStorage else { return [] }
         let characterRange = self.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
 
-        var rects: [NSRect] = []
+        var rects: [(range: NSRange, rect: NSRect)] = []
         var measured: [NSRange] = []
         storage.enumerateAttribute(.codeBlock, in: characterRange) { value, partial, _ in
             guard value != nil else { return }
@@ -476,7 +482,7 @@ final class PaperLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
                 bottom = max(bottom, used.maxY)
             }
             guard bottom > top else { return }
-            rects.append(NSRect(x: 0, y: top, width: 0, height: bottom - top))
+            rects.append((range, NSRect(x: 0, y: top, width: 0, height: bottom - top)))
         }
         return rects
     }
