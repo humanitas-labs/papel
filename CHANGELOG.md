@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The update badge shows in document windows too. A release installs itself while you write, and the restart loop that follows sat only in the welcome window, which a writer may never open; it now sits in the bottom-left corner of every document as well, the one coloured thing on the page (#62).
+
 ## 0.7.0 — 2026.09.04
 
 - Typing in a long document no longer restyles the whole of it on every keystroke. The restyle covers the run of paragraphs around the edit, out to the nearest blank lines and to any fenced block or comment it overlaps, and falls back to the full pass only when a fence or comment changed what is code elsewhere. The styler's share of a keystroke goes from 18 ms at 10 KB, 186 ms at 100 KB, and 2.3 s at 1 MB to about 1, 2, and 11 ms (Debug). The text view's own relayout after an edit, which grows with the text below the caret, is left as it is (#27).

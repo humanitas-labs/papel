@@ -90,6 +90,7 @@ private struct DocumentView: View {
     let fileURL: URL?
     /// Observed so the SwiftUI canvas and label follow theme changes.
     @ObservedObject private var store = ConfigurationStore.shared
+    @ObservedObject private var updates = UpdateCheck.observed
     @State private var watcher: FileWatcher?
 
     var body: some View {
@@ -98,6 +99,14 @@ private struct DocumentView: View {
             .background(WindowConfigurator())
             .overlay(alignment: .topLeading) { FileBadge(fileURL: fileURL) }
             .overlay(alignment: .topTrailing) { ZoomBadge() }
+            // A release installs while someone writes; the badge that asks
+            // for the restart sits in the document's corner as it does in
+            // the welcome window, which a writer may never open.
+            .overlay(alignment: .bottomLeading) {
+                if let release = updates.available, updates.justUpdatedTo == nil {
+                    UpdateBadge(release: release)
+                }
+            }
             .overlay(alignment: .top) { UpdateToast().ignoresSafeArea(.container, edges: .top) }
             .frame(minWidth: 640, minHeight: 520)
             .ignoresSafeArea()
