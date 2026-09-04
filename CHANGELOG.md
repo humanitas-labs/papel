@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.2 — 2026.09.04
 
 - Code blocks have a copy icon. Hover a block and it fades in at the top-right corner; a click puts the block's lines on the pasteboard, fences and info string left out, and the icon shrinks into a check for a moment before turning back.
 - The window can be grabbed again. Since the title band moved into the text view (#61) a press there started a selection; now a press along the traffic lights' row drags the window and a double-click zooms it (#65).
