@@ -132,6 +132,53 @@ struct TaskListTests {
     }
 
     @Test
+    func plainAndOrderedItemsAreUnitsToo() throws {
+        let text = "- dash\n1. one\n> * quoted\n"
+        let (textView, _) = makeTextView(text, selectedAt: 2)
+        func caret() -> NSRange { textView.selectedRange() }
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: 0, length: 0), "Left from the text hops the dash and its gap")
+        textView.moveRight(nil)
+        #expect(caret() == NSRange(location: 2, length: 0))
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        textView.setSelectedRange(NSRange(location: 1, length: 0))
+        #expect(caret() == NSRange(location: 2, length: 0), "a caret between marker and gap lands at the text")
+
+        let one = (text as NSString).range(of: "1. one")
+        textView.setSelectedRange(NSRange(location: one.location + 3, length: 0))
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: one.location, length: 0), "`1. ` is one unit")
+        textView.setSelectedRange(NSRange(location: one.location + 3, length: 0))
+        textView.moveLeftAndModifySelection(nil)
+        #expect(caret() == NSRange(location: one.location, length: 3))
+
+        // The quote prefix is outside the unit.
+        let quoted = (text as NSString).range(of: "> * quoted")
+        textView.setSelectedRange(NSRange(location: quoted.location + 4, length: 0))
+        textView.moveLeft(nil)
+        #expect(caret() == NSRange(location: quoted.location + 2, length: 0))
+
+        // Backspace at the text's start un-lists the item and keeps the
+        // quote.
+        let host = TestUndoHost()
+        host.attach(to: textView)
+        host.undoManager.groupsByEvent = false
+        textView.setSelectedRange(NSRange(location: quoted.location + 4, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteBackward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- dash\n1. one\n> quoted\n")
+        textView.setSelectedRange(NSRange(location: 2, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.deleteBackward(nil)
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "dash\n1. one\n> quoted\n")
+        host.undoManager.undo()
+        host.undoManager.undo()
+        #expect(textView.string == text)
+    }
+
+    @Test
     func backspaceAtTheTextStartRemovesThePrefixAndDeleteBeforeItDoesNothing() throws {
         let text = "- [ ] open\n  - [x] nested\n"
         let (textView, _) = makeTextView(text, selectedAt: 6)

@@ -34,6 +34,10 @@ extension NSAttributedString.Key {
     /// active one included, and the text view draws a circle in its place;
     /// a click on the circle flips the character between the brackets.
     static let taskBox = NSAttributedString.Key("papel.taskBox")
+    /// Marks a plain list item's marker (`-`, `*`, `+`, `1.`). Its glyph
+    /// substitute holds on the active paragraph too, so an item never
+    /// reflows when the caret enters it (#50).
+    static let listMarker = NSAttributedString.Key("papel.listMarker")
     /// Marks a character that, while concealed, draws nothing and takes the
     /// width the value (a `CGFloat`) names: room for something the text view
     /// draws itself, like a task item's circle.
@@ -316,7 +320,8 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         var concealable = false
         var substitute: Character?
         var reservedWidth: CGFloat?
-        /// A task prefix: concealed on the active paragraph as well.
+        /// A task prefix or list marker: rendered on the active paragraph
+        /// as well.
         var pinned = false
         var isEmpty: Bool { !concealable && substitute == nil && reservedWidth == nil }
     }
@@ -327,7 +332,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         marks.concealable = attributes[.concealable] != nil
         marks.substitute = (attributes[.glyphSubstitute] as? String)?.first
         marks.reservedWidth = attributes[.reservedWidth] as? CGFloat
-        marks.pinned = attributes[.taskBox] != nil
+        marks.pinned = attributes[.taskBox] != nil || attributes[.listMarker] != nil
         return marks
     }
 

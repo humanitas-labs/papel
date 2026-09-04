@@ -346,7 +346,7 @@ final class MarkdownSyntaxStyler {
                 // width and the marker gap; the hanging indent reserves the
                 // same room, so the layout is stable. Unlike other
                 // concealment this holds on the active paragraph too, and
-                // the prefix is one unit for the caret (`TaskPrefix`).
+                // the prefix is one unit for the caret (`ListPrefix`).
                 let box = (source as NSString).substring(with: boxRange)
                 let prefixRange = NSRange(location: markerRange.location, length: NSMaxRange(boxRange) - markerRange.location)
                 let circle = NSRange(location: boxRange.location, length: 1)
@@ -360,11 +360,18 @@ final class MarkdownSyntaxStyler {
                 let indentLength = markerRange.location - match.range.location
                 rendered = Array(prefix.prefix(indentLength))
                     + Array(prefix.dropFirst(NSMaxRange(boxRange) - match.range.location))
-            } else if let symbol = Self.renderedListMarker(for: marker) {
-                storage.addAttribute(.glyphSubstitute, value: symbol, range: markerRange)
-                storage.addAttribute(.font, value: Appearance.markerFont(for: symbol), range: markerRange)
-                // The prefix is ASCII, so UTF-16 and Character offsets agree.
-                rendered[markerRange.location - match.range.location] = Character(symbol)
+            } else {
+                // A plain item: the marker renders as its symbol on every
+                // paragraph, the active one included, and with its gap is
+                // one unit for the caret (`ListPrefix`), so entering the
+                // item never reflows it.
+                storage.addAttribute(.listMarker, value: true, range: markerRange)
+                if let symbol = Self.renderedListMarker(for: marker) {
+                    storage.addAttribute(.glyphSubstitute, value: symbol, range: markerRange)
+                    storage.addAttribute(.font, value: Appearance.markerFont(for: symbol), range: markerRange)
+                    // The prefix is ASCII, so UTF-16 and Character offsets agree.
+                    rendered[markerRange.location - match.range.location] = Character(symbol)
+                }
             }
             // Wrapped lines hang under the item's text, measured from the
             // prefix as it renders. Quote lines keep their own style, which
@@ -706,7 +713,7 @@ final class MarkdownSyntaxStyler {
         Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .strikethroughStyle, .linkDestination,
-                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth] {
+                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth, .listMarker] {
                 storage.removeAttribute(key, range: match.range)
             }
             storage.addAttribute(.font, value: Appearance.bodyFont(), range: match.range)

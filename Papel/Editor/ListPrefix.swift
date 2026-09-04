@@ -1,22 +1,22 @@
 import Foundation
 
-/// A task item's prefix — `- [ ] ` or `- [x] `, marker through the gap after
-/// the box — is one unit for the caret (#53). The circle stands in for it on
-/// every paragraph, so there is nothing to edit inside it: Left from the
-/// text's start lands before the marker, Right from there lands at the
-/// text's start, a selection that reaches into it takes it whole, and
-/// Backspace at the text's start removes it entirely. Nested indent before
-/// the marker is not part of the unit. Pure text-in, range-out; the text
-/// view applies the results.
-enum TaskPrefix {
+/// A list item's prefix — `- `, `1. `, or `- [ ] ` / `- [x] `, marker
+/// through the gap after it (and after the box, for a task) — is one unit
+/// for the caret (#53, #50). The rendered marker or the circle stands in
+/// for it on every paragraph, so there is nothing to edit inside it: Left
+/// from the text's start lands before the marker, Right from there lands at
+/// the text's start, a selection that reaches into it takes it whole, and
+/// Backspace at the text's start removes it entirely, leaving a plain line.
+/// Nested indent and a quote prefix before the marker are not part of the
+/// unit. Pure text-in, range-out; the text view applies the results.
+enum ListPrefix {
     /// The unit in the paragraph containing `location`, or nil when that
-    /// paragraph is not a task item.
+    /// paragraph is not a list item.
     static func unit(in text: NSString, at location: Int) -> NSRange? {
         guard location <= text.length else { return nil }
         let paragraph = text.paragraphRange(for: NSRange(location: location, length: 0))
         guard let match = MarkdownSyntaxStyler.listMarkerPattern.firstMatch(in: text as String, range: paragraph),
-              match.range.location == paragraph.location,
-              match.range(at: 3).location != NSNotFound else { return nil }
+              match.range.location == paragraph.location else { return nil }
         let marker = match.range(at: 1)
         return NSRange(location: marker.location, length: NSMaxRange(match.range) - marker.location)
     }
@@ -42,7 +42,7 @@ enum TaskPrefix {
     }
 
     /// The unit Backspace removes when the caret (`selection`, empty) sits
-    /// at the text's start of a task item; nil anywhere else.
+    /// at the text's start of a list item; nil anywhere else.
     static func backspaceRange(in text: NSString, selection: NSRange) -> NSRange? {
         guard selection.length == 0, let unit = unit(in: text, at: selection.location),
               selection.location == NSMaxRange(unit) else { return nil }

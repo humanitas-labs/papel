@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Lists no longer reflow when the caret enters an item: the bullet, dash, or number stays rendered on the active paragraph instead of giving way to the source `- ` or `1. `, so nothing below the caret moves as you click down a list. The marker and its gap are one unit for the caret, as the task prefix is: Left from the start of the text lands before the marker, Right lands back at the text, and a selection reaching into it takes it whole. Backspace at the start of the text removes the marker and leaves a plain line, undoably; Delete right before it does nothing. The rule now: syntax you edit by hand (emphasis, links, headings, quotes) reveals on the active paragraph; syntax you edit by command (list markers, task boxes) stays rendered (#50).
 - Nested tasks draw as rounded squares, top-level ones as circles, so the levels read apart at a glance.
 - Find: ⌘F opens a small pill at the top right, in the zoom badge's style, with a field and a count. Typing selects the nearest match from the caret and tints every match; Return, ⇧Return, ⌘G, and ⇧⌘G step through them, wrapping at either end; Esc closes the pill and leaves the selection on the match. A selected word seeds the field, and Edit ▸ Find ▸ Use Selection for Find sets the query without opening it. Find runs over the source, concealed syntax included. The Edit menu gains the Find submenu SwiftUI left out (#21).
 

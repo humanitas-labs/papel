@@ -50,9 +50,9 @@ final class PapelTextView: NSTextView {
     /// tracking loop reads the shift as a drag and selects a character or
     /// two (#42). While an input method holds marked text the revealed range
     /// is frozen, as restyling already is.
-    /// A task item's prefix is one unit for the caret (#53), so any range
-    /// reaching into one is snapped out of it here, where every key, click,
-    /// drag, and undo lands.
+    /// A list item's prefix is one unit for the caret (#53, #50), so any
+    /// range reaching into one is snapped out of it here, where every key,
+    /// click, drag, and undo lands.
     override func setSelectedRanges(
         _ ranges: [NSValue],
         affinity: NSSelectionAffinity,
@@ -64,7 +64,7 @@ final class PapelTextView: NSTextView {
             ranges = ranges.map { value in
                 let range = value.rangeValue
                 guard NSMaxRange(range) <= text.length else { return value }
-                let snapped = TaskPrefix.snapped(range, previous: previous, in: text)
+                let snapped = ListPrefix.snapped(range, previous: previous, in: text)
                 return snapped == range ? value : NSValue(range: snapped)
             }
         }
@@ -73,12 +73,12 @@ final class PapelTextView: NSTextView {
         revealSelectedParagraphs()
     }
 
-    /// Backspace at the start of a task's text removes the whole prefix,
+    /// Backspace at the start of an item's text removes the whole prefix,
     /// leaving a plain line; Delete right before the prefix does nothing.
     /// The prefix never holds the caret, so neither can eat into it.
     override func deleteBackward(_ sender: Any?) {
         guard isEditable, !hasMarkedText(),
-              let unit = TaskPrefix.backspaceRange(in: string as NSString, selection: selectedRange())
+              let unit = ListPrefix.backspaceRange(in: string as NSString, selection: selectedRange())
         else { return super.deleteBackward(sender) }
         breakUndoCoalescing()
         guard shouldChangeText(in: unit, replacementString: "") else { return }
@@ -89,7 +89,7 @@ final class PapelTextView: NSTextView {
     }
 
     override func deleteForward(_ sender: Any?) {
-        guard !TaskPrefix.deleteForwardIsBlocked(in: string as NSString, selection: selectedRange()) else { return }
+        guard !ListPrefix.deleteForwardIsBlocked(in: string as NSString, selection: selectedRange()) else { return }
         super.deleteForward(sender)
     }
 

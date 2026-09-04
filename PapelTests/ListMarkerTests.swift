@@ -80,10 +80,15 @@ struct ListMarkerTests {
         #expect(glyph(layoutManager, characterAt: 14) == bullet)
         #expect(glyph(layoutManager, characterAt: 2) != dash, "content glyphs are not substituted")
 
+        // The marker holds on the active paragraph too (#50): the item
+        // never reflows when the caret enters it.
         textView.setSelectedRange(NSRange(location: 3, length: 0))
         layoutManager.ensureLayout(for: textView.textContainer!)
-        #expect(glyph(layoutManager, characterAt: 0) == hyphen, "the active paragraph shows its source")
+        #expect(glyph(layoutManager, characterAt: 0) == dash, "the active paragraph keeps its rendered marker")
+        #expect(glyph(layoutManager, characterAt: 0) != hyphen)
         #expect(glyph(layoutManager, characterAt: 7) == bullet)
+        #expect(storage.attribute(.listMarker, at: 0, effectiveRange: nil) as? Bool == true)
+        #expect(storage.attribute(.listMarker, at: 21, effectiveRange: nil) as? Bool == true, "ordered markers are units too")
         #expect(textView.string == text)
     }
 
