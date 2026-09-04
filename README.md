@@ -40,6 +40,7 @@ Give this prompt to your agent of choice (it is also in the guide Papel opens on
 | --- | --- |
 | ⌘B / ⌘I / ⌘U / ⌘⇧X / ⌘E | toggle `**bold**`, `*italic*`, `<u>underline</u>`, `~~strikethrough~~`, `` `code` `` around the selection or word |
 | ⌘K | add a link, destination from the clipboard when it holds a URL |
+| ⌘F / ⌘G / ⇧⌘G | find; next and previous match. Return and ⇧Return step from the field, Esc closes |
 | click / ⌘-click | open a link |
 | double-click an image | open it in Quick Look |
 | paste or drop an image | saved beside the document, inserted as `![](…)` |

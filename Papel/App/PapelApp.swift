@@ -40,6 +40,23 @@ struct PapelApp: App {
                 Button("Add Link") { NSApp.sendAction(#selector(PapelTextView.insertLink(_:)), to: nil, from: nil) }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            // SwiftUI's document app leaves the Find submenu out of Edit, so
+            // nothing would reach find. Built here; the scroll view that
+            // owns the find pill answers (`PapelScrollView`).
+            CommandGroup(after: .pasteboard) {
+                Menu("Find") {
+                    Button("Find…") { NSApp.sendAction(#selector(PapelScrollView.showFind(_:)), to: nil, from: nil) }
+                        .keyboardShortcut("f", modifiers: .command)
+                    Button("Find Next") { NSApp.sendAction(#selector(PapelScrollView.findNext(_:)), to: nil, from: nil) }
+                        .keyboardShortcut("g", modifiers: .command)
+                    Button("Find Previous") { NSApp.sendAction(#selector(PapelScrollView.findPrevious(_:)), to: nil, from: nil) }
+                        .keyboardShortcut("g", modifiers: [.command, .shift])
+                    // ⌘E is Code, as documented; this one goes without a key.
+                    Button("Use Selection for Find") { NSApp.sendAction(#selector(PapelScrollView.useSelectionForFind(_:)), to: nil, from: nil) }
+                    Button("Jump to Selection") { NSApp.sendAction(Selector(("centerSelectionInVisibleRect:")), to: nil, from: nil) }
+                        .keyboardShortcut("j", modifiers: .command)
+                }
+            }
             CommandGroup(replacing: .toolbar) {
                 Button("Toggle Full Screen") {
                     NSApp.keyWindow?.toggleFullScreen(nil)
