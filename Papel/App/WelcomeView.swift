@@ -55,7 +55,7 @@ struct WelcomeView: View {
         .padding(.bottom, 72)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: Appearance.canvas))
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .bottomLeading) {
             if let release = updates.available {
                 UpdateBadge(release: release)
             }
@@ -148,27 +148,41 @@ private struct WelcomeRow: View {
     }
 }
 
-/// The download icon in the window's top-right corner, where the zoom
-/// badge sits in a document window, shown only when a newer release is
-/// out. Hover names the version; a click opens the DMG link.
+/// The download icon in the window's bottom-left corner, out of the way
+/// of the lists, shown only when a newer release is out. It is the one
+/// coloured thing on the page, in the theme's accent; it fades in, and
+/// while the pointer rests on it, it bobs: up, down, and again.
 private struct UpdateBadge: View {
     let release: UpdateCheck.Release
     @State private var hovering = false
+    @State private var shown = false
+    @State private var bobbing = false
 
     var body: some View {
         Button { UpdateCheck.download(release) } label: {
             Image(systemName: "arrow.down.circle")
                 .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(Color(nsColor: hovering ? Appearance.ink : Appearance.labelInk))
+                .foregroundStyle(Color(nsColor: Appearance.accent).opacity(hovering ? 1 : 0.78))
+                .animation(.easeOut(duration: 0.2), value: hovering)
+                .offset(y: bobbing ? -5 : 0)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help("Papel \(release.version) is available")
         .accessibilityLabel("Download Papel \(release.version)")
-        .onHover { hovering = $0 }
+        .onHover { inside in
+            hovering = inside
+            if inside {
+                withAnimation(.easeInOut(duration: 0.32).repeatForever(autoreverses: true)) { bobbing = true }
+            } else {
+                withAnimation(.easeOut(duration: 0.2)) { bobbing = false }
+            }
+        }
         .pointerStyle(.link)
-        .padding(.top, 12)
-        .padding(.trailing, 12)
+        .padding(.bottom, 12)
+        .padding(.leading, 12)
+        .opacity(shown ? 1 : 0)
+        .onAppear { withAnimation(.easeOut(duration: 0.45)) { shown = true } }
     }
 }

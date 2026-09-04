@@ -91,6 +91,7 @@ struct Configuration: Equatable, Sendable {
         ColorKey("color.selection.ink", \.selectionInk),
         ColorKey("color.code.background", \.codeBackground),
         ColorKey("color.rule", \.rule),
+        ColorKey("color.accent", \.accent),
         ColorKey("color.ink.muted.dark", \.inkMutedDark),
         ColorKey("color.ink.quote.dark", \.inkQuoteDark),
         ColorKey("color.ink.label.dark", \.inkLabelDark),
@@ -98,6 +99,7 @@ struct Configuration: Equatable, Sendable {
         ColorKey("color.selection.ink.dark", \.selectionInkDark),
         ColorKey("color.code.background.dark", \.codeBackgroundDark),
         ColorKey("color.rule.dark", \.ruleDark),
+        ColorKey("color.accent.dark", \.accentDark),
     ]
 
     /// The overrides applied over a resolved theme's palette.
@@ -197,8 +199,9 @@ struct Configuration: Equatable, Sendable {
     # theme file): muted syntax markers, bullets, and the file label; quoted
     # text; the welcome window's labels and icons; the selection highlight,
     # and the ink of selected text (unset keeps the text's own colour); the
-    # code band and chip; the thematic break rule. Each has a .dark form for
-    # the dark appearance.
+    # code band and chip; the thematic break rule; the accent, the one
+    # coloured tone, on the welcome window's update arrow. Each has a .dark
+    # form for the dark appearance.
     color.ink.muted =
     color.ink.quote =
     color.ink.label =
@@ -206,6 +209,7 @@ struct Configuration: Equatable, Sendable {
     color.selection.ink =
     color.code.background =
     color.rule =
+    color.accent =
     color.ink.muted.dark =
     color.ink.quote.dark =
     color.ink.label.dark =
@@ -213,6 +217,7 @@ struct Configuration: Equatable, Sendable {
     color.selection.ink.dark =
     color.code.background.dark =
     color.rule.dark =
+    color.accent.dark =
 
     """
 

@@ -113,6 +113,10 @@ enum Appearance {
     /// the theme's label ink, else the ink at the quote opacity.
     static var labelInk: NSColor { colors.labelInk }
 
+    /// The one coloured tone, on the welcome window's update arrow: the
+    /// theme's accent, else the label ink.
+    static var accent: NSColor { colors.accent }
+
     static var palette: Palette { ConfigurationStore.shared.palette }
 
     private struct Colors {
@@ -122,6 +126,7 @@ enum Appearance {
         let mutedInk: NSColor
         let quoteInk: NSColor
         let labelInk: NSColor
+        let accent: NSColor
         let selection: NSColor
         let selectionInk: NSColor?
         let hover: NSColor
@@ -150,6 +155,7 @@ enum Appearance {
             mutedInk: tone(palette.inkMuted, palette.inkMutedDark, alpha: 0.28),
             quoteInk: tone(palette.inkQuote, palette.inkQuoteDark, alpha: 0.62),
             labelInk: tone(palette.inkLabel, palette.inkLabelDark, alpha: 0.62),
+            accent: tone(palette.accent ?? palette.inkLabel, palette.accentDark ?? palette.inkLabelDark, alpha: 0.62),
             selection: tone(palette.selection, palette.selectionDark, alpha: 0.13),
             selectionInk: (palette.selectionInk ?? palette.selectionInkDark) == nil ? nil : dynamic(
                 light: color(hex: palette.selectionInk ?? palette.canvas),

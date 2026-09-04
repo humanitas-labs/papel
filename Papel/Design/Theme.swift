@@ -18,6 +18,9 @@ struct Palette: Equatable, Sendable {
     var selectionInk: String?
     var codeBackground: String?
     var rule: String?
+    /// The one coloured tone: the update arrow in the welcome window.
+    /// Nil is the label ink.
+    var accent: String?
     var inkMutedDark: String?
     var inkQuoteDark: String?
     var inkLabelDark: String?
@@ -25,6 +28,7 @@ struct Palette: Equatable, Sendable {
     var selectionInkDark: String?
     var codeBackgroundDark: String?
     var ruleDark: String?
+    var accentDark: String?
 
     /// The colour keys of a theme file or of the config's overrides: each
     /// value is a `#RRGGBB` string or nil to inherit.
@@ -40,6 +44,7 @@ struct Palette: Equatable, Sendable {
         var selectionInk: String?
         var codeBackground: String?
         var rule: String?
+        var accent: String?
         var inkMutedDark: String?
         var inkQuoteDark: String?
         var inkLabelDark: String?
@@ -47,6 +52,7 @@ struct Palette: Equatable, Sendable {
         var selectionInkDark: String?
         var codeBackgroundDark: String?
         var ruleDark: String?
+        var accentDark: String?
 
         var isEmpty: Bool { self == Overrides() }
     }
@@ -65,13 +71,15 @@ struct Palette: Equatable, Sendable {
             selectionInk: o.selectionInk ?? selectionInk,
             codeBackground: o.codeBackground ?? codeBackground,
             rule: o.rule ?? rule,
+            accent: o.accent ?? accent,
             inkMutedDark: o.inkMutedDark ?? inkMutedDark,
             inkQuoteDark: o.inkQuoteDark ?? inkQuoteDark,
             inkLabelDark: o.inkLabelDark ?? inkLabelDark,
             selectionDark: o.selectionDark ?? selectionDark,
             selectionInkDark: o.selectionInkDark ?? selectionInkDark,
             codeBackgroundDark: o.codeBackgroundDark ?? codeBackgroundDark,
-            ruleDark: o.ruleDark ?? ruleDark
+            ruleDark: o.ruleDark ?? ruleDark,
+            accentDark: o.accentDark ?? accentDark
         )
     }
 
@@ -80,10 +88,10 @@ struct Palette: Equatable, Sendable {
         Overrides(
             canvas: canvas, ink: ink, canvasDark: canvasDark, inkDark: inkDark,
             inkMuted: inkMuted, inkQuote: inkQuote, inkLabel: inkLabel, selection: selection, selectionInk: selectionInk,
-            codeBackground: codeBackground, rule: rule,
+            codeBackground: codeBackground, rule: rule, accent: accent,
             inkMutedDark: inkMutedDark, inkQuoteDark: inkQuoteDark, inkLabelDark: inkLabelDark,
             selectionDark: selectionDark, selectionInkDark: selectionInkDark,
-            codeBackgroundDark: codeBackgroundDark, ruleDark: ruleDark
+            codeBackgroundDark: codeBackgroundDark, ruleDark: ruleDark, accentDark: accentDark
         )
     }
 }
@@ -120,8 +128,10 @@ struct Theme: Equatable, Sendable, Identifiable {
             canvas: "#FFFFFF", ink: "#2D2B29", canvasDark: "#191B1D", inkDark: "#F4F9FA",
             inkLabel: "#68737E",
             selection: "#353535", selectionInk: "#F9F9F9",
+            accent: "#24B6C9",
             inkLabelDark: "#68737E",
-            selectionDark: "#F4F9FA", selectionInkDark: "#191B1D"
+            selectionDark: "#F4F9FA", selectionInkDark: "#191B1D",
+            accentDark: "#24B6C9"
         ),
         isBuiltIn: true
     )
