@@ -112,6 +112,11 @@ enum UpdateCheck {
         if let from = defaults.string(forKey: updatedFromKey) {
             defaults.removeObject(forKey: updatedFromKey)
             if isNewer(current, than: from) { observed.justUpdatedTo = current }
+            // Whatever the record said was available, the install fetched
+            // the latest there is; a record that still reads newer is
+            // wrong, and would keep the badge up. The next check redoes it.
+            defaults.removeObject(forKey: availableKey)
+            observed.available = nil
         }
         guard configuration.updateCheck else { return }
         if let known = defaults.string(forKey: availableKey) {

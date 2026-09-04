@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The launch after an update drops the remembered release, so a record that still read newer than the installed copy cannot keep the badge up; the next daily check finds a real one again.
 - The corner badges show a hand pointer on hover: the file name, the zoom percentage, and the update arrow. The text view heard every mouse move as first responder and forced the I-beam back over them.
 
 ## 0.7.2 — 2026.09.04

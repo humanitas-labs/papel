@@ -93,6 +93,23 @@ extension UpdateCheckTests {
         #expect(UpdateCheck.observed.justUpdatedTo == nil, "a relaunch that did not change the version says nothing")
     }
 
+    @MainActor
+    @Test
+    func theLaunchAfterAnInstallDropsTheRecordedRelease() {
+        let suite = TestDefaults("update.record")
+        defer { suite.remove() }
+        let defaults = suite.defaults
+        let now = Date()
+        defaults.set(now, forKey: UpdateCheck.lastCheckKey)
+        defaults.set("0.9.0", forKey: UpdateCheck.availableKey)
+        defaults.set("0.7.1", forKey: UpdateCheck.updatedFromKey)
+        UpdateCheck.observed.available = nil
+        UpdateCheck.runIfDue(configuration: Configuration(), defaults: defaults, current: "0.7.2", now: now)
+        #expect(UpdateCheck.observed.available == nil, "the install fetched the latest; a record still reading newer is stale")
+        #expect(defaults.string(forKey: UpdateCheck.availableKey) == nil)
+        UpdateCheck.observed.justUpdatedTo = nil
+    }
+
     @Test func relaunchReopensTheDocumentsThatWereOpen() {
         let none = UpdateInstaller.relaunchScript(pid: 42, bundle: "/Applications/Paper.app", documents: [])
         #expect(none == "while /bin/kill -0 42 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open '/Applications/Paper.app'")
