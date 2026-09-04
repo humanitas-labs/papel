@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.1 — 2026.09.04
 
 - A fence typed above an existing code block no longer swallows everything between them. CommonMark says a closing fence cannot carry an info string, so a bare ``` above a ```sh block ran to that block's closer and drew the paragraph, the sh fence, and its code as one band. Now a fence line of the same character, at least as long, with an info string always opens a block of its own, and a fence left open before it stays literal prose until it gets its own closer. A fence of the other character, or a shorter one, is content as before, so ~~~ around a ``` example and four backticks around three still work (#39).
 - Six heading levels are six sizes. `#` through `######` sit at 12, 8, 5, 3, 1, and 0 points above the body, 26 / 22 / 19 / 17 / 15 / 14 at the default; before, the step was 2 points with a floor that left `####`, `#####`, and `######` identical. `######` is body-sized, told apart by the heading weight (#38).
@@ -14,7 +14,6 @@
 - Lists no longer reflow when the caret enters an item: the bullet, dash, or number stays rendered on the active paragraph instead of giving way to the source `- ` or `1. `, so nothing below the caret moves as you click down a list. The marker and its gap are one unit for the caret, as the task prefix is: Left from the start of the text lands before the marker, Right lands back at the text, and a selection reaching into it takes it whole. Backspace at the start of the text removes the marker and leaves a plain line, undoably; Delete right before it does nothing. The rule now: syntax you edit by hand (emphasis, links, headings, quotes) reveals on the active paragraph; syntax you edit by command (list markers, task boxes) stays rendered (#50).
 - Nested tasks draw as rounded squares, top-level ones as circles, so the levels read apart at a glance.
 - Find: ⌘F opens a small pill at the top right, in the zoom badge's style, with a field and a count. Typing selects the nearest match from the caret and tints every match; Return, ⇧Return, ⌘G, and ⇧⌘G step through them, wrapping at either end; Esc closes the pill and leaves the selection on the match. A selected word seeds the field, and Edit ▸ Find ▸ Use Selection for Find sets the query without opening it. Find runs over the source, concealed syntax included. The Edit menu gains the Find submenu SwiftUI left out (#21).
-
 - Task lists: the circle stays on the line the caret is on; `- [ ]` no longer shows as raw text when you edit the item, and the text no longer shifts sideways on the way in. The prefix is one unit for the caret: Left from the start of the text lands before the item, Right lands back at the text, Shift-Left selects the prefix whole, and Up or Down never lands inside it. Backspace at the start of the text removes the whole prefix and leaves a plain line, undoably; Delete right before the prefix does nothing. A click on the circle flips the item on the focused line too. Copy still carries the source (#53).
 
 ## 0.6.0 — 2026.09.03
