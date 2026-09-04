@@ -27,6 +27,11 @@ struct MarkdownEditor: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.scrollerStyle = .overlay
+        // Under the full-size content view AppKit would inset the content
+        // and the scroller by the title area; the text view carries that
+        // band in its top margin instead, so the track runs corner to
+        // corner and the top of the document is scroll position zero (#61).
+        scrollView.automaticallyAdjustsContentInsets = false
 
         return scrollView
     }
@@ -54,11 +59,11 @@ struct MarkdownEditor: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? PaperTextView else { return }
             text.wrappedValue = textView.string
-            // Restyling replaces attributes across the whole storage. During
+            // Restyling replaces attributes in the storage. During
             // input-method composition that discards marked text, so styling
             // waits until the composition commits and fires a final change.
             guard !textView.hasMarkedText() else { return }
-            textView.syntaxStyler.apply(to: textView)
+            textView.syntaxStyler.applyEdited(to: textView)
         }
     }
 }

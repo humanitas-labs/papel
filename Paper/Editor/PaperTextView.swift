@@ -43,8 +43,14 @@ final class PaperTextView: NSTextView {
 
         storage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(container)
+        // Layout is done as the text is shown, not from the edit to the end
+        // of the text on every keystroke: with contiguous layout the view
+        // sizing after each edit relaid out everything below the caret,
+        // 57 ms per key in a 100 KB document (Debug) against 1 ms without.
+        layoutManager.allowsNonContiguousLayout = true
         super.init(frame: .zero, textContainer: container)
 
+        storage.delegate = self
         configure()
         observeSettings()
         observeImageLoads()
@@ -144,7 +150,7 @@ final class PaperTextView: NSTextView {
             Appearance.minimumHorizontalMargin,
             (newSize.width - Appearance.maximumMeasure) / 2
         )
-        textContainerInset = NSSize(width: margin, height: Appearance.topMargin)
+        textContainerInset = NSSize(width: margin, height: Appearance.topMargin + titleBarHeight)
 
         // A block image is fitted to the measure when styled; a window
         // narrower than the measure plus its margins shrinks the container,
@@ -157,6 +163,31 @@ final class PaperTextView: NSTextView {
     }
 
     private var styledMeasure: CGFloat = 0
+
+    /// The band under the window's transparent title bar and empty
+    /// toolbar. The scroll view no longer insets its content by it
+    /// (#61): that inset moved the scroller's track down with the text,
+    /// so the knob started well below the top corner while ending at the
+    /// bottom one. The text keeps its place by carrying the band in its
+    /// own top margin instead; the bottom margin grows by the same amount.
+    private var titleBarHeight: CGFloat {
+        guard let window else { return 0 }
+        return max(window.frame.height - window.contentLayoutRect.height, 0)
+    }
+
+    /// The title area's height settles after the view attaches (the chrome
+    /// adds the toolbar when the host view sees the window), so the
+    /// margin follows `contentLayoutRect`.
+    private var contentLayoutObservation: NSKeyValueObservation?
+
+    private func observeTitleBar() {
+        contentLayoutObservation = window?.observe(\.contentLayoutRect, options: [.initial]) { [weak self] _, _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.setFrameSize(self.frame.size)
+            }
+        }
+    }
 
     private var hasBlockImages: Bool {
         guard let storage = textStorage, storage.length > 0 else { return false }
@@ -220,6 +251,8 @@ final class PaperTextView: NSTextView {
     /// demand goes with it.
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
+        contentLayoutObservation = nil
+        observeTitleBar()
         if window == nil {
             for watcher in imageWatchers.values { watcher.cancel() }
             imageWatchers = [:]
@@ -1290,10 +1323,11 @@ final class PaperTextView: NSTextView {
     /// The checker can run on text before it is styled — on a freshly
     /// opened document, or on a span typed before its closing backtick —
     /// and its marks are temporary attributes that a restyle leaves
-    /// alone. So every restyle takes them off whatever is code now.
-    func clearCheckingMarksInCode() {
-        guard let storage = textStorage, let layoutManager, storage.length > 0 else { return }
-        storage.enumerateAttributes(in: NSRange(location: 0, length: storage.length)) { attributes, range, _ in
+    /// alone. So every restyle takes them off whatever is code now, in
+    /// the range it restyled.
+    func clearCheckingMarksInCode(in range: NSRange) {
+        guard let storage = textStorage, let layoutManager, range.length > 0 else { return }
+        storage.enumerateAttributes(in: range) { attributes, range, _ in
             guard Self.isCode(attributes) else { return }
             layoutManager.removeTemporaryAttribute(.spellingState, forCharacterRange: range)
         }
@@ -1334,3 +1368,21 @@ final class PaperTextView: NSTextView {
     }
 }
 
+// MARK: - Edits
+
+extension PaperTextView: NSTextStorageDelegate {
+    /// Every change to the characters, however it was made (typing, paste,
+    /// undo, a typed substitution, a list continuation), reaches the styler
+    /// here, so the restyle after it can stay local to the edit.
+    nonisolated func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        guard editedMask.contains(.editedCharacters) else { return }
+        // The storage is edited on the main thread only; the protocol is
+        // not annotated, so the isolation is asserted here.
+        MainActor.assumeIsolated { syntaxStyler.noteEdit(editedRange, delta: delta) }
+    }
+}
