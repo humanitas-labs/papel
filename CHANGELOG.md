@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.3 — 2026.09.04
 
 - Documents open at the top, every time. AppKit scrolls a text view's caret into view whenever its frame changes size, and the caret sits at the top of a freshly opened document; a band taking its height as its image decoded, or the top margin settling as the window attached, left the document a little scrolled. The viewport now stays put across any frame change that is not typing (#49).
 - The launch after an update drops the remembered release, so a record that still read newer than the installed copy cannot keep the badge up; the next daily check finds a real one again.
