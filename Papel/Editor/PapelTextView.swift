@@ -22,18 +22,6 @@ final class PapelTextView: NSTextView {
         }
     }
 
-    /// The toast of inline-format glyphs, when the document view shows one.
-    /// This view tells it when a pointer selection ends and when to go.
-    var selectionToolbar: SelectionToolbarModel? {
-        didSet {
-            selectionToolbar?.findBarVisible = { [weak self] in
-                self?.enclosingScrollView?.isFindBarVisible ?? false
-            }
-        }
-    }
-    /// Set around an edit the toast makes, so the edit does not dismiss it.
-    private var toolbarEditing = false
-
     init() {
         let storage = NSTextStorage()
         let layoutManager = PapelLayoutManager()
@@ -69,7 +57,6 @@ final class PapelTextView: NSTextView {
     ) {
         super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
         guard !stillSelecting, !hasMarkedText() else { return }
-        if ranges.allSatisfy({ $0.rangeValue.length == 0 }) { selectionToolbar?.hide() }
         revealSelectedParagraphs()
     }
 
@@ -191,17 +178,7 @@ final class PapelTextView: NSTextView {
             NotificationCenter.default.removeObserver(observer)
             clipBoundsObserver = nil
         }
-        if let observer = scrollObserver {
-            NotificationCenter.default.removeObserver(observer)
-            scrollObserver = nil
-        }
-        guard let scrollView = enclosingScrollView else { return }
-        scrollObserver = NotificationCenter.default.addObserver(
-            forName: NSScrollView.willStartLiveScrollNotification, object: scrollView, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.selectionToolbar?.hide() }
-        }
-        let clipView = scrollView.contentView
+        guard let clipView = enclosingScrollView?.contentView else { return }
         clipView.postsBoundsChangedNotifications = true
         clipBoundsObserver = NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification, object: clipView, queue: .main
@@ -211,7 +188,6 @@ final class PapelTextView: NSTextView {
     }
 
     private var clipBoundsObserver: NSObjectProtocol?
-    private var scrollObserver: NSObjectProtocol?
 
     /// The text view resizes itself after every relayout, so its own frame
     /// change covers restyling, edits, and a narrower measure resizing the
@@ -492,7 +468,6 @@ final class PapelTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
-        if !toolbarEditing { selectionToolbar?.hide() }
         if placeholderVisible != string.isEmpty { needsDisplay = true }
     }
 
@@ -874,33 +849,6 @@ final class PapelTextView: NSTextView {
            let up = NSApp.currentEvent, up.type == .leftMouseUp,
            linkDestination(at: up) == destination {
             open(destination)
-        }
-        // The tracking loop has run; a non-empty selection was made with
-        // the pointer, which is the one way the toast is summoned.
-        selectionToolbar?.pointerSelectionEnded(length: selectedRange().length)
-    }
-
-    /// Any key dismisses the toast: the shortcuts are the keyboard's
-    /// toolbar, and typing means the selection is being replaced.
-    override func keyDown(with event: NSEvent) {
-        selectionToolbar?.hide()
-        super.keyDown(with: event)
-    }
-
-    override func performTextFinderAction(_ sender: Any?) {
-        selectionToolbar?.hide()
-        super.performTextFinderAction(sender)
-    }
-
-    /// A glyph on the toast: the same edit as the shortcut, and the toast
-    /// stays so a second action can follow.
-    func performToolbarAction(_ action: SelectionToolbarAction) {
-        toolbarEditing = true
-        defer { toolbarEditing = false }
-        if let format = action.format {
-            toggle(format)
-        } else {
-            insertLink(nil)
         }
     }
 
