@@ -38,6 +38,7 @@ To make double-clicking a `.md` file open Papel: select any Markdown file in Fin
 | ⌘K | add a link, destination from the clipboard when it holds a URL |
 | click / ⌘-click | open a link |
 | double-click an image | open it in Quick Look |
+| paste or drop an image | saved beside the document, inserted as `![](…)` |
 | ⌘, | settings |
 
 ## Configuration

@@ -23,6 +23,13 @@ struct Configuration: Equatable, Sendable {
     var headingWeight: Double = 500
     /// Corner radius in points a block image is clipped to; 0 is square.
     var imageCornerRadius: Double = 12
+    /// Subfolder, relative to the document, that pasted images are written
+    /// into; empty is the document's own folder. Never absolute, never
+    /// escaping with `..`, so images stay with the document.
+    var imagePasteDirectory: String = ""
+    /// Whether a pointer selection summons the toast of inline-format
+    /// glyphs at the bottom of the window.
+    var selectionToolbar: Bool = true
     /// The theme's canonical name: a built-in or a file in `themes/`. Kept
     /// as written even when nothing resolves to it, so a theme file added
     /// later is picked up; `ConfigurationStore` resolves it to a `Theme`.
@@ -142,6 +149,16 @@ struct Configuration: Equatable, Sendable {
     # Corner radius in points that a block image is clipped to; 0 is square.
     image.corner.radius = 12
 
+    # Selection toolbar: on shows bold, italic, underline, strikethrough,
+    # code, and link glyphs at the bottom of the window while text is
+    # selected with the mouse or trackpad.
+    selection.toolbar = on
+
+    # Folder, relative to the document, that pasted and dropped images are
+    # written into (for example assets). Empty is the document's own
+    # folder. It is created when first needed.
+    image.paste.directory =
+
     # Theme: enso, apple, papel, slate, mono, or spatial, or the name of a file in
     # the themes/ directory beside this one holding color.* keys like those
     # below. Each has light and dark colours; the colour overrides below
@@ -196,6 +213,16 @@ struct Configuration: Equatable, Sendable {
         return config
     }
 
+    /// on/true/yes and off/false/no; anything else is nil so the last good
+    /// value stands.
+    private static func flag(_ value: String) -> Bool? {
+        switch value.lowercased() {
+        case "on", "true", "yes": true
+        case "off", "false", "no": false
+        default: nil
+        }
+    }
+
     private static func unquote(_ value: String) -> String {
         guard value.count >= 2, let first = value.first, first == "\"" || first == "'", value.last == first else {
             return value
@@ -218,17 +245,17 @@ struct Configuration: Equatable, Sendable {
         case "letter.spacing":
             letterSpacing = Self.number(value, in: Self.letterSpacingRange) ?? letterSpacing
         case "font.smoothing":
-            switch value.lowercased() {
-            case "on", "true", "yes": fontSmoothing = true
-            case "off", "false", "no": fontSmoothing = false
-            default: break
-            }
+            fontSmoothing = Self.flag(value) ?? fontSmoothing
         case "font.weight":
             fontWeight = Self.weight(value) ?? fontWeight
         case "heading.weight":
             headingWeight = Self.weight(value) ?? headingWeight
         case "image.corner.radius":
             imageCornerRadius = Self.number(value, in: Self.imageCornerRadiusRange) ?? imageCornerRadius
+        case "selection.toolbar":
+            selectionToolbar = Self.flag(value) ?? selectionToolbar
+        case "image.paste.directory":
+            if ImagePaste.isAcceptableDirectory(value) { imagePasteDirectory = value.trimmingCharacters(in: .whitespaces) }
         case "window.width":
             windowWidth = Self.number(value, in: Self.windowWidthRange) ?? windowWidth
         case "window.height":
@@ -256,6 +283,8 @@ struct Configuration: Equatable, Sendable {
             ("font.smoothing", fontSmoothing ? "on" : "off"),
             ("heading.weight", Self.format(headingWeight)),
             ("image.corner.radius", Self.format(imageCornerRadius)),
+            ("image.paste.directory", imagePasteDirectory),
+            ("selection.toolbar", selectionToolbar ? "on" : "off"),
             ("theme", theme),
             ("window.width", Self.format(windowWidth)),
             ("window.height", Self.format(windowHeight)),

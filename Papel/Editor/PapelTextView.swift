@@ -22,6 +22,18 @@ final class PapelTextView: NSTextView {
         }
     }
 
+    /// The toast of inline-format glyphs, when the document view shows one.
+    /// This view tells it when a pointer selection ends and when to go.
+    var selectionToolbar: SelectionToolbarModel? {
+        didSet {
+            selectionToolbar?.findBarVisible = { [weak self] in
+                self?.enclosingScrollView?.isFindBarVisible ?? false
+            }
+        }
+    }
+    /// Set around an edit the toast makes, so the edit does not dismiss it.
+    private var toolbarEditing = false
+
     init() {
         let storage = NSTextStorage()
         let layoutManager = PapelLayoutManager()
@@ -57,6 +69,7 @@ final class PapelTextView: NSTextView {
     ) {
         super.setSelectedRanges(ranges, affinity: affinity, stillSelecting: stillSelecting)
         guard !stillSelecting, !hasMarkedText() else { return }
+        if ranges.allSatisfy({ $0.rangeValue.length == 0 }) { selectionToolbar?.hide() }
         revealSelectedParagraphs()
     }
 
@@ -132,11 +145,18 @@ final class PapelTextView: NSTextView {
             watcher.cancel()
             imageWatchers[url] = nil
         }
+        var added = false
         for url in wanted where imageWatchers[url] == nil {
             imageWatchers[url] = FileWatcher(url: url) { [weak self] in
                 self?.imageDidChange(at: url)
             }
+            added = true
         }
+        // A file newly named (a pasted image, a line typed by hand, a file
+        // that has just appeared) is demanded now. The frame and scroll
+        // observers cover movement; an edit that adds a band in place
+        // moves nothing they watch, and the band stayed a placeholder.
+        if added { refreshImageDemand() }
     }
 
     private func imageDidChange(at url: URL) {
@@ -171,7 +191,17 @@ final class PapelTextView: NSTextView {
             NotificationCenter.default.removeObserver(observer)
             clipBoundsObserver = nil
         }
-        guard let clipView = enclosingScrollView?.contentView else { return }
+        if let observer = scrollObserver {
+            NotificationCenter.default.removeObserver(observer)
+            scrollObserver = nil
+        }
+        guard let scrollView = enclosingScrollView else { return }
+        scrollObserver = NotificationCenter.default.addObserver(
+            forName: NSScrollView.willStartLiveScrollNotification, object: scrollView, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.selectionToolbar?.hide() }
+        }
+        let clipView = scrollView.contentView
         clipView.postsBoundsChangedNotifications = true
         clipBoundsObserver = NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification, object: clipView, queue: .main
@@ -181,6 +211,7 @@ final class PapelTextView: NSTextView {
     }
 
     private var clipBoundsObserver: NSObjectProtocol?
+    private var scrollObserver: NSObjectProtocol?
 
     /// The text view resizes itself after every relayout, so its own frame
     /// change covers restyling, edits, and a narrower measure resizing the
@@ -461,6 +492,7 @@ final class PapelTextView: NSTextView {
 
     override func didChangeText() {
         super.didChangeText()
+        if !toolbarEditing { selectionToolbar?.hide() }
         if placeholderVisible != string.isEmpty { needsDisplay = true }
     }
 
@@ -687,6 +719,103 @@ final class PapelTextView: NSTextView {
         breakUndoCoalescing()
     }
 
+    // MARK: - Image paste and drop (#36)
+
+    /// A plain-text view reads only text types, and AppKit disables Paste
+    /// (so ⌘V beeps) when the pasteboard holds none of them. Images and
+    /// files are declared readable so a screenshot reaches `paste`.
+    override var readablePasteboardTypes: [NSPasteboard.PasteboardType] {
+        var types = super.readablePasteboardTypes
+        for type in [NSPasteboard.PasteboardType.png, .tiff, .fileURL] where !types.contains(type) {
+            types.append(type)
+        }
+        return types
+    }
+
+    /// An image on the clipboard lands beside the document and inserts a
+    /// block image line; anything else pastes as text, as before.
+    override func paste(_ sender: Any?) {
+        if pasteImage(from: .general, at: selectedRange()) { return }
+        super.paste(sender)
+    }
+
+    /// A Finder drop of an image file rides the paste path, at the point
+    /// dropped. AppKit's own handling would insert the file's path as text.
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pasteboard = sender.draggingPasteboard
+        guard ImagePaste.imageFileURL(on: pasteboard) != nil else { return super.performDragOperation(sender) }
+        let point = convert(sender.draggingLocation, from: nil)
+        let index = characterIndexForInsertion(at: point)
+        return pasteImage(from: pasteboard, at: NSRange(location: index, length: 0))
+    }
+
+    /// The subfolder pasted images go to, relative to the document; nil
+    /// reads the config. Tests set it directly.
+    var imagePasteDirectory: String?
+
+    /// Writes the image on `pasteboard` beside the document and inserts a
+    /// block image at `range`. False when the pasteboard holds no image, so
+    /// the caller falls through to ordinary text. An unsaved document has
+    /// no folder to write into: the save sheet runs first and the paste
+    /// continues once the file exists, or not at all when the sheet is
+    /// cancelled.
+    @discardableResult
+    func pasteImage(from pasteboard: NSPasteboard, at range: NSRange) -> Bool {
+        guard isEditable, !hasMarkedText(), let source = ImagePaste.source(on: pasteboard) else { return false }
+        if let documentURL {
+            insertImage(source, beside: documentURL, at: range)
+        } else {
+            saveThenInsert(source, at: range)
+        }
+        return true
+    }
+
+    private var pendingImage: (source: ImagePaste.Source, range: NSRange)?
+
+    private func saveThenInsert(_ source: ImagePaste.Source, at range: NSRange) {
+        guard let document = hostDocument else { NSSound.beep(); return }
+        pendingImage = (source, range)
+        document.save(withDelegate: self, didSave: #selector(document(_:didSave:contextInfo:)), contextInfo: nil)
+    }
+
+    /// The NSDocument behind this window: SwiftUI's document group wraps
+    /// the file document in one and hangs it on the window controller.
+    private var hostDocument: NSDocument? {
+        if let document = window?.windowController?.document as? NSDocument { return document }
+        return NSDocumentController.shared.documents.first { document in
+            document.windowControllers.contains { $0.window == window }
+        }
+    }
+
+    @objc private func document(_ document: NSDocument, didSave: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        defer { pendingImage = nil }
+        guard didSave, let url = document.fileURL, let pending = pendingImage else { return }
+        // The editor pushes the new URL in on its next update; the band
+        // should render now.
+        documentURL = url
+        insertImage(pending.source, beside: url, at: pending.range.clamped(to: (string as NSString).length))
+    }
+
+    private func insertImage(_ source: ImagePaste.Source, beside documentURL: URL, at range: NSRange) {
+        let directory = imagePasteDirectory ?? ConfigurationStore.shared.current.imagePasteDirectory
+        let destination: String
+        do {
+            destination = try ImagePaste.write(source, beside: documentURL, directory: directory)
+        } catch {
+            presentError(error)
+            return
+        }
+        let edit = ImagePaste.insertion(of: destination, replacing: range, in: string as NSString)
+        // Its own undo step: ⌘Z takes the line back out. The file stays,
+        // a deliberate choice against silently deleting a user's file.
+        breakUndoCoalescing()
+        guard shouldChangeText(in: range, replacementString: edit.replacement) else { return }
+        textStorage?.replaceCharacters(in: range, with: edit.replacement)
+        didChangeText()
+        setSelectedRange(edit.selection)
+        breakUndoCoalescing()
+    }
+
     // MARK: - Inline formatting (Format menu, ⌘B ⌘I ⌘U ⌘E)
 
     @objc func toggleBold(_ sender: Any?) { toggle(.bold) }
@@ -745,6 +874,33 @@ final class PapelTextView: NSTextView {
            let up = NSApp.currentEvent, up.type == .leftMouseUp,
            linkDestination(at: up) == destination {
             open(destination)
+        }
+        // The tracking loop has run; a non-empty selection was made with
+        // the pointer, which is the one way the toast is summoned.
+        selectionToolbar?.pointerSelectionEnded(length: selectedRange().length)
+    }
+
+    /// Any key dismisses the toast: the shortcuts are the keyboard's
+    /// toolbar, and typing means the selection is being replaced.
+    override func keyDown(with event: NSEvent) {
+        selectionToolbar?.hide()
+        super.keyDown(with: event)
+    }
+
+    override func performTextFinderAction(_ sender: Any?) {
+        selectionToolbar?.hide()
+        super.performTextFinderAction(sender)
+    }
+
+    /// A glyph on the toast: the same edit as the shortcut, and the toast
+    /// stays so a second action can follow.
+    func performToolbarAction(_ action: SelectionToolbarAction) {
+        toolbarEditing = true
+        defer { toolbarEditing = false }
+        if let format = action.format {
+            toggle(format)
+        } else {
+            insertLink(nil)
         }
     }
 
