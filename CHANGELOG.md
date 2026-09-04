@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026.09.03
 
 - Zoom: ⌘+ and ⌘− step the view, ten percent at a time around actual size and in larger steps further out, from 50% to 300%; ⌘0 returns to actual size, and the three sit in the View menu. A badge in the window's top-right corner shows the percentage on every change and while the pointer rests there; click it, type a percentage, and press Return to set the view to exactly that. The whole page scales together, body, headings, measure, indents, code inset, and margins, so it keeps its proportions; it is a lens for the monitor you are on, not a change to the typography. The scale is kept per machine in the app's defaults and never written to the config or a preset, so those stay the same on every machine (#13).
 
