@@ -438,6 +438,7 @@ final class PaperTextView: NSTextView {
     override func drawBackground(in rect: NSRect) {
         super.drawBackground(in: rect)
         drawCodeBlockBands(in: rect)
+        syncCodeCopyButtons()
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
         drawTaskCircles(in: rect)
@@ -583,6 +584,11 @@ final class PaperTextView: NSTextView {
             ).fill()
         }
     }
+
+    /// One per code band in the viewport, kept in step by
+    /// `syncCodeCopyButtons` (in `CodeCopyButton.swift`).
+    var codeCopyButtons: [CodeCopyButton] = []
+
 
     private func drawCodeBlockBands(in dirtyRect: NSRect) {
         guard let layoutManager = layoutManager as? PaperLayoutManager,
@@ -962,6 +968,7 @@ final class PaperTextView: NSTextView {
     /// `super.mouseDown` runs the whole tracking loop, so afterwards a drag
     /// shows up as a non-empty selection and the click is left alone.
     override func mouseDown(with event: NSEvent) {
+        if pressIsInTitleBand(event) { return handleTitleBandPress(event) }
         let destination = linkDestination(at: event)
         if event.modifierFlags.contains(.command), let destination {
             open(destination)
@@ -977,6 +984,33 @@ final class PaperTextView: NSTextView {
            let up = NSApp.currentEvent, up.type == .leftMouseUp,
            linkDestination(at: up) == destination {
             open(destination)
+        }
+    }
+
+    /// The band under the transparent title bar lies over the text view
+    /// since it took over the title inset (#61), so a press there would
+    /// start a selection and the window had nowhere to be grabbed (#65).
+    /// The band is the title bar: a press drags the window and a
+    /// double-click does what the title bar's would.
+    /// The grab band is the traffic lights' row, not the whole title area:
+    /// as far below the close button as the button sits below the top.
+    private func pressIsInTitleBand(_ event: NSEvent) -> Bool {
+        guard let window else { return false }
+        var floor = window.contentLayoutRect.maxY
+        if let close = window.standardWindowButton(.closeButton), let superview = close.superview {
+            let button = superview.convert(close.frame, to: nil)
+            floor = max(floor, button.minY - (window.frame.height - button.maxY))
+        }
+        return event.locationInWindow.y > floor
+    }
+
+    private func handleTitleBandPress(_ event: NSEvent) {
+        guard let window else { return }
+        guard event.clickCount == 2 else { return window.performDrag(with: event) }
+        switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
+        case "Minimize": window.miniaturize(nil)
+        case "None": break
+        default: window.zoom(nil)
         }
     }
 
