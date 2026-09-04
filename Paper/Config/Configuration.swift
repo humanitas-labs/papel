@@ -18,9 +18,11 @@ struct Configuration: Equatable, Sendable {
     /// as WebKit does.
     var fontSmoothing: Bool = false
     /// The system's continuous spelling and grammar checking, each drawn
-    /// as underlines while you type. Off drops the marks as well.
+    /// as underlines while you type. Off drops the marks as well. Grammar
+    /// starts off: its marks land on prose that is fine and on Markdown
+    /// that is not prose.
     var spelling: Bool = true
-    var grammar: Bool = true
+    var grammar: Bool = false
     /// Weights on the CSS scale, 100–900. A face with a variable weight axis
     /// takes the exact value; a static family takes its nearest face.
     var fontWeight: Double = 400
@@ -159,7 +161,7 @@ struct Configuration: Equatable, Sendable {
 
     # Spelling and grammar checking as you type, each on or off.
     spelling = on
-    grammar = on
+    grammar = off
 
     # Indent of a list's bullets, numbers, and task circles from the text
     # margin, as a multiple of the font size; 0 puts them on the margin.
