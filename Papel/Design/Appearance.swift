@@ -326,36 +326,50 @@ enum Appearance {
 /// The view scale behind ⌘+, ⌘−, and ⌘0: a lens over the rendered page for
 /// the monitor at hand, kept in `UserDefaults` per machine and never in the
 /// config or a preset, which are the document's typographic identity and
-/// stay the same everywhere. Steps walk a fixed ladder so Actual Size lands
-/// on exactly 1 and repeated steps land on the same values.
+/// stay the same everywhere. Steps walk a fixed ladder, ten percent apart
+/// around actual size and coarser further out, so Actual Size lands on
+/// exactly 1 and repeated steps land on the same values; the badge in the
+/// window's corner takes any value in `range`.
 @MainActor
 enum Zoom {
-    static let steps: [CGFloat] = [0.7, 0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0]
+    static let steps: [CGFloat] = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0, 2.5, 3.0]
+    static let range: ClosedRange<CGFloat> = 0.5...3.0
     static let defaultsKey = "papel.viewScale"
+
+    /// Published for the badge; `scale` is the same value for everyone else.
+    final class Observed: ObservableObject {
+        @Published fileprivate(set) var scale: CGFloat = 1
+    }
+    static let observed = Observed()
 
     private static var cached: CGFloat?
 
     static var scale: CGFloat {
         if let cached { return cached }
         let stored = UserDefaults.standard.object(forKey: defaultsKey) as? Double
-        let scale = stored.map { nearestStep(to: CGFloat($0)) } ?? 1
+        let scale = stored.map { clamp(CGFloat($0)) } ?? 1
         cached = scale
+        observed.scale = scale
         return scale
     }
 
-    static var canZoomIn: Bool { scale < steps[steps.count - 1] }
-    static var canZoomOut: Bool { scale > steps[0] }
+    static var percent: Int { Int((scale * 100).rounded()) }
 
-    static func zoomIn() { set(steps.first { $0 > scale } ?? scale) }
-    static func zoomOut() { set(steps.last { $0 < scale } ?? scale) }
+    static var canZoomIn: Bool { scale < range.upperBound }
+    static var canZoomOut: Bool { scale > range.lowerBound }
+
+    /// The next rung above or below; past the ladder's end, the range's.
+    static func zoomIn() { set(steps.first { $0 > scale } ?? range.upperBound) }
+    static func zoomOut() { set(steps.last { $0 < scale } ?? range.lowerBound) }
     static func reset() { set(1) }
 
-    /// Stores the scale and tells every window to restyle; a value off the
-    /// ladder snaps to the nearest step. Setting 1 clears the key.
+    /// Stores the scale and tells every window to restyle; a value outside
+    /// `range` is clamped. Setting 1 clears the key.
     static func set(_ value: CGFloat) {
-        let next = nearestStep(to: value)
+        let next = clamp(value)
         guard next != scale else { return }
         cached = next
+        observed.scale = next
         if next == 1 {
             UserDefaults.standard.removeObject(forKey: defaultsKey)
         } else {
@@ -364,7 +378,11 @@ enum Zoom {
         NotificationCenter.default.post(name: Configuration.didChangeNotification, object: nil)
     }
 
-    static func nearestStep(to value: CGFloat) -> CGFloat {
-        steps.min { abs($0 - value) < abs($1 - value) } ?? 1
+    static func set(percent: Int) { set(CGFloat(percent) / 100) }
+
+    /// Clamped into `range` and rounded to whole percent, so the badge
+    /// shows exactly what was set.
+    static func clamp(_ value: CGFloat) -> CGFloat {
+        (min(max(value, range.lowerBound), range.upperBound) * 100).rounded() / 100
     }
 }

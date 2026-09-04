@@ -18,11 +18,11 @@ struct ZoomTests {
         withCleanZoom {
             #expect(Zoom.scale == 1)
             for _ in 0..<20 { Zoom.zoomIn() }
-            #expect(Zoom.scale == Zoom.steps.last)
+            #expect(Zoom.scale == Zoom.range.upperBound)
             #expect(!Zoom.canZoomIn)
             #expect(Zoom.canZoomOut)
             for _ in 0..<40 { Zoom.zoomOut() }
-            #expect(Zoom.scale == Zoom.steps.first)
+            #expect(Zoom.scale == Zoom.range.lowerBound)
             #expect(!Zoom.canZoomOut)
             Zoom.reset()
             #expect(Zoom.scale == 1)
@@ -38,7 +38,18 @@ struct ZoomTests {
             Zoom.zoomIn(); Zoom.zoomOut()
             #expect(Zoom.scale == up)
             Zoom.set(1.42)
+            #expect(Zoom.scale == 1.42)
+            #expect(Zoom.percent == 142)
+            Zoom.zoomIn()
             #expect(Zoom.scale == 1.5)
+            Zoom.set(percent: 83)
+            Zoom.zoomOut()
+            #expect(Zoom.scale == 0.8)
+            Zoom.set(percent: 900)
+            #expect(Zoom.scale == Zoom.range.upperBound)
+            Zoom.set(0.001)
+            #expect(Zoom.scale == Zoom.range.lowerBound)
+            #expect(Zoom.observed.scale == Zoom.range.lowerBound)
         }
     }
 
