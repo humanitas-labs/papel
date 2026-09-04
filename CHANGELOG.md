@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- After an update restarts Paper, the documents that were open come back. The relaunch used to open the app bare, landing on the welcome window (#63).
 - The guide is shorter and shows the formatting by wearing it: bold, italic, code, a link, and a task list with a nested item, each naming its key. The terminal section is gone; the agent prompt tells the agent to mention the `paper` command and the default-app switch only to someone who works in the terminal.
 - Grammar checking is off by default; `grammar = on` in the config or the switch under Settings ▸ Text turns it on. Spelling stays on.
 - A newer release is offered, not fetched. The badge in the bottom-left corner shows a down arrow when one is out and nothing downloads until it is clicked; then the ring fills, the restart loop takes its place, and a click relaunches. Before, the release installed itself the moment it was found.

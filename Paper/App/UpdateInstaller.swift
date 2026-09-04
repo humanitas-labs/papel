@@ -164,15 +164,27 @@ enum UpdateInstaller {
     /// A cancelled quit (an unsaved document kept open) leaves the new copy
     /// in place for the next launch.
     @MainActor
+    /// Quits and starts the new copy once this one has gone, with the
+    /// documents that were open handed back to it, so an update does not
+    /// throw the reader out of what they were reading (#63).
     static func relaunch() {
-        let path = Bundle.main.bundleURL.path
+        let documents = NSDocumentController.shared.documents.compactMap(\.fileURL?.path)
         let pid = ProcessInfo.processInfo.processIdentifier
-        let script = "while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open \"\(path)\""
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script]
+        process.arguments = ["-c", relaunchScript(pid: pid, bundle: Bundle.main.bundleURL.path, documents: documents)]
         try? process.run()
         NSApp.terminate(nil)
+    }
+
+    /// Waits for `pid` to exit, then opens the bundle with `documents`;
+    /// each path is single-quoted for the shell.
+    static func relaunchScript(pid: Int32, bundle: String, documents: [String]) -> String {
+        let quoted = ([bundle] + documents).map { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+        let open = documents.isEmpty
+            ? "/usr/bin/open \(quoted[0])"
+            : "/usr/bin/open -a \(quoted[0]) \(quoted.dropFirst().joined(separator: " "))"
+        return "while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.2; done; \(open)"
     }
 
     private static func run(_ tool: String, _ arguments: [String]) -> (ok: Bool, output: String) {

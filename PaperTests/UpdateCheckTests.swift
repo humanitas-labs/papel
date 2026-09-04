@@ -92,4 +92,11 @@ extension UpdateCheckTests {
         UpdateCheck.runIfDue(configuration: Configuration(), defaults: defaults, current: "0.7.0", now: Date())
         #expect(UpdateCheck.observed.justUpdatedTo == nil, "a relaunch that did not change the version says nothing")
     }
+
+    @Test func relaunchReopensTheDocumentsThatWereOpen() {
+        let none = UpdateInstaller.relaunchScript(pid: 42, bundle: "/Applications/Paper.app", documents: [])
+        #expect(none == "while /bin/kill -0 42 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open '/Applications/Paper.app'")
+        let two = UpdateInstaller.relaunchScript(pid: 42, bundle: "/Applications/Paper.app", documents: ["/Users/a/notes.md", "/Users/a/it's here.md"])
+        #expect(two.hasSuffix("/usr/bin/open -a '/Applications/Paper.app' '/Users/a/notes.md' '/Users/a/it'\\''s here.md'"))
+    }
 }
