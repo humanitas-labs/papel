@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026.09.04
 
 - Typing in a long document no longer restyles the whole of it on every keystroke. The restyle covers the run of paragraphs around the edit, out to the nearest blank lines and to any fenced block or comment it overlaps, and falls back to the full pass only when a fence or comment changed what is code elsewhere. The styler's share of a keystroke goes from 18 ms at 10 KB, 186 ms at 100 KB, and 2.3 s at 1 MB to about 1, 2, and 11 ms (Debug). The text view's own relayout after an edit, which grows with the text below the caret, is left as it is (#27).
 - The scroller runs from the top corner to the bottom one. AppKit was insetting the scroll view by the transparent title area, 66 points, which moved the knob's track down along with the text, so the knob started well below the top while ending at the bottom; the text view now carries that band in its own top margin and the scroll view is not inset at all. The top of the document is scroll position zero again, which is the likely cause of documents opening a little scrolled down (#61, #49).
