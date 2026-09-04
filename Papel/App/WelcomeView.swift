@@ -56,12 +56,11 @@ struct WelcomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: Appearance.canvas))
         .overlay(alignment: .bottomLeading) {
-            if updates.justUpdatedTo != nil {
-                UpdateToast()
-            } else if let release = updates.available {
+            if let release = updates.available, updates.justUpdatedTo == nil {
                 UpdateBadge(release: release)
             }
         }
+        .overlay(alignment: .top) { UpdateToast().ignoresSafeArea(.container, edges: .top) }
     }
 
     private var header: some View {
