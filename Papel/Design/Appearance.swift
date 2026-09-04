@@ -77,14 +77,15 @@ enum Appearance {
     /// stands on the margin itself, aligned with the surrounding text.
     static var quoteIndent: CGFloat { (bodySize * 1.4).rounded() }
 
-    /// `#` sits at body + 12 pt; `##` starts at body + 6 pt and each further
-    /// level steps down 2 pt, never below body + 2 pt. The offsets scale
-    /// with the view so a heading keeps its proportion to the body.
+    /// Heading offsets above the body size, `#` through `######`: six
+    /// levels, six sizes. `######` sits at the body size itself and is told
+    /// apart by weight and the muted ink. The offsets scale with the view
+    /// so a heading keeps its proportion to the body.
+    static let headingOffsets: [CGFloat] = [12, 8, 5, 3, 1, 0]
+
     static func headingSize(level: Int) -> CGFloat {
-        let step = Zoom.scale
-        return level == 1
-            ? bodySize + 12 * step
-            : max(bodySize + 2 * step, bodySize + (6 - CGFloat(level - 2) * 2) * step)
+        let offset = headingOffsets[min(max(level, 1), headingOffsets.count) - 1]
+        return bodySize + offset * Zoom.scale
     }
 
     /// Canvas and ink come from the configured theme (plus any overrides)

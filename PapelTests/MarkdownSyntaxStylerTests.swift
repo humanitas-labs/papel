@@ -238,6 +238,30 @@ struct ConfigurationDrivenAppearanceTests {
         return try body()
     }
 
+    /// Six heading levels are six sizes, each smaller than the last, with
+    /// `######` at the body size in the quote ink so it still reads as a
+    /// heading (#38).
+    @Test
+    func sixHeadingLevelsAreSixSizes() throws {
+        let sizes = (1...6).map { Appearance.headingSize(level: $0) }
+        #expect(sizes == sizes.sorted(by: >))
+        #expect(Set(sizes).count == 6)
+        #expect(sizes[5] == Appearance.bodySize)
+        #expect(sizes[0] == Appearance.bodySize + 12)
+
+        let textView = PapelTextView()
+        textView.string = "##### Five\n\n###### Six\n"
+        textView.syntaxStyler.apply(to: textView)
+        let storage = try #require(textView.textStorage)
+        let text = textView.string as NSString
+        let five = text.range(of: "Five").location
+        let six = text.range(of: "Six").location
+        #expect((storage.attribute(.font, at: five, effectiveRange: nil) as? NSFont)?.pointSize == Appearance.headingSize(level: 5))
+        #expect((storage.attribute(.font, at: six, effectiveRange: nil) as? NSFont)?.pointSize == Appearance.bodySize)
+        #expect(storage.attribute(.foregroundColor, at: six, effectiveRange: nil) as? NSColor == Appearance.quoteInk)
+        #expect(storage.attribute(.foregroundColor, at: five, effectiveRange: nil) as? NSColor == Appearance.ink)
+    }
+
     @Test
     func configurationDrivesBodyFontAndHeadings() {
         var config = Configuration()
@@ -254,8 +278,8 @@ struct ConfigurationDrivenAppearanceTests {
             #expect(Appearance.bodySize == 20)
             #expect(Appearance.bodyFont().familyName == "Georgia")
             #expect(Appearance.headingSize(level: 1) == 32)
-            #expect(Appearance.headingSize(level: 2) == 26)
-            #expect(Appearance.headingSize(level: 6) == 22)
+            #expect(Appearance.headingSize(level: 2) == 28)
+            #expect(Appearance.headingSize(level: 6) == 20)
             #expect(Appearance.paragraphStyle().lineHeightMultiple == 1.5)
             #expect(Appearance.paragraphStyle().paragraphSpacing == 20)
             #expect(Appearance.maximumMeasure == 700)

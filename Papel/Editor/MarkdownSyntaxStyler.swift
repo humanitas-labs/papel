@@ -220,6 +220,11 @@ final class MarkdownSyntaxStyler {
 
             storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: markerRange)
             storage.addAttribute(.font, value: Appearance.headingFont(size: size), range: contentRange)
+            // `######` is body-sized; the quote ink marks it as a heading
+            // along with the weight.
+            if markerRange.length == 6 {
+                storage.addAttribute(.foregroundColor, value: Appearance.quoteInk, range: contentRange)
+            }
             // The marker and the whitespace up to the content vanish together
             // when the selection leaves the paragraph, so the heading text sits
             // on the margin.
