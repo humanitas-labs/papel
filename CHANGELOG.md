@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Task lists: `- [ ]` and `- [x]` draw as a circle in place of the list marker, a ring for an open item and an ink disc with a check for a done one, whose text recedes into the quote ink. A click on the circle flips the source between `[ ]` and `[x]`, undoably, with the disc growing out of the ring; the caret on the line shows the raw marker. Return after a task continues with `- [ ] `, and Return on an empty task ends the list. `[X]` counts as done; anything else in the brackets is a plain item (#37).
 - `papel --set-default` makes Papel the app that opens `.md` and `.markdown` files, and a Make Default button in Settings ▸ CLI does the same; Get Info's Change All is no longer the only way. The agent prompt in the guide and the README now also has the agent open a test note with `papel`, so the command is seen working, and ask whether Papel should be the default app before running the command.
 
 - Paste an image (a screenshot, a picture copied from a browser) and it lands as a PNG beside the document, named after the document and the moment (`notes-20260903-141205.png`), with `![](notes-20260903-141205.png)` inserted on its own line at the caret. A Finder copy or drop of an image file is copied the same way, keeping its format. `image.paste.directory = assets` in the config puts them in a subfolder of the document's, created on demand. An unsaved document runs the save sheet first, since there is no folder to write into. ⌘Z removes the line; the file stays (#36).

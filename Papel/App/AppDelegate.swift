@@ -13,13 +13,15 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Not under tests: the test host would put the link on the
-        // tester's PATH and open the guide over the test run.
+        // tester's PATH, open the guide over the test run, and build the
+        // welcome window from the run loop inside a test's task, where the
+        // main-actor executor check faults.
         let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
         let panel = NSApp.windows.first(where: { $0 is NSOpenPanel }) as? NSOpenPanel
         panel?.cancel(nil)
-        let firstLaunch = ConfigurationStore.shared.isFirstLaunch && !testing
-        if panel != nil, !firstLaunch { WelcomeWindow.show() }
         guard !testing else { return }
+        let firstLaunch = ConfigurationStore.shared.isFirstLaunch
+        if panel != nil, !firstLaunch { WelcomeWindow.show() }
         Task {
             await CommandLineTool.shared.installQuietly()
             if panel != nil, firstLaunch { await WelcomeDocument.open(replacing: true) }

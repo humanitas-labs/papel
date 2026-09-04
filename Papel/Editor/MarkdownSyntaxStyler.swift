@@ -71,12 +71,19 @@ final class MarkdownSyntaxStyler {
     private static let blockImagePattern = try! NSRegularExpression(
         pattern: #"(?m)^[\t ]*!\[([^\]\n]*)\]\(([^)\s]+)\)[\t ]*$"#
     )
+    /// Groups: 1 the marker, 2 the gap after it, 3 a task box (`[ ]`,
+    /// `[x]`, `[X]`) when the item is a task, 4 the gap after the box.
     nonisolated static let listMarkerPattern = try! NSRegularExpression(
         // `\S` or end of line: an item freshly continued by Return is just
         // `- ` and must already sit like a list item, not inherit the
-        // previous line's indent until its first character.
-        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]+(?=\S|$)"#
+        // previous line's indent until its first character. The box needs
+        // whitespace (or the line's end) after it, so `- [ ]x` is prose.
+        pattern: #"(?m)^(?:[\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])([\t ]+)(?:(\[[ xX]\])([\t ]+|$))?(?=\S|$)"#
     )
+
+    /// The room a task item's `[` reserves off the active paragraph: the
+    /// circle the text view draws there, and the marker gap after it.
+    static var taskBoxReservedWidth: CGFloat { Appearance.taskBoxSize + Appearance.listMarkerGap }
 
     /// Unordered markers render as Apple Notes' two list kinds: `-` as a
     /// dashed list, `*` and `+` as a bulleted one.
@@ -330,7 +337,30 @@ final class MarkdownSyntaxStyler {
             )
 
             var rendered = Array(prefix)
-            if let symbol = Self.renderedListMarker(for: marker) {
+            var boxWidth: CGFloat = 0
+            let boxRange = match.range(at: 3)
+            if boxRange.location != NSNotFound {
+                // A task item: a circle the text view draws stands in for
+                // the marker. The marker, the gap, and the box's characters
+                // conceal, except the `[`, which reserves the circle's
+                // width and the marker gap off the active paragraph; the
+                // hanging indent reserves the same room, so the layout is
+                // stable there. On the active paragraph the line reads as
+                // typed, at its own width, as every concealed line does.
+                let box = (source as NSString).substring(with: boxRange)
+                let prefixRange = NSRange(location: markerRange.location, length: NSMaxRange(boxRange) - markerRange.location)
+                let circle = NSRange(location: boxRange.location, length: 1)
+                storage.addAttribute(.concealable, value: true, range: prefixRange)
+                storage.removeAttribute(.concealable, range: circle)
+                storage.addAttribute(.reservedWidth, value: Self.taskBoxReservedWidth, range: circle)
+                storage.addAttribute(.foregroundColor, value: Appearance.mutedInk, range: prefixRange)
+                storage.addAttribute(.taskBox, value: box, range: prefixRange)
+                storage.addAttribute(.cursor, value: NSCursor.pointingHand, range: prefixRange)
+                boxWidth = Self.taskBoxReservedWidth
+                let indentLength = markerRange.location - match.range.location
+                rendered = Array(prefix.prefix(indentLength))
+                    + Array(prefix.dropFirst(NSMaxRange(boxRange) - match.range.location))
+            } else if let symbol = Self.renderedListMarker(for: marker) {
                 storage.addAttribute(.glyphSubstitute, value: symbol, range: markerRange)
                 storage.addAttribute(.font, value: Appearance.markerFont(for: symbol), range: markerRange)
                 // The prefix is ASCII, so UTF-16 and Character offsets agree.
@@ -345,10 +375,26 @@ final class MarkdownSyntaxStyler {
                 // are lazy continuations of the item (a hard-wrapped item);
                 // they align under the item's text with no spacing between.
                 let continuations = Self.continuationParagraphs(after: paragraphRange, in: source, limit: range.length)
+                if boxRange.location != NSNotFound, (source as NSString).substring(with: boxRange) != "[ ]" {
+                    // A done item's text recedes into the quote ink, with no
+                    // strikethrough, so the source still reads as prose.
+                    // Delimiters, links, and code keep their own inks.
+                    for paragraph in [paragraphRange] + continuations {
+                        let text = NSRange(
+                            location: max(paragraph.location, NSMaxRange(match.range)),
+                            length: NSMaxRange(paragraph) - max(paragraph.location, NSMaxRange(match.range))
+                        )
+                        guard text.length > 0 else { continue }
+                        storage.enumerateAttribute(.foregroundColor, in: text) { value, run, _ in
+                            guard value as? NSColor == Appearance.ink else { return }
+                            storage.addAttribute(.foregroundColor, value: Appearance.quoteInk, range: run)
+                        }
+                    }
+                }
                 let itemStyle = Appearance.hangingParagraphStyle(
                     under: String(rendered),
                     indent: Self.nestedIndent(at: match.range.location, in: source),
-                    gap: Appearance.listMarkerGap,
+                    gap: boxWidth > 0 ? boxWidth : Appearance.listMarkerGap,
                     spacing: continuations.isEmpty ? nil : 0
                 )
                 storage.addAttribute(.paragraphStyle, value: itemStyle, range: paragraphRange)
@@ -660,7 +706,7 @@ final class MarkdownSyntaxStyler {
         Self.commentPattern.enumerateMatches(in: source, range: range) { match, _, _ in
             guard let match, !Self.isCode(at: match.range.location, in: storage) else { return }
             for key in [NSAttributedString.Key.concealable, .glyphSubstitute, .underlineStyle, .strikethroughStyle, .linkDestination,
-                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor] {
+                        .address, .cursor, .imageSource, .thematicBreak, .backgroundColor, .taskBox, .reservedWidth] {
                 storage.removeAttribute(key, range: match.range)
             }
             storage.addAttribute(.font, value: Appearance.bodyFont(), range: match.range)

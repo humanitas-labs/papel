@@ -29,6 +29,15 @@ extension NSAttributedString.Key {
     /// line) whose file loaded; the value is the resolved file `URL`. The
     /// paragraph's spacing reserves the band the text view draws it in.
     static let imageSource = NSAttributedString.Key("papel.imageSource")
+    /// Marks a task item's prefix, from its list marker through the `]` of
+    /// its `[ ]` / `[x]` box. Off the active paragraph the run draws as one
+    /// box glyph; a click on it flips the character between the brackets.
+    static let taskBox = NSAttributedString.Key("papel.taskBox")
+    /// Marks a character that, off the active paragraph, draws nothing and
+    /// takes the width the value (a `CGFloat`) names: room for something
+    /// the text view draws itself, like a task item's circle. On the active
+    /// paragraph the character renders as typed.
+    static let reservedWidth = NSAttributedString.Key("papel.reservedWidth")
 }
 
 /// TextKit 1 layout manager that computes margin decorations and conceals
@@ -152,7 +161,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         guard let storage = textStorage else { return false }
         var found = false
         storage.enumerateAttributes(in: range) { attributes, _, stop in
-            if attributes[.concealable] != nil || attributes[.glyphSubstitute] != nil {
+            if attributes[.concealable] != nil || attributes[.glyphSubstitute] != nil || attributes[.reservedWidth] != nil {
                 found = true
                 stop.pointee = true
             }
@@ -192,7 +201,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
             }
             guard !run.isEmpty, !NSLocationInRange(index, activeRange) else { continue }
 
-            if run.contains(.concealable) {
+            if run.concealable || run.reservedWidth != nil {
                 if replacedProperties == nil {
                     replacedProperties = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
                 }
@@ -231,19 +240,36 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     }
 
     /// Concealed characters were generated as control glyphs; they take no
-    /// space. Real control characters (tabs, line breaks) keep their action.
+    /// space. One with a reserved width takes that width as whitespace (see
+    /// the bounding-box delegate below). Real control characters (tabs,
+    /// line breaks) keep their action.
     func layoutManager(
         _ layoutManager: NSLayoutManager,
         shouldUse action: NSLayoutManager.ControlCharacterAction,
         forControlCharacterAt charIndex: Int
     ) -> NSLayoutManager.ControlCharacterAction {
         guard let storage = textStorage, charIndex < storage.length,
-              storage.attribute(.concealable, at: charIndex, effectiveRange: nil) != nil,
-              !NSLocationInRange(charIndex, activeRange)
-        else { return action }
+              !NSLocationInRange(charIndex, activeRange) else { return action }
+        let attributes = storage.attributes(at: charIndex, effectiveRange: nil)
+        if attributes[.reservedWidth] != nil { return .whitespace }
+        guard attributes[.concealable] != nil else { return action }
         let character = (storage.string as NSString).character(at: charIndex)
         guard character != 0x0A, character != 0x0D, character != 0x09 else { return action }
         return .zeroAdvancement
+    }
+
+    func layoutManager(
+        _ layoutManager: NSLayoutManager,
+        boundingBoxForControlGlyphAt glyphIndex: Int,
+        for textContainer: NSTextContainer,
+        proposedLineFragment proposedRect: NSRect,
+        glyphPosition: NSPoint,
+        characterIndex charIndex: Int
+    ) -> NSRect {
+        guard let storage = textStorage, charIndex < storage.length,
+              let width = storage.attribute(.reservedWidth, at: charIndex, effectiveRange: nil) as? CGFloat
+        else { return NSRect(origin: glyphPosition, size: NSSize(width: 0, height: proposedRect.height)) }
+        return NSRect(x: glyphPosition.x, y: glyphPosition.y, width: width, height: proposedRect.height)
     }
 
     /// The used rect's bottom after the previous complete layout, for the
@@ -286,8 +312,8 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
     private struct Marks {
         var concealable = false
         var substitute: Character?
-        var isEmpty: Bool { !concealable && substitute == nil }
-        func contains(_ key: NSAttributedString.Key) -> Bool { key == .concealable && concealable }
+        var reservedWidth: CGFloat?
+        var isEmpty: Bool { !concealable && substitute == nil && reservedWidth == nil }
     }
 
     private func markers(at index: Int, in storage: NSTextStorage, effectiveRange: NSRangePointer) -> Marks {
@@ -295,6 +321,7 @@ final class PapelLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         var marks = Marks()
         marks.concealable = attributes[.concealable] != nil
         marks.substitute = (attributes[.glyphSubstitute] as? String)?.first
+        marks.reservedWidth = attributes[.reservedWidth] as? CGFloat
         return marks
     }
 

@@ -18,7 +18,7 @@ enum ListContinuation {
     /// A line that is only indent, quote prefix, and marker — an item the
     /// writer left empty before pressing Return.
     private static let emptyItemPattern = try! NSRegularExpression(
-        pattern: #"^([\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])[\t ]*$"#
+        pattern: #"^([\t ]*(?:>[\t ]?)*)([-+*]|\d+[A-Za-z]?[.)])(?:[\t ]+\[[ xX]\])?[\t ]*$"#
     )
 
     /// The edit Return should perform at `selection`, or nil when ordinary
@@ -62,12 +62,13 @@ enum ListContinuation {
                     length: match.range(at: 1).location - match.range.location
                 )
             )
-            let gap = text.substring(
-                with: NSRange(
-                    location: NSMaxRange(match.range(at: 1)),
-                    length: NSMaxRange(match.range) - NSMaxRange(match.range(at: 1))
-                )
-            )
+            var gap = text.substring(with: match.range(at: 2))
+            // A task item continues as an open task, with the box's own
+            // gap (or one space, when Return came right after the box).
+            if match.range(at: 3).location != NSNotFound {
+                let boxGap = match.range(at: 4).length > 0 ? text.substring(with: match.range(at: 4)) : " "
+                gap += "[ ]" + boxGap
+            }
             // Splitting an item mid-line hands the tail to the new item;
             // the spaces that separated the halves would double the marker
             // gap, so the edit takes them too.

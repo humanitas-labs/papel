@@ -350,6 +350,7 @@ final class PapelTextView: NSTextView {
         drawCodeBlockBands(in: rect)
         drawQuoteRules(in: rect)
         drawThematicBreaks(in: rect)
+        drawTaskCircles(in: rect)
         drawImages(in: rect)
         drawImageSelection(in: rect)
         drawPlaceholder()
@@ -842,6 +843,7 @@ final class PapelTextView: NSTextView {
         }
         let unmodified = event.modifierFlags.intersection([.shift, .control, .option]).isEmpty
         if unmodified, clickImage(with: event) { return }
+        if unmodified, event.clickCount == 1, toggleTaskBox(at: convert(event.locationInWindow, from: nil)) { return }
         selectedImage = nil
         let plainClick = event.clickCount == 1 && unmodified
         super.mouseDown(with: event)
@@ -850,6 +852,158 @@ final class PapelTextView: NSTextView {
            linkDestination(at: up) == destination {
             open(destination)
         }
+    }
+
+    /// A click on a task item's box (the point in view coordinates) flips
+    /// the source between `[ ]` and `[x]`, undoably, and leaves the caret
+    /// where it was so the item stays rendered. False when the point is not
+    /// on a drawn box: the active paragraph shows its source, and a click
+    /// there places the caret as anywhere else.
+    @discardableResult
+    func toggleTaskBox(at point: NSPoint) -> Bool {
+        guard isEditable, let storage = textStorage, storage.length > 0,
+              let layoutManager = layoutManager as? PapelLayoutManager,
+              let container = textContainer else { return false }
+        let origin = textContainerOrigin
+        let containerPoint = NSPoint(x: point.x - origin.x, y: point.y - origin.y)
+        var fraction: CGFloat = 0
+        let index = layoutManager.characterIndex(
+            for: containerPoint, in: container, fractionOfDistanceBetweenInsertionPoints: &fraction
+        )
+        guard index < storage.length else { return false }
+        var prefix = NSRange(location: NSNotFound, length: 0)
+        guard storage.attribute(.taskBox, at: index, longestEffectiveRange: &prefix,
+                                in: NSRange(location: 0, length: storage.length)) != nil,
+              let circle = taskCircleRect(forPrefix: prefix),
+              circle.insetBy(dx: -3, dy: -3).contains(containerPoint) else { return false }
+
+        let inner = NSRange(location: NSMaxRange(prefix) - 2, length: 1)
+        let done = (storage.string as NSString).substring(with: inner) != " "
+        let replacement = done ? " " : "x"
+        breakUndoCoalescing()
+        guard shouldChangeText(in: inner, replacementString: replacement) else { return false }
+        storage.replaceCharacters(in: inner, with: replacement)
+        didChangeText()
+        breakUndoCoalescing()
+        animateTaskCircle(atPrefix: prefix.location)
+        return true
+    }
+
+    /// The circle for the task prefix at `prefix`, in text-container
+    /// coordinates: the diameter square sitting on the baseline's cap
+    /// height where the `[` renders. Nil on the active paragraph, where
+    /// the source shows and nothing is a circle.
+    private func taskCircleRect(forPrefix prefix: NSRange) -> NSRect? {
+        guard prefix.length >= 3, let layoutManager = layoutManager as? PapelLayoutManager,
+              let container = textContainer, let storage = textStorage,
+              layoutManager.isConcealed(characterAt: NSMaxRange(prefix) - 1) else { return nil }
+        let index = NSMaxRange(prefix) - 3
+        let glyph = layoutManager.glyphIndexForCharacter(at: index)
+        let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyph, effectiveRange: nil, withoutAdditionalLayout: true)
+        let location = layoutManager.location(forGlyphAt: glyph)
+        let font = storage.attribute(.font, at: index, effectiveRange: nil) as? NSFont ?? Appearance.bodyFont()
+        let size = Appearance.taskBoxSize
+        let baseline = fragment.minY + location.y
+        return NSRect(
+            x: fragment.minX + location.x,
+            y: baseline - font.capHeight / 2 - size / 2,
+            width: size,
+            height: size
+        )
+    }
+
+    /// Task circles: a ring in the rule ink for an open item, a disc in the
+    /// text ink with a check in the canvas colour for a done one. Drawn
+    /// under the glyphs, in the room the item's concealed `[ ]` reserves.
+    private func drawTaskCircles(in dirtyRect: NSRect) {
+        guard let layoutManager = layoutManager as? PapelLayoutManager,
+              let container = textContainer, let storage = textStorage, storage.length > 0 else { return }
+        let origin = textContainerOrigin
+        let containerRect = dirtyRect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let glyphRange = layoutManager.glyphRange(forBoundingRect: containerRect, in: container)
+        let characters = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
+        storage.enumerateAttribute(.taskBox, in: characters) { value, run, _ in
+            guard let box = value as? String, let rect = taskCircleRect(forPrefix: run) else { return }
+            let circle = rect.offsetBy(dx: origin.x, dy: origin.y)
+            let done = box != "[ ]"
+            // The disc's share of the circle: full when done, none when
+            // open, in between while a flip animates.
+            var fill: CGFloat = done ? 1 : 0
+            if let animation = taskAnimation, animation.prefix == run.location {
+                let progress = min(1, (CACurrentMediaTime() - animation.start) / Self.taskAnimationDuration)
+                let eased = 1 - pow(1 - progress, 3)
+                fill = done ? eased : 1 - eased
+            }
+            if fill < 1 {
+                let ring = NSBezierPath(ovalIn: circle.insetBy(dx: Appearance.taskBoxStroke / 2, dy: Appearance.taskBoxStroke / 2))
+                ring.lineWidth = Appearance.taskBoxStroke
+                Appearance.thematicBreakInk.setStroke()
+                ring.stroke()
+            }
+            guard fill > 0 else { return }
+            let inset = circle.width * (1 - fill) / 2
+            let disc = circle.insetBy(dx: inset, dy: inset)
+            Appearance.ink.setFill()
+            NSBezierPath(ovalIn: disc).fill()
+            if let check = Self.checkmark {
+                // The symbol sits a little below centre optically; nudge it
+                // up by a hair and scale it with the disc.
+                let side = disc.width * 0.56
+                let target = NSRect(
+                    x: disc.midX - side / 2, y: disc.midY - side / 2 - disc.width * 0.02,
+                    width: side, height: side
+                )
+                check.draw(in: target, from: .zero, operation: .sourceOver, fraction: fill, respectFlipped: true, hints: nil)
+            }
+        }
+    }
+
+    /// SF Symbols' checkmark, in the canvas colour, cut out of a done disc.
+    private static var checkmark: NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 64, weight: .bold)
+            .applying(.init(paletteColors: [Appearance.canvas]))
+        return NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration)
+    }
+
+    /// The flip in progress: the prefix it belongs to and when it began.
+    /// The disc grows out of the ring on a check and shrinks back on an
+    /// uncheck, redrawn by a timer until the duration is up.
+    private var taskAnimation: (prefix: Int, start: CFTimeInterval)?
+    private var taskAnimationTimer: Timer?
+    private static let taskAnimationDuration: CFTimeInterval = 0.22
+
+    private func animateTaskCircle(atPrefix prefix: Int) {
+        taskAnimationTimer?.invalidate()
+        taskAnimation = (prefix, CACurrentMediaTime())
+        // The timer fires on the main run loop; the closure hops into the
+        // actor the way the layout-complete delegate does.
+        taskAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1 / 60, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            MainActor.assumeIsolated {
+                guard let animation = self.taskAnimation else {
+                    self.taskAnimationTimer?.invalidate()
+                    self.taskAnimationTimer = nil
+                    return
+                }
+                self.redrawTaskCircle(atPrefix: animation.prefix)
+                if CACurrentMediaTime() - animation.start >= Self.taskAnimationDuration {
+                    self.taskAnimationTimer?.invalidate()
+                    self.taskAnimationTimer = nil
+                    self.taskAnimation = nil
+                    self.redrawTaskCircle(atPrefix: animation.prefix)
+                }
+            }
+        }
+    }
+
+    private func redrawTaskCircle(atPrefix prefix: Int) {
+        guard let storage = textStorage, prefix < storage.length else { return }
+        var run = NSRange(location: NSNotFound, length: 0)
+        guard storage.attribute(.taskBox, at: prefix, longestEffectiveRange: &run, in: NSRange(location: 0, length: storage.length)) != nil,
+              let rect = taskCircleRect(forPrefix: run) else { return }
+        let origin = textContainerOrigin
+        setNeedsDisplay(rect.offsetBy(dx: origin.x, dy: origin.y).insetBy(dx: -2, dy: -2))
     }
 
     private func linkDestination(at event: NSEvent) -> String? {

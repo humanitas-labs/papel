@@ -40,6 +40,10 @@ enum Appearance {
     /// Extra space after a list marker, beyond the source's single space,
     /// so the text sits clear of the bullet as in Apple Notes.
     static var listMarkerGap: CGFloat { (bodySize * 0.5).rounded() }
+    /// The diameter of a task item's circle, drawn by the text view in the
+    /// width its concealed `[ ]` reserves, and the stroke of an open one.
+    static var taskBoxSize: CGFloat { (bodySize * 0.95).rounded() }
+    static let taskBoxStroke: CGFloat = 1.25
 
     /// How far each nesting level steps a list item's marker. The source's
     /// two spaces per level are far narrower than a legible step, so the
