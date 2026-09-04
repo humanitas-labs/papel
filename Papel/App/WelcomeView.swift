@@ -56,7 +56,9 @@ struct WelcomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(nsColor: Appearance.canvas))
         .overlay(alignment: .bottomLeading) {
-            if let release = updates.available {
+            if updates.justUpdatedTo != nil {
+                UpdateToast()
+            } else if let release = updates.available {
                 UpdateBadge(release: release)
             }
         }
@@ -148,41 +150,94 @@ private struct WelcomeRow: View {
     }
 }
 
-/// The download icon in the window's bottom-left corner, out of the way
-/// of the lists, shown only when a newer release is out. It is the one
-/// coloured thing on the page, in the theme's accent; it fades in, and
-/// while the pointer rests on it, it bobs: up, down, and again.
+/// The badge in the window's bottom-left corner, out of the way of the
+/// lists, shown only while a newer release is about. It is the one
+/// coloured thing on the page, in the theme's accent. A ring fills as the
+/// release downloads and installs itself; then a restart loop takes its
+/// place, bobbing while the pointer rests on it, and a click relaunches.
+/// After a failure a dotted arrow opens the browser download instead.
 private struct UpdateBadge: View {
     let release: UpdateCheck.Release
+    @ObservedObject private var updates = UpdateCheck.observed
     @State private var hovering = false
     @State private var shown = false
     @State private var bobbing = false
 
+    private var clickable: Bool {
+        switch updates.phase {
+        case .ready, .failed: true
+        case .found, .installing: false
+        }
+    }
+
+    private var help: String {
+        switch updates.phase {
+        case .found, .installing: "Installing Papel \(release.version)…"
+        case .ready: "Papel \(release.version) is ready. Click to restart"
+        case .failed: "Couldn't install Papel \(release.version); click to download it"
+        }
+    }
+
     var body: some View {
-        Button { UpdateCheck.download(release) } label: {
-            Image(systemName: "arrow.down.circle")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(Color(nsColor: Appearance.accent).opacity(hovering ? 1 : 0.78))
-                .animation(.easeOut(duration: 0.2), value: hovering)
-                .offset(y: bobbing ? -5 : 0)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
+        Button { UpdateCheck.activate(release) } label: {
+            ZStack {
+                switch updates.phase {
+                case .found:
+                    ProgressRing(fraction: 0)
+                case .installing(let fraction):
+                    ProgressRing(fraction: fraction)
+                case .ready:
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .regular))
+                case .failed:
+                    Image(systemName: "arrow.down.circle.dotted")
+                        .font(.system(size: 14, weight: .regular))
+                }
+            }
+            .foregroundStyle(Color(nsColor: Appearance.accent).opacity(hovering && clickable ? 1 : 0.78))
+            .offset(y: bobbing ? -5 : 0)
+            .frame(width: 28, height: 28)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help("Papel \(release.version) is available")
-        .accessibilityLabel("Download Papel \(release.version)")
+        .disabled(!clickable)
+        .help(help)
+        .accessibilityLabel(help)
         .onHover { inside in
             hovering = inside
-            if inside {
+            if inside, clickable {
                 withAnimation(.easeInOut(duration: 0.32).repeatForever(autoreverses: true)) { bobbing = true }
             } else {
                 withAnimation(.easeOut(duration: 0.2)) { bobbing = false }
             }
         }
-        .pointerStyle(.link)
+        .pointerStyle(clickable ? .link : .default)
         .padding(.bottom, 12)
         .padding(.leading, 12)
         .opacity(shown ? 1 : 0)
+        .animation(.easeInOut(duration: 0.25), value: updates.phase)
         .onAppear { withAnimation(.easeOut(duration: 0.45)) { shown = true } }
+    }
+}
+
+/// A 13-point ring: the download's fraction as an arc, or a slow spin
+/// while the fraction is unknown.
+private struct ProgressRing: View {
+    let fraction: Double?
+    @State private var spinning = false
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(lineWidth: 1.2).opacity(0.25)
+            Circle()
+                .trim(from: 0, to: fraction ?? 0.3)
+                .stroke(style: StrokeStyle(lineWidth: 1.2, lineCap: .round))
+                .rotationEffect(.degrees(spinning ? 270 : -90))
+                .animation(fraction == nil ? .linear(duration: 0.9).repeatForever(autoreverses: false) : .easeOut(duration: 0.2), value: spinning)
+                .animation(.easeOut(duration: 0.2), value: fraction)
+        }
+        .frame(width: 13, height: 13)
+        .onAppear { spinning = fraction == nil }
+        .onChange(of: fraction == nil) { _, unknown in spinning = unknown }
     }
 }

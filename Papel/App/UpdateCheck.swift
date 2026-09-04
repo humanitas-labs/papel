@@ -1,11 +1,11 @@
 import AppKit
 import Combine
 
-/// The once-a-day look at GitHub for a newer release. When one is out, the
-/// welcome window shows a download icon that opens the DMG link, the same
-/// path as the site; nothing appears when the app is current, offline, or
-/// the request fails, and the check never blocks launch. No framework, no
-/// keys, no in-app install.
+/// The once-a-day look at GitHub for a newer release. When one is out it
+/// is installed in place at once (`UpdateInstaller`) and the welcome
+/// window shows a restart loop; the first launch after that shows a toast.
+/// Nothing appears when the app is current, offline, or the request
+/// fails, and the check never blocks launch. No framework, no keys.
 enum UpdateCheck {
     struct Release: Equatable, Sendable {
         /// The version without a leading `v`.
@@ -22,11 +22,29 @@ enum UpdateCheck {
 
     static let lastCheckKey = "papel.update.lastCheck"
     static let availableKey = "papel.update.available"
+    /// The version an install replaced, read on the next launch for the
+    /// "Updated to" toast.
+    static let updatedFromKey = "papel.update.updatedFrom"
 
     /// What the welcome window observes.
     @MainActor
     final class Observed: ObservableObject {
         @Published var available: Release?
+        @Published var phase: Phase = .found
+        /// Set for the first launch after an install: the toast's version.
+        @Published var justUpdatedTo: String?
+    }
+
+    /// Where a newer release stands. It is installed as soon as it is
+    /// found, as Zed does; the welcome window only ever asks for a restart.
+    enum Phase: Equatable {
+        case found
+        /// The download's fraction, then nil for the mount, check, and swap.
+        case installing(Double?)
+        /// Swapped in; a relaunch runs it.
+        case ready
+        /// The arrow then opens the browser download instead.
+        case failed
     }
 
     @MainActor static let observed = Observed()
@@ -91,10 +109,14 @@ enum UpdateCheck {
         current: String = bundleVersion,
         now: Date = Date()
     ) {
+        if let from = defaults.string(forKey: updatedFromKey) {
+            defaults.removeObject(forKey: updatedFromKey)
+            if isNewer(current, than: from) { observed.justUpdatedTo = current }
+        }
         guard configuration.updateCheck else { return }
         if let known = defaults.string(forKey: availableKey) {
             if isNewer(known, than: current) {
-                observed.available = Release(version: known, url: downloadURL)
+                found(Release(version: known, url: downloadURL))
             } else {
                 defaults.removeObject(forKey: availableKey)
             }
@@ -119,7 +141,16 @@ enum UpdateCheck {
             return
         }
         defaults.set(release.version, forKey: availableKey)
+        found(release)
+    }
+
+    /// Shows the release and starts its install, once per launch.
+    @MainActor
+    private static func found(_ release: Release) {
+        guard observed.available != release else { return }
         observed.available = release
+        observed.phase = .found
+        install(release)
     }
 
     private static func fetchLatest() async -> Data? {
@@ -132,8 +163,35 @@ enum UpdateCheck {
         return data
     }
 
-    /// Opens the download in the browser.
-    static func download(_ release: Release) {
-        NSWorkspace.shared.open(release.url)
+    /// Installs the release in place, quietly; the badge then asks for a
+    /// restart. Under tests nothing is downloaded.
+    @MainActor
+    static func install(_ release: Release) {
+        guard observed.phase == .found,
+              ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+        observed.phase = .installing(0)
+        Task {
+            do {
+                try await UpdateInstaller.install(release) { fraction in
+                    Task { @MainActor in observed.phase = .installing(fraction) }
+                }
+                UserDefaults.standard.set(bundleVersion, forKey: updatedFromKey)
+                observed.phase = .ready
+            } catch {
+                NSLog("Papel update failed: \(error)")
+                observed.phase = .failed
+            }
+        }
+    }
+
+    /// The badge's click: a relaunch once the release is in place, the
+    /// browser download after a failure, nothing meanwhile.
+    @MainActor
+    static func activate(_ release: Release) {
+        switch observed.phase {
+        case .ready: UpdateInstaller.relaunch()
+        case .failed: NSWorkspace.shared.open(release.url)
+        case .found, .installing: break
+        }
     }
 }

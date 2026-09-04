@@ -92,6 +92,7 @@ private struct DocumentView: View {
             .background(Color(nsColor: Appearance.canvas))
             .background(WindowConfigurator())
             .overlay(alignment: .topTrailing) { ZoomBadge() }
+            .overlay(alignment: .bottomLeading) { UpdateToast() }
             .frame(minWidth: 640, minHeight: 520)
             .ignoresSafeArea()
             .onChange(of: fileURL, initial: true) { _, url in

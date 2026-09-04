@@ -73,3 +73,21 @@ struct UpdateCheckTests {
         #expect(defaults.string(forKey: UpdateCheck.availableKey) == nil)
     }
 }
+
+extension UpdateCheckTests {
+    @MainActor
+    @Test
+    func theFirstLaunchAfterAnInstallShowsTheToastOnce() {
+        let defaults = UserDefaults(suiteName: "papel.tests.update.toast.\(UUID().uuidString)")!
+        defer { defaults.removePersistentDomain(forName: defaults.description) }
+        UpdateCheck.observed.justUpdatedTo = nil
+        defaults.set("0.6.0", forKey: UpdateCheck.updatedFromKey)
+        UpdateCheck.runIfDue(configuration: Configuration(), defaults: defaults, current: "0.7.0", now: Date())
+        #expect(UpdateCheck.observed.justUpdatedTo == "0.7.0")
+        #expect(defaults.string(forKey: UpdateCheck.updatedFromKey) == nil, "read once")
+        UpdateCheck.observed.justUpdatedTo = nil
+        defaults.set("0.7.0", forKey: UpdateCheck.updatedFromKey)
+        UpdateCheck.runIfDue(configuration: Configuration(), defaults: defaults, current: "0.7.0", now: Date())
+        #expect(UpdateCheck.observed.justUpdatedTo == nil, "a relaunch that did not change the version says nothing")
+    }
+}
