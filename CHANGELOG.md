@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Nested tasks draw as rounded squares, top-level ones as circles, so the levels read apart at a glance.
 - Find: ⌘F opens a small pill at the top right, in the zoom badge's style, with a field and a count. Typing selects the nearest match from the caret and tints every match; Return, ⇧Return, ⌘G, and ⇧⌘G step through them, wrapping at either end; Esc closes the pill and leaves the selection on the match. A selected word seeds the field, and Edit ▸ Find ▸ Use Selection for Find sets the query without opening it. Find runs over the source, concealed syntax included. The Edit menu gains the Find submenu SwiftUI left out (#21).
 
 - Task lists: the circle stays on the line the caret is on; `- [ ]` no longer shows as raw text when you edit the item, and the text no longer shifts sideways on the way in. The prefix is one unit for the caret: Left from the start of the text lands before the item, Right lands back at the text, Shift-Left selects the prefix whole, and Up or Down never lands inside it. Backspace at the start of the text removes the whole prefix and leaves a plain line, undoably; Delete right before the prefix does nothing. A click on the circle flips the item on the focused line too. Copy still carries the source (#53).

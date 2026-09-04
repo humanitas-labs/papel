@@ -322,4 +322,13 @@ struct TaskListTests {
         #expect(returned("- [ ]", at: 5) == "", "so does one with no trailing space")
         #expect(returned("- [ ] first", at: 3) == nil, "Return inside the box is a plain newline")
     }
+
+    @Test
+    func aNestedTaskIsTheOneWithIndentBeforeItsMarker() {
+        let text = "- [ ] top\n  - [x] nested\n\t- [ ] tabbed\n- [ ] top again\n" as NSString
+        #expect(!PapelTextView.isNestedTask(prefixAt: 0, in: text))
+        #expect(PapelTextView.isNestedTask(prefixAt: text.range(of: "- [x]").location, in: text))
+        #expect(PapelTextView.isNestedTask(prefixAt: text.range(of: "- [ ] tabbed").location, in: text))
+        #expect(!PapelTextView.isNestedTask(prefixAt: text.range(of: "- [ ] top again").location, in: text))
+    }
 }

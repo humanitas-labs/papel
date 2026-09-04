@@ -994,6 +994,14 @@ final class PapelTextView: NSTextView {
             guard let box = value as? String, let rect = taskCircleRect(forPrefix: run) else { return }
             let circle = rect.offsetBy(dx: origin.x, dy: origin.y)
             let done = box != "[ ]"
+            // A nested task draws as a rounded square, so the levels read
+            // apart at a glance (Will's suggestion).
+            let nested = Self.isNestedTask(prefixAt: run.location, in: storage.string as NSString)
+            let shape: (NSRect) -> NSBezierPath = { rect in
+                nested
+                    ? NSBezierPath(roundedRect: rect, xRadius: rect.width * 0.28, yRadius: rect.width * 0.28)
+                    : NSBezierPath(ovalIn: rect)
+            }
             // The disc's share of the circle: full when done, none when
             // open, in between while a flip animates.
             var fill: CGFloat = done ? 1 : 0
@@ -1003,7 +1011,7 @@ final class PapelTextView: NSTextView {
                 fill = done ? eased : 1 - eased
             }
             if fill < 1 {
-                let ring = NSBezierPath(ovalIn: circle.insetBy(dx: Appearance.taskBoxStroke / 2, dy: Appearance.taskBoxStroke / 2))
+                let ring = shape(circle.insetBy(dx: Appearance.taskBoxStroke / 2, dy: Appearance.taskBoxStroke / 2))
                 ring.lineWidth = Appearance.taskBoxStroke
                 Appearance.thematicBreakInk.setStroke()
                 ring.stroke()
@@ -1012,7 +1020,7 @@ final class PapelTextView: NSTextView {
             let inset = circle.width * (1 - fill) / 2
             let disc = circle.insetBy(dx: inset, dy: inset)
             Appearance.ink.setFill()
-            NSBezierPath(ovalIn: disc).fill()
+            shape(disc).fill()
             if let check = Self.checkmark {
                 // The symbol sits a little below centre optically; nudge it
                 // up by a hair and scale it with the disc.
@@ -1024,6 +1032,14 @@ final class PapelTextView: NSTextView {
                 check.draw(in: target, from: .zero, operation: .sourceOver, fraction: fill, respectFlipped: true, hints: nil)
             }
         }
+    }
+
+    /// A task whose marker is indented under another item: whitespace
+    /// stands between the line start and the prefix.
+    nonisolated static func isNestedTask(prefixAt location: Int, in text: NSString) -> Bool {
+        guard location > 0 else { return false }
+        let previous = text.character(at: location - 1)
+        return previous == 0x20 || previous == 0x09
     }
 
     /// SF Symbols' checkmark, in the canvas colour, cut out of a done disc.
