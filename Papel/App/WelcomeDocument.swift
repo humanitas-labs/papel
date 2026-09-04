@@ -19,15 +19,15 @@ enum WelcomeDocument {
         return support.appendingPathComponent("Papel", isDirectory: true).appendingPathComponent(fileName)
     }
 
-    /// The README's prompt: the one paragraph to add to the instructions, then a check that the
+    /// The README's prompt: the quoted paragraph to add, then a check that the
     /// command works, then the offer to make Papel the default app, each
     /// its own paragraph so they read as such in the fence.
     static let agentPrompt = """
-        Add the following paragraph, and only this paragraph, to my global instructions:
+        Add the following to my global instructions:
 
-        Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
+        "Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines."
 
-        The rest of this message is for right now, not for the instructions. First, check that the `papel` command works: write a short Markdown note to a temporary file and open it with `papel`. If the command is not found, tell me; it installs from Papel's Settings (⌘,) under CLI.
+        Then check that the `papel` command works: write a short Markdown note to a temporary file and open it with `papel`. If the command is not found, tell me; it installs from Papel's Settings (⌘,) under CLI.
 
         Finally, ask me explicitly whether I want Papel to be the default app for Markdown files, and explain what that means: double-clicking a .md file in Finder would open it in Papel instead of the current app. Do not change anything until I answer. Only if I say yes, run `papel --set-default`.
         """
