@@ -2,11 +2,12 @@ import SwiftUI
 
 /// The badge in a window's bottom-left corner, the welcome window's and
 /// every document's, out of the way of the text, shown only while a
-/// newer release is about. It is the one
-/// coloured thing on the page, in the theme's accent. A ring fills as the
-/// release downloads and installs itself; then a restart loop takes its
-/// place, bobbing while the pointer rests on it, and a click relaunches.
-/// After a failure a dotted arrow opens the browser download instead.
+/// newer release is about. It is the one coloured thing on the page, in
+/// the theme's accent. A down arrow says a release is out and a click
+/// installs it; a ring fills as it downloads and installs; then a restart
+/// loop takes its place, bobbing while the pointer rests on it, and a
+/// click relaunches. Nothing is downloaded until asked. After a failure a
+/// dotted arrow opens the browser download instead.
 struct UpdateBadge: View {
     let release: UpdateCheck.Release
     @ObservedObject private var updates = UpdateCheck.observed
@@ -16,14 +17,15 @@ struct UpdateBadge: View {
 
     private var clickable: Bool {
         switch updates.phase {
-        case .ready, .failed: true
-        case .found, .installing: false
+        case .found, .ready, .failed: true
+        case .installing: false
         }
     }
 
     private var help: String {
         switch updates.phase {
-        case .found, .installing: "Installing Paper \(release.version)…"
+        case .found: "Paper \(release.version) is available. Click to install"
+        case .installing: "Installing Paper \(release.version)…"
         case .ready: "Paper \(release.version) is ready. Click to restart"
         case .failed: "Couldn't install Paper \(release.version); click to download it"
         }
@@ -34,7 +36,8 @@ struct UpdateBadge: View {
             ZStack {
                 switch updates.phase {
                 case .found:
-                    ProgressRing(fraction: 0)
+                    Image(systemName: "arrow.down.circle")
+                        .font(.system(size: 14, weight: .regular))
                 case .installing(let fraction):
                     ProgressRing(fraction: fraction)
                 case .ready:

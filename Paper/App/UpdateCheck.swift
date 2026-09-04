@@ -146,11 +146,12 @@ enum UpdateCheck {
 
     /// Shows the release and starts its install, once per launch.
     @MainActor
+    /// A release found is shown, not fetched: the badge names it, and the
+    /// download starts when the badge is clicked.
     private static func found(_ release: Release) {
         guard observed.available != release else { return }
         observed.available = release
         observed.phase = .found
-        install(release)
     }
 
     private static func fetchLatest() async -> Data? {
@@ -163,8 +164,8 @@ enum UpdateCheck {
         return data
     }
 
-    /// Installs the release in place, quietly; the badge then asks for a
-    /// restart. Under tests nothing is downloaded.
+    /// Installs the release in place on the badge's click; the badge then
+    /// asks for a restart. Under tests nothing is downloaded.
     @MainActor
     static func install(_ release: Release) {
         guard observed.phase == .found,
@@ -184,14 +185,16 @@ enum UpdateCheck {
         }
     }
 
-    /// The badge's click: a relaunch once the release is in place, the
-    /// browser download after a failure, nothing meanwhile.
+    /// The badge's click: the install when the release has only been
+    /// found, a relaunch once it is in place, the browser download after a
+    /// failure, nothing while it installs.
     @MainActor
     static func activate(_ release: Release) {
         switch observed.phase {
+        case .found: install(release)
         case .ready: UpdateInstaller.relaunch()
         case .failed: NSWorkspace.shared.open(release.url)
-        case .found, .installing: break
+        case .installing: break
         }
     }
 }

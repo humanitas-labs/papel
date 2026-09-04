@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A newer release is offered, not fetched. The badge in the bottom-left corner shows a down arrow when one is out and nothing downloads until it is clicked; then the ring fills, the restart loop takes its place, and a click relaunches. Before, the release installed itself the moment it was found.
+
 ## 0.7.1 — 2026.09.04
 
 - The "Updated to version" toast sits level with the traffic lights again. It measured them once through the key window, and on the launch that shows it there is no key window yet, so it fell back to a guess and sat too high; it now reads the line from the window it is in, as the title band settles.
