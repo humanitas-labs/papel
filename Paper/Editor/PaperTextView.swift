@@ -138,8 +138,23 @@ final class PaperTextView: NSTextView {
         layoutManager.setActiveRange(active ?? NSRange(location: 0, length: 0))
     }
 
+    /// A frame change makes the text view scroll its insertion point into
+    /// view (AppKit's `_setFrameSize:forceScroll:`), and the caret sits at
+    /// the top of a freshly opened document. So a band resizing as its
+    /// image decodes, or the top margin growing as the window attaches,
+    /// left the document scrolled a little down (#49). Typing is the one
+    /// frame change that should follow the caret; every other keeps the
+    /// viewport where it was.
     override func setFrameSize(_ newSize: NSSize) {
+        let clip = enclosingScrollView?.contentView
+        let before = clip?.bounds.origin
+        let typing = NSApp.currentEvent.map { [.keyDown, .keyUp, .flagsChanged].contains($0.type) } ?? false
         super.setFrameSize(newSize)
+        if let clip, let before, !typing, clip.bounds.origin != before {
+            let kept = clip.constrainBoundsRect(NSRect(origin: before, size: clip.bounds.size)).origin
+            clip.scroll(to: kept)
+            enclosingScrollView?.reflectScrolledClipView(clip)
+        }
 
         let margin = max(
             Appearance.minimumHorizontalMargin,
