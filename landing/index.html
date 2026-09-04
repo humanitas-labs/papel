@@ -169,6 +169,8 @@
   .supporters li::before { content: none; }
   @media (max-width: 600px) { .supporters { grid-template-columns: repeat(2, 1fr); } }
   .muted { color: rgba(var(--ink-rgb), 0.62); font-size: 0.88em; }
+  .coffee { white-space: nowrap; }
+  .coffee img { height: 1em; width: auto; vertical-align: -0.12em; margin-right: 0.25em; }
 </style>
   <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -205,7 +207,7 @@
 
   <h2 id="supporters">Supporters</h2>
   <div class="blank"></div>
-  <p>Paper is free forever, but these are the people who helped make it possible. You can join them with a <a href="https://buymeacoffee.com/dremnik">coffee</a>.</p>
+  <p>Paper is free forever, but these are the people who helped make it possible. You can join them with a <a class="coffee" href="https://buymeacoffee.com/dremnik"><img src="bmc.svg" alt="">coffee</a>.</p>
   <div class="blank"></div>
   <!-- Alphabetical: sort by first name and by surname agree here; keep it that way or pick surname. -->
   <ul class="supporters">
