@@ -49,8 +49,9 @@ struct UpdateCheckTests {
     @MainActor
     @Test
     func offNeverTouchesDefaultsAndAKnownReleaseShowsWithoutANetwork() {
-        let defaults = UserDefaults(suiteName: "paper.tests.update.\(UUID().uuidString)")!
-        defer { defaults.removePersistentDomain(forName: defaults.description) }
+        let suite = TestDefaults("update")
+        defer { suite.remove() }
+        let defaults = suite.defaults
         var off = Configuration()
         off.updateCheck = false
         UpdateCheck.runIfDue(configuration: off, defaults: defaults, current: "0.6.0")
@@ -78,8 +79,9 @@ extension UpdateCheckTests {
     @MainActor
     @Test
     func theFirstLaunchAfterAnInstallShowsTheToastOnce() {
-        let defaults = UserDefaults(suiteName: "paper.tests.update.toast.\(UUID().uuidString)")!
-        defer { defaults.removePersistentDomain(forName: defaults.description) }
+        let suite = TestDefaults("update.toast")
+        defer { suite.remove() }
+        let defaults = suite.defaults
         UpdateCheck.observed.justUpdatedTo = nil
         defaults.set("0.6.0", forKey: UpdateCheck.updatedFromKey)
         UpdateCheck.runIfDue(configuration: Configuration(), defaults: defaults, current: "0.7.0", now: Date())
