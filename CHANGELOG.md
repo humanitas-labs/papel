@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Papel is Paper. The app, the bundle (`org.humanitas.paper`), the `paper` command, the config directory (`~/.config/paper`), the built-in theme, the repository (`humanitas-labs/paper`; old links redirect), and the download (`Paper.dmg`) all take the name. Settings and themes under `~/.config/papel` are not migrated; copy the directory across. A Papel 0.6.1 cannot update itself into Paper, since its check of the downloaded app is bound to the old identifier: download the DMG once, and drop `Papel.app` in the bin along with the `papel` link. Earlier changelog entries keep the old name.
+
 ## 0.6.1 — 2026.09.04
 
 - A fence typed above an existing code block no longer swallows everything between them. CommonMark says a closing fence cannot carry an info string, so a bare ``` above a ```sh block ran to that block's closer and drew the paragraph, the sh fence, and its code as one band. Now a fence line of the same character, at least as long, with an info string always opens a block of its own, and a fence left open before it stays literal prose until it gets its own closer. A fence of the other character, or a shorter one, is content as before, so ~~~ around a ``` example and four backticks around three still work (#39).

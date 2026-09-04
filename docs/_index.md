@@ -1,4 +1,4 @@
-# Papel — Documentation
+# Paper — Documentation
 
 | Doc | What it covers |
 | --- | --- |

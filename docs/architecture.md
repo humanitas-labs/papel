@@ -1,19 +1,19 @@
-# Papel — Architecture
+# Paper — Architecture
 
 Last updated: `2026.09.03`
 
-> Papel is a native macOS editor for ordinary UTF-8 Markdown files. The file is the only persistent document state. Rendering, configuration, and window state remain outside it.
+> Paper is a native macOS editor for ordinary UTF-8 Markdown files. The file is the only persistent document state. Rendering, configuration, and window state remain outside it.
 
 ## 1. System boundaries
 
 | Component | Responsibility |
 |---|---|
 | `MarkdownDocument` | Decode and encode the source without transforming it |
-| `PapelApp` | Own scenes, commands, and the native document lifecycle |
+| `PaperApp` | Own scenes, commands, and the native document lifecycle |
 | `MarkdownEditor` | Bridge the SwiftUI document binding into AppKit |
-| `PapelTextView` | Provide editing behavior and draw page decorations |
+| `PaperTextView` | Provide editing behavior and draw page decorations |
 | `MarkdownSyntaxStyler` | Add temporary presentation attributes to the source |
-| `PapelLayoutManager` | Conceal or substitute glyphs without changing storage |
+| `PaperLayoutManager` | Conceal or substitute glyphs without changing storage |
 | `ConfigurationStore` | Load, write, and watch user settings and presets |
 | `Appearance` | Resolve configuration into fonts, spacing, and colours |
 
@@ -28,12 +28,12 @@ MarkdownDocument
     ↕ SwiftUI binding
 MarkdownEditor
     ↕
-PapelTextView + MarkdownSyntaxStyler + PapelLayoutManager
+PaperTextView + MarkdownSyntaxStyler + PaperLayoutManager
 ```
 
 The styler replaces presentation attributes across the in-memory text storage, then annotates recognized Markdown constructs. It does not replace source characters. Restyling waits while an input method holds marked text.
 
-`PapelLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs and draws inline-code chips. Glyph substitution renders list markers and arrows without editing their source characters. `PapelTextView` draws block quotes, code blocks, thematic breaks, placeholders, and images around the laid-out text.
+`PaperLayoutManager` turns concealed punctuation into zero-advance control glyphs outside the selected paragraphs and draws inline-code chips. Glyph substitution renders list markers and arrows without editing their source characters. `PaperTextView` draws block quotes, code blocks, thematic breaks, placeholders, and images around the laid-out text.
 
 Block images use paragraph spacing to reserve a stable drawing band below the source line. The source remains present for selection, undo, copy, find, and saving. `ImageStore` decodes and downsamples local images off the main actor according to visible and prefetched demand. Its cache evicts least-recently-used unpinned entries under byte and entry budgets; visible images remain pinned and can exceed the byte budget. Image changes on disk invalidate cached content.
 
@@ -46,7 +46,7 @@ Block images use paragraph spacing to reserve a stable drawing band below the so
 - Opening a document must not fetch remote media automatically.
 - The configuration file is the source of truth for user-tunable appearance values. The view zoom is the one exception: `Zoom` keeps a scale in `UserDefaults` per machine and `Appearance` multiplies the body size, measure, and margins by it, so the config and presets stay portable.
 
-`ConfigurationStore` reads `key = value` settings from `$XDG_CONFIG_HOME/papel/config` or `~/.config/papel/config`. It preserves comments and unknown keys when writing, watches in-place and atomic saves, and posts a notification when effective values change. Presets use the same format in the adjacent `presets/` directory.
+`ConfigurationStore` reads `key = value` settings from `$XDG_CONFIG_HOME/paper/config` or `~/.config/paper/config`. It preserves comments and unknown keys when writing, watches in-place and atomic saves, and posts a notification when effective values change. Presets use the same format in the adjacent `presets/` directory.
 
 ## 4. Decisions
 

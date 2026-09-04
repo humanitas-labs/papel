@@ -4,19 +4,19 @@ Date: `2026.08.31`
 
 Revision: [ADR-004](004-zero-advance-control-glyphs.md), recorded `2026.09.03`, replaces the `.null` glyph mechanism below with zero-advance control glyphs. The source-preservation and contextual-reveal decisions remain in force.
 
-> Papel conceals Markdown syntax during layout while preserving the source text exactly.
+> Paper conceals Markdown syntax during layout while preserving the source text exactly.
 
 ---
 
 ## 1. Decision
 
-Papel marks eligible Markdown punctuation with a `.concealable` text attribute. `PapelLayoutManager` suppresses those characters with `.null` glyph properties outside the paragraphs touched by the current selection. The selected paragraphs reveal their complete source.
+Paper marks eligible Markdown punctuation with a `.concealable` text attribute. `PaperLayoutManager` suppresses those characters with `.null` glyph properties outside the paragraphs touched by the current selection. The selected paragraphs reveal their complete source.
 
 Concealment changes glyph generation only. It never replaces, removes, or normalizes characters in text storage.
 
 ## 2. Rationale
 
-Papel must read like a typeset page without sacrificing ordinary Markdown as the source of truth. Layout-time concealment satisfies both requirements: inactive syntax recedes, while saving, undo, find, copy, paste, and select-all continue to operate on the original text.
+Paper must read like a typeset page without sacrificing ordinary Markdown as the source of truth. Layout-time concealment satisfies both requirements: inactive syntax recedes, while saving, undo, find, copy, paste, and select-all continue to operate on the original text.
 
 The selection range controls disclosure because a person editing a paragraph must be able to see and manipulate its complete syntax. The revealed range is frozen while an input method holds marked text so composition remains stable.
 

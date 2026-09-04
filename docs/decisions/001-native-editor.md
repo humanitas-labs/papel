@@ -2,7 +2,7 @@
 
 Date: `2026.08.30`
 
-> Papel uses the native macOS document lifecycle with an AppKit editing
+> Paper uses the native macOS document lifecycle with an AppKit editing
 > surface because trustworthy file and text behavior matter more than
 > cross-platform reach for this product.
 
@@ -10,7 +10,7 @@ Date: `2026.08.30`
 
 ## 1. Decision
 
-- Build Papel as a macOS-native Swift application.
+- Build Paper as a macOS-native Swift application.
 - Use SwiftUI for scene composition and AppKit `NSTextView` for editing.
 - Store ordinary UTF-8 Markdown as the sole document representation.
 - Use visual source attributes before attempting character concealment.
@@ -42,4 +42,4 @@ than it would with a mature web editor engine.
 
 Reconsider the editing engine if contextual Markdown concealment cannot remain
 cursor-correct, if tables or embedded block editing become core requirements,
-or if Papel must support non-Apple platforms.
+or if Paper must support non-Apple platforms.
