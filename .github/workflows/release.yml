@@ -1,6 +1,6 @@
 # Builds, signs, notarizes, and publishes a release whenever a v* tag is
 # pushed, or on demand for an existing tag. The landing page downloads
-# releases/latest/download/Papel.dmg, so publishing here is what puts a
+# releases/latest/download/Paper.dmg, so publishing here is what puts a
 # version in front of visitors.
 #
 # Repository secrets it needs, set once under Settings ▸ Secrets ▸ Actions:
@@ -80,7 +80,7 @@ jobs:
           export NOTARY_KEY="$RUNNER_TEMP/notary.p8"
           scripts/make-dmg.sh "${VERSION#v}"
           rm "$NOTARY_KEY"
-          cp "dist/Papel-${VERSION#v}.dmg" dist/Papel.dmg
+          cp "dist/Paper-${VERSION#v}.dmg" dist/Paper.dmg
 
       - name: Release notes from the changelog
         run: |
@@ -97,6 +97,6 @@ jobs:
         run: |
           set -eu
           gh release create "$VERSION" \
-            --title "Papel ${VERSION#v}" \
+            --title "Paper ${VERSION#v}" \
             --notes-file "$RUNNER_TEMP/notes.md" \
-            "dist/Papel-${VERSION#v}.dmg" dist/Papel.dmg
+            "dist/Paper-${VERSION#v}.dmg" dist/Paper.dmg

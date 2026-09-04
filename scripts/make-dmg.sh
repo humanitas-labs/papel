@@ -1,6 +1,6 @@
 #!/bin/sh
-# Builds Papel (Release) and packages it into a compressed DMG with an
-# /Applications shortcut. Output: dist/Papel-<version>.dmg
+# Builds Paper (Release) and packages it into a compressed DMG with an
+# /Applications shortcut. Output: dist/Paper-<version>.dmg
 #
 # With a "Developer ID Application" identity in the keychain the app is
 # signed with the hardened runtime, and with notary credentials in the
@@ -24,7 +24,7 @@ cd "$(dirname "$0")/.."
 VERSION="${1:-0.2.0}"
 DERIVED="${DERIVED_DATA:-build/dd}"
 STAGE="build/dmg-stage"
-OUT="dist/Papel-$VERSION.dmg"
+OUT="dist/Paper-$VERSION.dmg"
 
 IDENTITY="$(security find-identity -v -p codesigning | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
 
@@ -32,7 +32,7 @@ xcodegen generate
 if [ -n "$IDENTITY" ]; then
   TEAM="$(printf '%s' "$IDENTITY" | sed -n 's/.*(\([A-Z0-9]*\))$/\1/p')"
   echo "Signing as: $IDENTITY"
-  xcodebuild build -project Papel.xcodeproj -scheme Papel -configuration Release \
+  xcodebuild build -project Paper.xcodeproj -scheme Paper -configuration Release \
     -derivedDataPath "$DERIVED" \
     CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="$IDENTITY" DEVELOPMENT_TEAM="$TEAM" \
     ENABLE_HARDENED_RUNTIME=YES OTHER_CODE_SIGN_FLAGS="--timestamp" \
@@ -40,12 +40,12 @@ if [ -n "$IDENTITY" ]; then
     ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO -quiet
 else
   echo "No Developer ID Application identity in the keychain; ad-hoc signing."
-  xcodebuild build -project Papel.xcodeproj -scheme Papel -configuration Release \
+  xcodebuild build -project Paper.xcodeproj -scheme Paper -configuration Release \
     -derivedDataPath "$DERIVED" CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
     ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO -quiet
 fi
 
-APP="$DERIVED/Build/Products/Release/Papel.app"
+APP="$DERIVED/Build/Products/Release/Paper.app"
 
 notarize() {
   # $1: the file to submit. Waits; fails the build on rejection. The
@@ -70,7 +70,7 @@ fi
 
 if [ "$CAN_NOTARIZE" = 1 ]; then
   codesign --verify --deep --strict --verbose=2 "$APP"
-  ZIP="build/Papel-$VERSION.zip"
+  ZIP="build/Paper-$VERSION.zip"
   rm -f "$ZIP"
   ditto -c -k --keepParent "$APP" "$ZIP"
   notarize "$ZIP"
@@ -81,11 +81,11 @@ elif [ -n "$IDENTITY" ]; then
 fi
 
 rm -rf "$STAGE" && mkdir -p "$STAGE" dist
-cp -R "$APP" "$STAGE/Papel.app"
+cp -R "$APP" "$STAGE/Paper.app"
 ln -s /Applications "$STAGE/Applications"
 
 rm -f "$OUT"
-hdiutil create -volname "Papel" -srcfolder "$STAGE" -ov -format UDZO -quiet "$OUT"
+hdiutil create -volname "Paper" -srcfolder "$STAGE" -ov -format UDZO -quiet "$OUT"
 rm -rf "$STAGE"
 
 if [ -n "$IDENTITY" ]; then

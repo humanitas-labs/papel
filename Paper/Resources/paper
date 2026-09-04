@@ -1,0 +1,76 @@
+#!/bin/sh
+# paper — open files in Paper from the terminal.
+#
+# Usage:
+#   paper                open Paper
+#   paper file.md …      open files, creating any that do not exist yet
+#   paper --help         this text
+#   paper --version      the version of the app the command belongs to
+#   paper --set-default  make Paper the app that opens Markdown files
+#
+# The script lives at Paper.app/Contents/Resources/paper and finds the
+# app from its own real location, so a symlink on the PATH works from
+# anywhere. Settings ▸ CLI puts one there; by hand:
+#   ln -s /Applications/Paper.app/Contents/Resources/paper /usr/local/bin/paper
+
+usage() {
+  cat <<'EOF'
+usage: paper [file ...]
+       paper --help | --version | --set-default
+
+Opens files in Paper, creating any that do not exist yet. With no
+arguments, opens the app. --set-default makes Paper the app that
+opens Markdown files.
+EOF
+}
+
+self="$0"
+resolved="$(readlink -f "$self" 2>/dev/null)" && self="$resolved"
+app="$(cd "$(dirname "$self")/../.." 2>/dev/null && pwd)"
+case "$app" in
+  *.app) ;;
+  *) app="/Applications/Paper.app" ;;
+esac
+
+case "$1" in
+  -h|--help)
+    usage
+    exit 0 ;;
+  -V|--version)
+    /usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null \
+      || { echo "paper: no app at $app" >&2; exit 1; }
+    exit 0 ;;
+  --set-default)
+    # The app itself asks Launch Services; run its executable directly so
+    # it answers and exits even while another copy is open.
+    exe="$app/Contents/MacOS/Paper"
+    [ -x "$exe" ] || { echo "paper: no app at $app" >&2; exit 1; }
+    exec "$exe" --set-default ;;
+  --)
+    shift ;;
+esac
+
+if [ ! -f "$app/Contents/Info.plist" ]; then
+  echo "paper: no app at $app" >&2
+  exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+  exec open -a "$app"
+fi
+
+# Absolute paths: open resolves them regardless of its own directory, and
+# none can start with a dash, so touch and open never read one as a flag.
+count="$#"
+for f in "$@"; do
+  case "$f" in
+    /*) ;;
+    *) f="$PWD/$f" ;;
+  esac
+  if [ ! -e "$f" ]; then
+    touch "$f" || exit 1
+  fi
+  set -- "$@" "$f"
+done
+shift "$count"
+exec open -a "$app" "$@"
