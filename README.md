@@ -83,7 +83,7 @@ window.height = 876
 
 ## Supporters
 
-Paper is free forever, but these are the people who helped make it possible. If you want to join them, a <a href="https://buymeacoffee.com/dremnik"><img src="landing/bmc.svg" height="15" alt="">a [☕ coffee](https://buymeacoffee.com/dremnik) is always appreciated :)nbsp;coffee</a> is always appreciated :)
+Paper is free forever, but these are the people who helped make it possible. If you want to join them, a <a href="https://buymeacoffee.com/dremnik"><img src="landing/bmc.svg" height="15" alt="">&nbsp;coffee</a> is always appreciated :)
 
 - Roman Pronskiy
 - Ross Sylvester
