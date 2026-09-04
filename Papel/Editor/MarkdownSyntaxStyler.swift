@@ -547,7 +547,10 @@ final class MarkdownSyntaxStyler {
 
     private static func startsBlock(_ line: String) -> Bool {
         let range = NSRange(location: 0, length: line.utf16.count)
-        return [listMarkerPattern, headingPattern, blockQuotePattern].contains {
+        // A block image is its own band, never a hard-wrapped item: the
+        // flush style a continuation takes would drop the spacing the
+        // image reserved and the text below would run over the picture.
+        return [listMarkerPattern, headingPattern, blockQuotePattern, blockImagePattern].contains {
             $0.firstMatch(in: line, range: range)?.range.location == 0
         }
     }

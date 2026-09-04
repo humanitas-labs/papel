@@ -44,6 +44,19 @@ struct ImageTests {
         (textView.textStorage!.attribute(.paragraphStyle, at: location, effectiveRange: nil) as! NSParagraphStyle).paragraphSpacing
     }
 
+    /// An image pasted right under a list item, with no blank line between,
+    /// is a band of its own, not a hard-wrapped continuation of the item:
+    /// it keeps the spacing it reserved, and the item keeps its gap.
+    @Test
+    func anImageRightUnderAListItemKeepsItsBand() throws {
+        writePNG("under.png", width: 200, height: 150)
+        let textView = styledView("- item\n![](under.png)\n\nafter", documentURL: documentURL)
+        let text = textView.string as NSString
+        let line = text.range(of: "![](under.png)")
+        #expect(spacing(at: line.location, in: textView) == 150 + Appearance.paragraphSpacing)
+        #expect(spacing(at: 0, in: textView) == Appearance.paragraphSpacing, "the item is not hard-wrapped")
+    }
+
     @Test
     func aWideImageFitsTheMeasureAndReservesItsHeight() throws {
         writePNG("wide.png", width: 1600, height: 400)
