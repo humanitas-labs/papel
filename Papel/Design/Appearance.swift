@@ -6,9 +6,12 @@ import AppKit
 enum Appearance {
     static var configuration: Configuration { ConfigurationStore.shared.current }
 
-    static var bodySize: CGFloat { CGFloat(configuration.fontSize) }
+    /// The view scale multiplies the configured size, the measure, and the
+    /// margins, so the page keeps its proportions at every step; the
+    /// metrics derived from these scale with them.
+    static var bodySize: CGFloat { CGFloat(configuration.fontSize) * Zoom.scale }
     static var preferredFamily: String { configuration.fontFamily }
-    static var maximumMeasure: CGFloat { CGFloat(configuration.measure) }
+    static var maximumMeasure: CGFloat { CGFloat(configuration.measure) * Zoom.scale }
     static var lineHeightMultiple: CGFloat { CGFloat(configuration.lineHeight) }
     static var paragraphSpacing: CGFloat { CGFloat(configuration.paragraphSpacing) }
     static var letterSpacing: CGFloat { CGFloat(configuration.letterSpacing) }
@@ -16,8 +19,8 @@ enum Appearance {
     static var bodyWeight: CGFloat { CGFloat(configuration.fontWeight) }
     static var headingWeight: CGFloat { CGFloat(configuration.headingWeight) }
 
-    static let minimumHorizontalMargin: CGFloat = 64
-    static let topMargin: CGFloat = 80
+    static var minimumHorizontalMargin: CGFloat { 64 * Zoom.scale }
+    static var topMargin: CGFloat { 80 * Zoom.scale }
     static let codeScale: CGFloat = 0.88
 
     /// The insertion point is a rounded bar sized to the glyph box of the
@@ -75,9 +78,13 @@ enum Appearance {
     static var quoteIndent: CGFloat { listIndent }
 
     /// `#` sits at body + 12 pt; `##` starts at body + 6 pt and each further
-    /// level steps down 2 pt, never below body + 2 pt.
+    /// level steps down 2 pt, never below body + 2 pt. The offsets scale
+    /// with the view so a heading keeps its proportion to the body.
     static func headingSize(level: Int) -> CGFloat {
-        level == 1 ? bodySize + 12 : max(bodySize + 2, bodySize + 6 - CGFloat(level - 2) * 2)
+        let step = Zoom.scale
+        return level == 1
+            ? bodySize + 12 * step
+            : max(bodySize + 2 * step, bodySize + (6 - CGFloat(level - 2) * 2) * step)
     }
 
     /// Canvas and ink come from the configured theme (plus any overrides)
@@ -313,5 +320,51 @@ enum Appearance {
 
     static func codeFont(size: CGFloat = bodySize) -> NSFont {
         .monospacedSystemFont(ofSize: size * codeScale, weight: .regular)
+    }
+}
+
+/// The view scale behind ⌘+, ⌘−, and ⌘0: a lens over the rendered page for
+/// the monitor at hand, kept in `UserDefaults` per machine and never in the
+/// config or a preset, which are the document's typographic identity and
+/// stay the same everywhere. Steps walk a fixed ladder so Actual Size lands
+/// on exactly 1 and repeated steps land on the same values.
+@MainActor
+enum Zoom {
+    static let steps: [CGFloat] = [0.7, 0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0]
+    static let defaultsKey = "papel.viewScale"
+
+    private static var cached: CGFloat?
+
+    static var scale: CGFloat {
+        if let cached { return cached }
+        let stored = UserDefaults.standard.object(forKey: defaultsKey) as? Double
+        let scale = stored.map { nearestStep(to: CGFloat($0)) } ?? 1
+        cached = scale
+        return scale
+    }
+
+    static var canZoomIn: Bool { scale < steps[steps.count - 1] }
+    static var canZoomOut: Bool { scale > steps[0] }
+
+    static func zoomIn() { set(steps.first { $0 > scale } ?? scale) }
+    static func zoomOut() { set(steps.last { $0 < scale } ?? scale) }
+    static func reset() { set(1) }
+
+    /// Stores the scale and tells every window to restyle; a value off the
+    /// ladder snaps to the nearest step. Setting 1 clears the key.
+    static func set(_ value: CGFloat) {
+        let next = nearestStep(to: value)
+        guard next != scale else { return }
+        cached = next
+        if next == 1 {
+            UserDefaults.standard.removeObject(forKey: defaultsKey)
+        } else {
+            UserDefaults.standard.set(Double(next), forKey: defaultsKey)
+        }
+        NotificationCenter.default.post(name: Configuration.didChangeNotification, object: nil)
+    }
+
+    static func nearestStep(to value: CGFloat) -> CGFloat {
+        steps.min { abs($0 - value) < abs($1 - value) } ?? 1
     }
 }

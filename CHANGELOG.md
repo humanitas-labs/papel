@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Zoom: ⌘+ and ⌘− step the view through a fixed ladder from 70% to 200%, ⌘0 returns to actual size, and the three sit in the View menu. The whole page scales together, body, headings, measure, indents, code inset, and margins, so it keeps its proportions; it is a lens for the monitor you are on, not a change to the typography. The scale is kept per machine in the app's defaults and never written to the config or a preset, so those stay the same on every machine (#13).
+
 - Task lists: `- [ ]` and `- [x]` draw as a circle in place of the list marker, a ring for an open item and an ink disc with a check for a done one, whose text recedes into the quote ink. A click on the circle flips the source between `[ ]` and `[x]`, undoably, with the disc growing out of the ring; the caret on the line shows the raw marker. Return after a task continues with `- [ ] `, and Return on an empty task ends the list. `[X]` counts as done; anything else in the brackets is a plain item (#37).
 - `papel --set-default` makes Papel the app that opens `.md` and `.markdown` files, and a Make Default button in Settings ▸ CLI does the same; Get Info's Change All is no longer the only way. The agent prompt in the guide and the README now also has the agent open a test note with `papel`, so the command is seen working, and ask whether Papel should be the default app before running the command.
 

@@ -43,6 +43,7 @@ Give this prompt to your agent of choice (it is also in the guide Papel opens on
 | click / ⌘-click | open a link |
 | double-click an image | open it in Quick Look |
 | paste or drop an image | saved beside the document, inserted as `![](…)` |
+| ⌘+ / ⌘− / ⌘0 | zoom the view in and out, back to actual size; per machine, never written to the config |
 | ⌘, | settings |
 
 Pasting or dropping an image into an unsaved document asks you to save first. Images go beside the document by default; set `image.paste.directory = assets` to use a relative subfolder instead. Undo removes the inserted Markdown, but keeps the image file.

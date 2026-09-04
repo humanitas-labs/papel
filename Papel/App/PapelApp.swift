@@ -45,6 +45,15 @@ struct PapelApp: App {
                     NSApp.keyWindow?.toggleFullScreen(nil)
                 }
                 .keyboardShortcut("f", modifiers: [.control, .command])
+                Divider()
+                // A lens for the monitor at hand: the whole page scales
+                // together and the setting stays on this machine.
+                Button("Zoom In") { Zoom.zoomIn() }
+                    .keyboardShortcut("+", modifiers: .command)
+                Button("Zoom Out") { Zoom.zoomOut() }
+                    .keyboardShortcut("-", modifiers: .command)
+                Button("Actual Size") { Zoom.reset() }
+                    .keyboardShortcut("0", modifiers: .command)
             }
         }
 
