@@ -163,6 +163,47 @@ struct TaskListTests {
     }
 
     @Test
+    func typingBracketsAtTheStartOfALineMakesATask() throws {
+        func typed(_ text: String, then character: String = "]") -> (String, Int) {
+            let textView = PapelTextView()
+            textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+            textView.string = text
+            textView.syntaxStyler.apply(to: textView)
+            textView.setSelectedRange(NSRange(location: text.utf16.count, length: 0))
+            textView.insertText(character, replacementRange: NSRange(location: text.utf16.count, length: 0))
+            textView.flushPendingSubstitution()
+            return (textView.string, textView.selectedRange().location)
+        }
+        #expect(typed("[") == ("- [ ] ", 6), "brackets alone start a task list")
+        #expect(typed("- [") == ("- [ ] ", 6), "brackets after a marker complete it")
+        #expect(typed("  [") == ("  - [ ] ", 8), "the indent carries, so the task nests")
+        #expect(typed("> [") == ("> - [ ] ", 8))
+        #expect(typed("1. [") == ("1. [ ] ", 7))
+        #expect(typed("first\n[") == ("first\n- [ ] ", 12), "only the line's own start counts")
+        #expect(typed("see [") == ("see []", 6), "mid-line brackets are prose")
+        #expect(typed("- [x] [") == ("- [x] []", 8), "a second pair on a task is prose")
+        #expect(typed("`[") == ("`[]", 3), "not in code")
+
+        // One undo step gives back the typed pair.
+        let textView = PapelTextView()
+        textView.frame = NSRect(x: 0, y: 0, width: 400, height: 300)
+        let host = TestUndoHost()
+        host.attach(to: textView)
+        host.undoManager.groupsByEvent = false
+        textView.string = "["
+        textView.setSelectedRange(NSRange(location: 1, length: 0))
+        host.undoManager.beginUndoGrouping()
+        textView.insertText("]", replacementRange: NSRange(location: 1, length: 0))
+        host.undoManager.endUndoGrouping()
+        host.undoManager.beginUndoGrouping()
+        textView.flushPendingSubstitution()
+        host.undoManager.endUndoGrouping()
+        #expect(textView.string == "- [ ] ")
+        host.undoManager.undo()
+        #expect(textView.string == "[]")
+    }
+
+    @Test
     func returnContinuesATaskAndClearsAnEmptyOne() {
         func returned(_ text: String, at location: Int) -> String? {
             guard let edit = ListContinuation.edit(in: text as NSString, selection: NSRange(location: location, length: 0)) else { return nil }

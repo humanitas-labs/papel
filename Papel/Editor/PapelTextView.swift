@@ -622,7 +622,7 @@ final class PapelTextView: NSTextView {
         guard let typed = string as? String ?? (string as? NSAttributedString)?.string,
               typed.utf16.count == 1, !hasMarkedText() else { return }
         let isDashTrigger = typed == " " || typed.rangeOfCharacter(from: .alphanumerics) != nil
-        guard typed == ">" || isDashTrigger else { return }
+        guard typed == ">" || typed == "]" || isDashTrigger else { return }
         // On the next pass of the run loop, after the keystroke's undo group
         // has closed, so the substitution is its own undo step.
         pendingSubstitution?.invalidate()
@@ -630,6 +630,7 @@ final class PapelTextView: NSTextView {
             MainActor.assumeIsolated {
                 self?.replaceTypedArrow()
                 self?.replaceTypedDashes()
+                self?.replaceTypedTaskBox()
             }
         }
     }
@@ -692,6 +693,41 @@ final class PapelTextView: NSTextView {
         textStorage?.replaceCharacters(in: pair, with: "—")
         didChangeText()
         setSelectedRange(NSRange(location: caret - 1, length: 0))
+        breakUndoCoalescing()
+    }
+
+    /// The line before a typed `[]`: indent, any quote prefix, and
+    /// optionally a list marker with its gap. Anything else and the
+    /// brackets are prose.
+    private static let taskBoxLeadPattern = try! NSRegularExpression(
+        pattern: #"^[\t ]*(?:>[\t ]?)*(?:(?:[-+*]|\d+[A-Za-z]?[.)])[\t ]+)?$"#
+    )
+
+    /// `[]` at the start of a line's content becomes an open task: `[]`
+    /// alone becomes `- [ ] `, and `- []` becomes `- [ ] `, the caret after
+    /// the space. Never mid-line, never in code.
+    private func replaceTypedTaskBox() {
+        guard selectedRange().length == 0 else { return }
+        let caret = selectedRange().location
+        let text = self.string as NSString
+        guard caret >= 2, text.character(at: caret - 1) == 0x5D, text.character(at: caret - 2) == 0x5B else { return }
+        let paragraph = text.paragraphRange(for: NSRange(location: caret, length: 0))
+        let lead = NSRange(location: paragraph.location, length: caret - 2 - paragraph.location)
+        guard let match = Self.taskBoxLeadPattern.firstMatch(in: text as String, range: lead),
+              match.range == lead else { return }
+        if let font = textStorage?.attribute(.font, at: caret - 2, effectiveRange: nil) as? NSFont,
+           font == Appearance.codeFont() { return }
+        let leadText = text.substring(with: lead)
+        let hasMarker = MarkdownSyntaxStyler.listMarkerPattern.firstMatch(
+            in: leadText, range: NSRange(location: 0, length: leadText.utf16.count)
+        ) != nil
+        let pair = NSRange(location: caret - 2, length: 2)
+        let replacement = hasMarker ? "[ ] " : "- [ ] "
+        breakUndoCoalescing()
+        guard shouldChangeText(in: pair, replacementString: replacement) else { return }
+        textStorage?.replaceCharacters(in: pair, with: replacement)
+        didChangeText()
+        setSelectedRange(NSRange(location: pair.location + replacement.utf16.count, length: 0))
         breakUndoCoalescing()
     }
 
