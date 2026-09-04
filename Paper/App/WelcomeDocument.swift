@@ -57,6 +57,8 @@ enum WelcomeDocument {
 
         Click into this paragraph and the Markdown shows itself: **bold** is ⌘B, *italic* is ⌘I, `code` is ⌘E, and a [link](https://papel.sh) is ⌘K. Click a link to follow it, ⌘F to find.
 
+        - A dash starts a list
+        * A star starts a bullet
         - [ ] A task, with a circle you can click
           - [ ] A nested task, with a square you can click
         - [x] A task that is done
