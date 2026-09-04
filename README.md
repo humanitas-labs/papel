@@ -80,3 +80,11 @@ window.height = 876
 
 - [Build and test](docs/build.md)
 - [Architecture](docs/architecture.md)
+
+## Supporters
+
+Paper is free forever, but these are the people who helped make it possible. If you want to join them, a [☕ coffee](https://buymeacoffee.com/dremnik) is always appreciated :)
+
+- Roman Pronskiy
+- Ross Sylvester
+- Will Tholke
