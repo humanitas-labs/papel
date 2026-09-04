@@ -59,7 +59,7 @@ struct TaskListTests {
         // The hang reserves the circle: the text sits past the diameter
         // and the gap, not past a dash.
         let style = try #require(storage.attribute(.paragraphStyle, at: 6, effectiveRange: nil) as? NSParagraphStyle)
-        let expected = Appearance.taskIndent + Appearance.listMarkerGap + Appearance.taskBoxSize
+        let expected = Appearance.listIndent + Appearance.listMarkerGap + Appearance.taskBoxSize
             + (" " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width
         #expect(abs(style.headIndent - expected) < 0.5)
         #expect(textView.string == text)
@@ -235,11 +235,8 @@ struct TaskListTests {
         }
         let nestedTask = (text as NSString).range(of: "  - [ ] nested").location
         let nestedItem = (text as NSString).range(of: "  - nested item").location
-        // A task sits `taskIndent` in where a bullet sits `listIndent`, at
-        // every level.
-        let shift = Appearance.listIndent - Appearance.taskIndent
-        #expect(try style(at: 0).firstLineHeadIndent == Appearance.taskIndent)
-        #expect(try style(at: nestedTask).firstLineHeadIndent == style(at: nestedItem).firstLineHeadIndent - shift)
+        #expect(try style(at: 0).firstLineHeadIndent == Appearance.listIndent)
+        #expect(try style(at: nestedTask).firstLineHeadIndent == style(at: nestedItem).firstLineHeadIndent)
         #expect(try style(at: 0).firstLineHeadIndent == style(at: nestedTask).firstLineHeadIndent - Appearance.listNestIndent
                 + ("  " as NSString).size(withAttributes: [.font: Appearance.bodyFont()]).width, "one nesting step apart")
     }

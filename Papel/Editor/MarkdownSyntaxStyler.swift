@@ -398,13 +398,9 @@ final class MarkdownSyntaxStyler {
                         }
                     }
                 }
-                // A task item stands closer to the margin than a bullet:
-                // its indent is the bullet's, shifted by the difference.
-                var indent = Self.nestedIndent(at: match.range.location, in: source)
-                if boxWidth > 0 { indent = max(0, indent - Appearance.listIndent + Appearance.taskIndent) }
                 let itemStyle = Appearance.hangingParagraphStyle(
                     under: String(rendered),
-                    indent: indent,
+                    indent: Self.nestedIndent(at: match.range.location, in: source),
                     gap: boxWidth > 0 ? boxWidth : Appearance.listMarkerGap,
                     spacing: continuations.isEmpty ? nil : 0
                 )

@@ -165,8 +165,8 @@ struct SettingsView: View {
             }
 
             Section("Lists") {
-                numberRow("Task indent", binding(\.taskIndent), in: Configuration.taskIndentRange, unit: "pt")
-                Text("How far a task's circle sits from the text margin; bullets sit at 1.4 × the font size.")
+                numberRow("Indent", binding(\.listIndent), in: Configuration.listIndentRange, unit: "×")
+                Text("How far bullets, numbers, and task circles sit from the text margin, in font sizes.")
                     .font(.caption)
             }
 

@@ -66,7 +66,7 @@ struct ZoomTests {
             Zoom.set(1.5)
             #expect(Appearance.bodySize == body * 1.5)
             #expect(Appearance.headingSize(level: 1) == heading * 1.5)
-            #expect(Appearance.listIndent == (body * 1.5 * 1.4).rounded())
+            #expect(Appearance.listIndent == (body * 1.5 * CGFloat(Appearance.configuration.listIndent)).rounded())
             #expect(indent < Appearance.listIndent)
             #expect(Appearance.maximumMeasure == measure * 1.5)
             #expect(Appearance.topMargin == top * 1.5)

@@ -36,9 +36,9 @@ enum Appearance {
     /// File-name label: system sans, light beige-grey, evenly inset from the
     /// top-left corner below the traffic lights, in and out of full screen.
 
-    /// List items are inset from the margin by this much, scaled with the
-    /// body size so the marker sits like an Apple Notes bullet.
-    static var listIndent: CGFloat { (bodySize * 1.4).rounded() }
+    /// List items are inset from the margin by this much (`list.indent`,
+    /// a multiple of the font size, so it scales with the type).
+    static var listIndent: CGFloat { (bodySize * CGFloat(configuration.listIndent)).rounded() }
 
     /// Extra space after a list marker, beyond the source's single space,
     /// so the text sits clear of the bullet as in Apple Notes.
@@ -47,11 +47,6 @@ enum Appearance {
     /// width its concealed `[ ]` reserves, and the stroke of an open one.
     static var taskBoxSize: CGFloat { (bodySize * 0.95).rounded() }
     static let taskBoxStroke: CGFloat = 1.25
-    /// The indent of a top-level task item's circle from the text margin
-    /// (`task.indent`): about half a bullet's by default, so a checklist
-    /// sits in from the prose without the wide circle pushing its text as
-    /// far as a bullet's. Bullets keep `listIndent`.
-    static var taskIndent: CGFloat { (CGFloat(configuration.taskIndent) * Zoom.scale).rounded() }
 
     /// How far each nesting level steps a list item's marker. The source's
     /// two spaces per level are far narrower than a legible step, so the
@@ -78,9 +73,9 @@ enum Appearance {
     /// One cached instance per palette: the chip drawing in the layout
     /// manager recognises spans by this exact colour.
     static var codeBlockBackground: NSColor { colors.codeBackground }
-    /// Quote text is inset from the margin by the list indent; the rule
+    /// Quote text is inset from the margin by 1.4 × the body size; the rule
     /// stands on the margin itself, aligned with the surrounding text.
-    static var quoteIndent: CGFloat { listIndent }
+    static var quoteIndent: CGFloat { (bodySize * 1.4).rounded() }
 
     /// `#` sits at body + 12 pt; `##` starts at body + 6 pt and each further
     /// level steps down 2 pt, never below body + 2 pt. The offsets scale
