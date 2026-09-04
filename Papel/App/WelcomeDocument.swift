@@ -19,12 +19,17 @@ enum WelcomeDocument {
         return support.appendingPathComponent("Papel", isDirectory: true).appendingPathComponent(fileName)
     }
 
-    /// The README's prompt, with the instruction on its own line so the
-    /// two paragraphs read as such in the fence.
+    /// The README's prompt: the instruction to add, then a check that the
+    /// command works, then the offer to make Papel the default app, each
+    /// its own paragraph so they read as such in the fence.
     static let agentPrompt = """
         Add the following to my global instructions:
 
         Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
+
+        Then check that the `papel` command works: write a short Markdown note to a temporary file and open it with `papel`. If the command is not found, tell me; it installs from Papel's Settings (⌘,) under CLI.
+
+        Finally, ask me explicitly whether I want Papel to be the default app for Markdown files, and explain what that means: double-clicking a .md file in Finder would open it in Papel instead of the current app. Do not change anything until I answer. Only if I say yes, run `papel --set-default`.
         """
 
     /// The command-line paragraph, from what the launch-time install found.
@@ -72,7 +77,7 @@ enum WelcomeDocument {
 
         ## 3. Default app for Markdown
 
-        To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All…*. Repeat once for `.markdown` if you use that extension.
+        `papel --set-default` makes double-clicking a `.md` or `.markdown` file open Papel; so does *Make Default* in Settings (⌘,) under CLI. By hand: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All…*.
 
         ## 4. Shortcuts
 
@@ -80,12 +85,15 @@ enum WelcomeDocument {
         - ⌘K: add a link, destination from the clipboard when it holds a URL
         - Click or ⌘-click: open a link
         - Double-click an image: open it in Quick Look
+        - Paste or drop an image: save a copy beside the document and insert its Markdown reference
         - ⌘N, ⌘O: new document, open a document
         - ⌘,: settings
 
+        Pasting or dropping an image into an unsaved document asks you to save first. Images go beside the document by default; set `image.paste.directory = assets` to use a relative subfolder instead. Undo removes the inserted Markdown, but keeps the image file.
+
         ## 5. Configuration
 
-        Everything lives in `~/.config/papel/config`: typeface, size, measure, theme, window size. It is written as a commented template on first launch and applied live to open windows whenever it is saved. Settings (⌘,) edits the same file.
+        Settings live in `$XDG_CONFIG_HOME/papel/config` when set, otherwise `~/.config/papel/config`: typeface, size, measure, theme, window size. The file is written as a commented template on first launch and applied live to open windows whenever it is saved. Settings (⌘,) edits the same file.
 
         """
     }

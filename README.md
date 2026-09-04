@@ -25,10 +25,14 @@ Give this prompt to your agent of choice (it is also in the guide Papel opens on
 > Add the following to my global instructions: 
 >
 >Markdown files are read in Papel (a native macOS editor). To show me a document, open it with `papel <file.md>`. Papel reloads clean documents from disk automatically, so after the first open just keep editing the file. Never hard-wrap prose in Markdown — a paragraph is one source line; fixed-width wrapping renders as broken mid-paragraph lines.
+>
+> Then check that the `papel` command works: write a short Markdown note to a temporary file and open it with `papel`. If the command is not found, tell me; it installs from Papel's Settings (⌘,) under CLI.
+>
+> Finally, ask me explicitly whether I want Papel to be the default app for Markdown files, and explain what that means: double-clicking a .md file in Finder would open it in Papel instead of the current app. Do not change anything until I answer. Only if I say yes, run `papel --set-default`.
 
 ## Default app for Markdown
 
-To make double-clicking a `.md` file open Papel: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*… — that applies to every `.md` file. Repeat once for `.markdown` if you use that extension.
+`papel --set-default` makes double-clicking a `.md` or `.markdown` file open Papel; so does *Make Default* in Settings (⌘,) under CLI. By hand: select any Markdown file in Finder, press ⌘I (Get Info), choose Papel under *Open with*, and click *Change All*….
 
 ## Shortcuts
 
@@ -41,20 +45,23 @@ To make double-clicking a `.md` file open Papel: select any Markdown file in Fin
 | paste or drop an image | saved beside the document, inserted as `![](…)` |
 | ⌘, | settings |
 
+Pasting or dropping an image into an unsaved document asks you to save first. Images go beside the document by default; set `image.paste.directory = assets` to use a relative subfolder instead. Undo removes the inserted Markdown, but keeps the image file.
+
 ## Configuration
 
-Everything lives in `~/.config/papel/config` (`$XDG_CONFIG_HOME` honoured), written as a commented template on first launch and applied live to open windows whenever it is saved:
+Settings live in `$XDG_CONFIG_HOME/papel/config` when set, otherwise `~/.config/papel/config`. The file is written as a commented template on first launch and applied live to open windows whenever it is saved. Selected defaults are shown below; the generated template documents every key.
 
 ```ini
 font.family = New York
-font.size = 16
-line.height = 1.11
-letter.spacing = 0.02
+font.size = 15
+line.height = 1.2
+paragraph.spacing = 11
+letter.spacing = -0.02
 font.smoothing = off
-measure = 655
-theme = slate
-window.width = 1374
-window.height = 877
+measure = 640
+theme = enso
+window.width = 1400
+window.height = 876
 ```
 
 ## More

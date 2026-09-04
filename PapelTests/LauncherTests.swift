@@ -124,6 +124,32 @@ struct LauncherTests {
     }
 
     @Test
+    func setDefaultRunsTheAppExecutable() throws {
+        let h = try Harness()
+        defer { h.remove() }
+        let macOS = h.root.appendingPathComponent("Fake.app/Contents/MacOS")
+        try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
+        let stub = macOS.appendingPathComponent("Papel")
+        try "#!/bin/sh\nprintf 'stub %s\\n' \"$@\"\n".write(to: stub, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: stub.path)
+        let result = try h.run(["--set-default"])
+        #expect(result.status == 0)
+        #expect(result.stdout == "stub --set-default\n")
+        #expect(result.opened.isEmpty)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: h.cwd.path).isEmpty)
+    }
+
+    @Test
+    func setDefaultWithoutTheExecutableFails() throws {
+        let h = try Harness()
+        defer { h.remove() }
+        let result = try h.run(["--set-default"])
+        #expect(result.status == 1)
+        #expect(result.stderr.contains("no app at"))
+        #expect(result.opened.isEmpty)
+    }
+
+    @Test
     func doubleDashEndsOptions() throws {
         let h = try Harness()
         defer { h.remove() }

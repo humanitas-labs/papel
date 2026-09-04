@@ -14,7 +14,7 @@ struct WelcomeDocumentTests {
         let link = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/bin/papel")
         let text = WelcomeDocument.text(commandLine: .installed(link))
         #expect(text.contains("installed at `~/.local/bin/papel`"))
-        #expect(!text.contains("Settings (⌘,) under CLI"))
+        #expect(!text.contains("The command is not installed yet"))
     }
 
     @Test func pointsAtSettingsWhenNotInstalled() {
@@ -36,6 +36,17 @@ struct WelcomeDocumentTests {
         let text = WelcomeDocument.text(commandLine: .notInstalled)
         #expect(text.contains("```\n\(WelcomeDocument.agentPrompt)\n```"))
         #expect(text.hasPrefix("![The Papel mark, an ink-brush circle](enso.png)\n\n# Welcome to Papel!\n"))
+    }
+
+    @Test func promptChecksTheCommandAndOffersTheDefault() {
+        let prompt = WelcomeDocument.agentPrompt
+        #expect(prompt.hasPrefix("Add the following to my global instructions:\n\n"))
+        #expect(prompt.contains("check that the `papel` command works"))
+        #expect(prompt.contains("ask me explicitly whether I want Papel to be the default app for Markdown files"))
+        #expect(prompt.contains("Do not change anything until I answer. Only if I say yes, run `papel --set-default`."))
+        #expect(prompt.contains("run `papel --set-default`"))
+        let text = WelcomeDocument.text(commandLine: .notInstalled)
+        #expect(text.contains("## 3. Default app for Markdown\n\n`papel --set-default`"))
     }
 
     @Test func keepsAnExistingFileUnlessReplacing() throws {

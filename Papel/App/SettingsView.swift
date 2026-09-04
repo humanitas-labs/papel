@@ -179,6 +179,7 @@ struct SettingsView: View {
 
             Section("CLI") {
                 CommandLineToolRow()
+                DefaultApplicationRow()
             }
         }
         .formStyle(.grouped)
@@ -274,6 +275,39 @@ private struct SettingsWindowConfigurator: NSViewRepresentable {
         func configureWindow() {
             window?.collectionBehavior.insert([.fullScreenAuxiliary, .moveToActiveSpace])
         }
+    }
+}
+
+/// Papel as the app that opens Markdown files, and a button to make it so.
+private struct DefaultApplicationRow: View {
+    @State private var isDefault = false
+    @State private var busy = false
+    @State private var error: String?
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(isDefault ? "Papel opens Markdown files" : "Default app for Markdown")
+            Spacer()
+            Button("Make Default") {
+                busy = true
+                Task {
+                    do { try await DefaultApplication.makeDefault(); error = nil }
+                    catch { self.error = error.localizedDescription }
+                    isDefault = DefaultApplication.isDefault
+                    busy = false
+                }
+            }
+            .disabled(busy || isDefault)
+        }
+        Text("What a double-click on a .md or .markdown file opens; `papel --set-default` does the same from the terminal.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        if let error {
+            Text(error)
+                .font(.caption)
+                .foregroundStyle(.red)
+        }
+        Color.clear.frame(height: 0).task { isDefault = DefaultApplication.isDefault }
     }
 }
 

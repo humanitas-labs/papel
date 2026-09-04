@@ -7,6 +7,9 @@ struct PapelApp: App {
     @ObservedObject private var store = ConfigurationStore.shared
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     init() {
+        // `papel --set-default` runs this executable directly; answer and
+        // exit before the application, and any window, comes up.
+        if DefaultApplication.requestedOnCommandLine { DefaultApplication.runFromCommandLine() }
         ConfigurationStore.shared.start()
     }
 
